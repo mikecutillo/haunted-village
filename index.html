@@ -1508,17 +1508,19 @@ const VIDEOS=[
  ['boR8mKhXJuI','Celebrate Halloween on Sesame Street','Sesame Street','Four episodes'],
  ['D6Y8FNsvwf0','Curious George: A Halloween Boo Fest','PBS KIDS','Full movie'],
  ['ztoZJqiobSQ',"It's Halloween on PBS KIDS",'PBS KIDS','Short'],
+ ['the-skeleton-dance_1929','The Skeleton Dance (1929)','Classic cartoon, public domain','5 min','ia'],
+ ['the-haunted-house-1929','The Haunted House (1929)','Classic Mickey cartoon, public domain','7 min','ia'],
 ];
 const SELF_HOSTED=!/claude\.ai$/.test(location.hostname)&&location.protocol.startsWith('http');
-function videoShelf(){const wrap=el('div',{style:'display:flex;flex-direction:column;gap:12px;margin-top:10px'});wrap.append(el('h3',{},'Watch: Halloween videos from YouTube'),el('p',{style:'margin:0;color:var(--muted);font-size:14px'},SELF_HOSTED?'Tap a picture to play it right here. The village music pauses while a video plays.':'These open in a new tab on YouTube.'));const grid=el('div',{class:'posters'});wrap.append(grid);
- for(const[id,title,ch,len]of VIDEOS){const fb=miniCanvas(320,180);const x=fb.ctx;skyGrad(x,320,180,'#2A1152','#3B1A62','#5A2A78');drawMoon(x,270,40,20);x.fillStyle='#FFF4E6';x.font='900 13px "Baloo 2"';x.textAlign='center';x.fillText(ch,160,150);
+function videoShelf(){const wrap=el('div',{style:'display:flex;flex-direction:column;gap:12px;margin-top:10px'});wrap.append(el('h3',{},'Watch: Halloween videos'),el('p',{style:'margin:0;color:var(--muted);font-size:14px'},SELF_HOSTED?'Tap a picture to play it right here. The village music pauses while a video plays.':'These open in a new tab on YouTube.'));const grid=el('div',{class:'posters'});wrap.append(grid);
+ for(const[id,title,ch,len,src]of VIDEOS){const IA=src==='ia',watch=IA?'https://archive.org/details/'+id:'https://www.youtube.com/watch?v='+id,embed=IA?'https://archive.org/embed/'+id:'https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0&playsinline=1&modestbranding=1';const fb=miniCanvas(320,180);const x=fb.ctx;skyGrad(x,320,180,'#2A1152','#3B1A62','#5A2A78');drawMoon(x,270,40,20);x.fillStyle='#FFF4E6';x.font='900 13px "Baloo 2"';x.textAlign='center';x.fillText(ch,160,150);
   const meta=el('div',{class:'meta'},el('h3',{},title),el('p',{},ch+' · '+len));
-  const thumb=el('div',{class:'vthumb'});const img=el('img',{src:'https://i.ytimg.com/vi/'+id+'/hqdefault.jpg',alt:'',loading:'lazy'});img.onerror=()=>{img.replaceWith(fb);};thumb.append(img,el('span',{class:'vplay'},'▶'));
+  const thumb=el('div',{class:'vthumb'});const img=el('img',{src:IA?'https://archive.org/services/img/'+id:'https://i.ytimg.com/vi/'+id+'/hqdefault.jpg',alt:'',loading:'lazy'});img.onerror=()=>{img.replaceWith(fb);};thumb.append(img,el('span',{class:'vplay'},'▶'));
   if(SELF_HOSTED){const b=el('button',{class:'poster',type:'button','aria-label':'Play '+title},thumb,meta);
    b.onclick=()=>{if(!SFX.muted){SFX.setMuted(true);window.__vidMuted=true;}
-    const fr=document.createElement('iframe');fr.src='https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0&playsinline=1&modestbranding=1';fr.title=title;fr.setAttribute('allow','autoplay; encrypted-media; picture-in-picture; fullscreen');fr.setAttribute('allowfullscreen','');fr.setAttribute('referrerpolicy','strict-origin-when-cross-origin');
-    const box=el('div',{class:'vbox'},fr);const card=el('div',{class:'poster playing'},box,meta,el('a',{href:'https://www.youtube.com/watch?v='+id,target:'_blank',rel:'noopener',style:'padding:0 16px 14px;color:var(--candle);font-weight:800;font-size:13px'},'Not playing? Watch on YouTube'));b.replaceWith(card);};grid.append(b);}
-  else{const a=el('a',{class:'poster',href:'https://www.youtube.com/watch?v='+id,target:'_blank',rel:'noopener',style:'text-decoration:none'},thumb,meta);grid.append(a);}}
+    const fr=document.createElement('iframe');fr.src=embed;fr.title=title;fr.setAttribute('allow','autoplay; encrypted-media; picture-in-picture; fullscreen');fr.setAttribute('allowfullscreen','');fr.setAttribute('referrerpolicy','strict-origin-when-cross-origin');
+    const box=el('div',{class:'vbox'},fr);const card=el('div',{class:'poster playing'},box,meta,el('a',{href:watch,target:'_blank',rel:'noopener',style:'padding:0 16px 14px;color:var(--candle);font-weight:800;font-size:13px'},IA?'Not playing? Watch on the Internet Archive':'Not playing? Watch on YouTube'));b.replaceWith(card);};grid.append(b);}
+  else{const a=el('a',{class:'poster',href:watch,target:'_blank',rel:'noopener',style:'text-decoration:none'},thumb,meta);grid.append(a);}}
  return wrap;}
 
 /* ---------- town postcards ---------- */
@@ -1550,6 +1552,7 @@ $('#playBtn').onclick=()=>{SFX.get();SFX.click();const boot=$('#boot');boot.clas
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
+
 
 
 
