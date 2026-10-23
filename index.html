@@ -145,8 +145,17 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-si
 .jam-member b{font-size:13px}
 .jam-member small{font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
 .jam-tempo{flex:none;display:flex;flex-direction:column;align-items:center;gap:4px;margin-left:auto;font-size:11px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
-.jam-done{position:absolute;top:14px;right:16px;z-index:2}
-.jam-intro{position:absolute;top:14px;left:16px;right:140px;z-index:2;font-weight:800;color:var(--candle);text-shadow:0 2px 8px #000}
+.jam-top{position:absolute;top:10px;left:12px;right:12px;z-index:2;display:flex;gap:10px;align-items:flex-start}
+.jam-top .host{flex:none;margin-top:6px;filter:drop-shadow(0 6px 10px rgba(0,0,0,.5))}
+.jam-bubble{position:relative;flex:1;min-width:0;background:#FFF4E6;color:#2A1858;border-radius:20px;padding:10px 14px 12px;box-shadow:0 8px 22px rgba(0,0,0,.45)}
+.jam-bubble::before{content:"";position:absolute;left:-9px;top:28px;border:10px solid transparent;border-right-color:#FFF4E6;border-left:0}
+.jam-bubble.bp{animation:bubIn .35s cubic-bezier(.3,1.5,.5,1)}
+@keyframes bubIn{from{transform:scale(.92) translateY(6px);opacity:.4}to{transform:none;opacity:1}}
+.jam-bubble .js{font-family:'Creepster',cursive;letter-spacing:.06em;color:#E8650A;font-size:15px;margin-bottom:2px}
+.jam-bubble .jt{font-weight:700;font-size:clamp(13px,3.5vw,16px);line-height:1.35}
+.jam-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.jam-actions[hidden]{display:none}
+@media (max-width:520px){.jam-top .host{width:64px!important;height:72px!important}.jam-bubble{padding:9px 11px 11px}}
 
 /* maker + carver */
 .two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:22px;align-items:start}
@@ -844,12 +853,23 @@ SCENES.jam={title:'Monster Jamband',keepSong:true,mount(stage,opts={}){
   const btn=el('button',{class:'jam-member',type:'button'},rc,el('b',{},m.name),el('small',{},m.role));btn.onclick=()=>{SFX.get();BAND.toggle(m.id);sync();};slots[m.id].btn=btn;roster.append(btn);});
  const tempo=el('input',{type:'range',min:'80',max:'150',value:String(BAND.bpm),id:'jamTempo'});const tl=el('span',{},BAND.bpm+' bpm');tempo.oninput=()=>{BAND.bpm=+tempo.value;tl.textContent=BAND.bpm+' bpm';};
  roster.append(el('div',{class:'jam-tempo'},el('label',{for:'jamTempo'},'Tempo'),tempo,tl));
- const intro=el('div',{class:'jam-intro'},opts.compose?'Tap monsters to build the village song. It plays everywhere you go.':'Tap a monster to add or remove it from the band.');st.append(intro);
- const done=el('button',{class:'btn slime jam-done',type:'button'},opts.compose?'Use this song':'Save song');done.onclick=()=>{if(!BAND.members.size){toast('Add at least one monster first.');return;}BAND.save();$('#songName').textContent=BAND.label();SFX.good();if(opts.onDone)opts.onDone();else{toast('Song saved. It plays through the whole village.');closeScene();}};st.append(done);
- const share=el('button',{class:'btn ghost small',type:'button',style:'position:absolute;top:60px;right:16px;z-index:2'},'Copy song link');share.onclick=()=>{if(!BAND.members.size){toast('Add a monster first.');return;}copyText(songLink(),'Song link copied. Anyone who opens it hears your band.');};st.append(share);
- function sync(){for(const id in slots){const s=slots[id],on=BAND.members.has(id);s.slot.classList.toggle('on',on);s.cv.hidden=!on;s.slot.querySelector('.nm').textContent=on?s.m.name:'';s.btn.classList.toggle('on',on);}intro.hidden=BAND.members.size>0&&!opts.compose;}
+ const hostCv=miniCanvas(84,95);hostCv.className='host';
+ const bubTxt=el('div',{class:'jt'}),bubStep=el('div',{class:'js'});
+ const done=el('button',{class:'btn slime',type:'button'},opts.compose?'Use this song':'Save song');done.onclick=()=>{if(!BAND.members.size){toast('Add at least one monster first.');return;}BAND.save();$('#songName').textContent=BAND.label();SFX.good();if(opts.onDone)opts.onDone();else{toast('Song saved. It plays through the whole village.');closeScene();}};
+ const share=el('button',{class:'btn ghost small',type:'button'},'Copy song link');share.onclick=()=>{if(!BAND.members.size){toast('Add a monster first.');return;}copyText(songLink(),'Song link copied. Anyone who opens it hears your band.');};
+ const acts=el('div',{class:'jam-actions'},done,share);
+ const bub=el('div',{class:'jam-bubble'},bubStep,bubTxt,acts);
+ st.append(el('div',{class:'jam-top'},hostCv,bub));
+ function say(){const n=BAND.members.size,names=[...BAND.members].map(id=>MEMBERS.find(m=>m.id===id).name);
+  let step,txt;
+  if(!opts.compose){step='Your band';txt=n?'Tap a monster to add them or send them home. Your song plays all over the village.':'The stage is empty! Tap a monster below to bring them out.';}
+  else if(n===0){step='Step 1 of 3 · Wake the band';txt='Psst, brave one! The village is fast asleep, and it only wakes up to music. So first, you pick the band. Tap a monster below to call them onto the stage.';}
+  else if(n<3){step='Step 2 of 3 · Add friends';txt=(names[names.length-1])+' is warming up! Each monster plays a different part: drums, bass, giggly keys. Call in a couple more, then slide the tempo to make it creepy or zippy.';}
+  else{step='Step 3 of 3 · Make it yours';txt='Ooh, that sounds spooky! This song will follow you through the whole Halloween journey, from the games to the Witch Tracker. Happy with it? Tap the green button!';}
+  bubStep.textContent=step;bubTxt.textContent=txt;bub.classList.remove('bp');void bub.offsetWidth;bub.classList.add('bp');acts.hidden=n===0;}
+ function sync(){for(const id in slots){const s=slots[id],on=BAND.members.has(id);s.slot.classList.toggle('on',on);s.cv.hidden=!on;s.slot.querySelector('.nm').textContent=on?s.m.name:'';s.btn.classList.toggle('on',on);}say();}
  BAND.onHit=id=>{const s=slots[id];if(!s||!alive)return;s.slot.classList.remove('hit');void s.slot.offsetWidth;s.slot.classList.add('hit');};
- sync();const t0=performance.now();function anim(){if(!alive)return;const t=(performance.now()-t0)/1000;for(const id of BAND.members){const s=slots[id];if(!s)continue;const x=s.cv.ctx;x.clearRect(0,0,100,130);s.m.draw(x,t);}raf=requestAnimationFrame(anim);}anim();
+ sync();const t0=performance.now();function anim(){if(!alive)return;const t=(performance.now()-t0)/1000;{const hx=hostCv.ctx;hx.clearRect(0,0,84,95);hx.save();hx.scale(.7,.7);drawHost(hx,'jack',t);hx.restore();}for(const id of BAND.members){const s=slots[id];if(!s)continue;const x=s.cv.ctx;x.clearRect(0,0,100,130);s.m.draw(x,t);}raf=requestAnimationFrame(anim);}anim();
  return()=>{alive=false;cancelAnimationFrame(raf);BAND.onHit=null;};}};
 
 /* ---------- Monster Maker ---------- */
