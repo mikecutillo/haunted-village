@@ -667,13 +667,13 @@ const AMB={on:Object.assign(Object.fromEntries(AMB_DEFS.map(d=>[d[0],!!d[3]])),s
 };
 
 /* ---------- real recordings (CC0, Freesound). Falls back to the synth if a file is missing ---------- */
-const SMP={files:{crows:['crow',.9],bell:['bell',.8],creak:['creak',.8],thunder:['thunder',1],chains:['chains',.7],wolf:['wolf',.8],cackle:['cackle',.8],owl:['owl',.9],organ:['organ',.7]},buf:{},loading:false,
+const SMP={mode:store.get('hv-smode','both'),setMode(m){this.mode=m;store.set('hv-smode',m);},files:{crows:['crow',.9],bell:['bell',.8],creak:['creak',.8],thunder:['thunder',1],chains:['chains',.7],wolf:['wolf',.8],cackle:['cackle',.8],owl:['owl',.9],organ:['organ',.7]},buf:{},loading:false,
  load(){if(this.loading)return;const c=SFX.ctx;if(!c)return;this.loading=true;
   Object.entries(this.files).forEach(([id,[f]])=>{fetch('audio/'+f+'.mp3').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(ab=>new Promise((ok,no)=>c.decodeAudioData(ab,ok,no))).then(b=>{this.buf[id]=b;}).catch(()=>{});});},
  play(id,delay){const c=SFX.ctx,B=AMB.bus(),b=this.buf[id];if(!c||!B||!b)return false;const s=c.createBufferSource(),g=c.createGain();s.buffer=b;s.playbackRate.value=id==='organ'?1:.96+Math.random()*.08;g.gain.value=this.files[id][1];s.connect(g).connect(B);s.start(c.currentTime+(delay||0));return true;}};
 AMB.crows=AMB.caw;
-Object.keys(SMP.files).forEach(id=>{const syn=AMB[id];AMB[id]=function(){SMP.load();if(id==='thunder'){const fl=document.getElementById('flash');if(fl){fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go');}}
- if(SMP.play(id,id==='thunder'?.4:0))return;return syn.call(this);};});
+Object.keys(SMP.files).forEach(id=>{const syn=AMB[id];AMB[id]=function(){SMP.load();if(id==='thunder'&&SMP.mode!=='synth'){const fl=document.getElementById('flash');if(fl){fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go');}}
+ const m=SMP.mode;const real=m==='real'||(m==='both'&&Math.random()<.5);if(real&&SMP.play(id,id==='thunder'?.4:0))return;return syn.call(this);};});
 SFX.ambient=function(on){const c=this.get();if(!c)return;
  if(!on){if(this.amb){try{this.amb.src.forEach(s=>s.stop());}catch(e){}clearInterval(this.amb.timer);this.amb=null;}return;}
  if(this.amb)return;
@@ -902,6 +902,7 @@ function openDrawer(){const p=$('#drawerPanel');p.innerHTML='';p.append(el('h2',
  p.append(el('button',{class:'item',type:'button',onclick:()=>{closeDrawer();openScene('jam',{force:true});}},'Change the village song',el('span',{class:'s'},BAND.label())));
  p.append(el('div',{class:'sec'},'Spooky sounds'));
  {const rows=[];const paint=()=>rows.forEach(([d,b])=>{const on=AMB.on[d[0]],sp=b.querySelector('.s');sp.textContent=on?'On':'Off';sp.style.color=on?'var(--slime)':'';});
+  {const M=[['both','Both (mixed)'],['real','Real recordings'],['synth','Synth only']];const mb=el('button',{class:'item',type:'button'},'Sound style',el('span',{class:'s'},''));const pm=()=>{mb.querySelector('.s').textContent=M.find(x=>x[0]===SMP.mode)[1];};mb.onclick=()=>{const i=(M.findIndex(x=>x[0]===SMP.mode)+1)%M.length;SMP.setMode(M[i][0]);pm();SFX.click();};pm();p.append(mb);}
   p.append(el('div',{style:'display:flex;gap:8px;padding:2px 12px 6px'},el('button',{class:'btn ghost small',type:'button',onclick:()=>{AMB.allOn();paint();SFX.click();}},'All on'),el('button',{class:'btn ghost small',type:'button',onclick:()=>{AMB.allOff();paint();SFX.click();}},'All off')));
   AMB_DEFS.forEach(d=>{const b=el('button',{class:'item',type:'button',title:d[2]},d[1],el('span',{class:'s'},''));b.onclick=()=>{const v=!AMB.on[d[0]];AMB.set(d[0],v);paint();if(v)AMB.preview(d[0]);else SFX.click();};rows.push([d,b]);p.append(b);});paint();}
  p.append(el('div',{class:'sec'},'Games'));
@@ -1773,6 +1774,7 @@ $('#playBtn').onclick=()=>{SFX.get();SFX.click();const boot=$('#boot');boot.clas
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
+
 
 
 
