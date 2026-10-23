@@ -926,17 +926,20 @@ const PLACES=[
  {id:'bakery',hot:'candy',side:'R',sub:'Sweet Tooth Bakery',h:225},
  {id:'print',hot:'print',side:'L',sub:'3D Printer Workshop',title:'Print Shop',h:240,yard:'crows'},
  {id:'inn',hot:'match',side:'R',sub:'Haunted Inn',h:250},
- {id:'tower',hot:'maker',side:'L',sub:'The Tower Lab',h:320},
- {id:'theater',hot:'shorts',side:'R',sub:'Moonmere Theater',title:'Spooky Shorts',h:200,yard:'campfire'},
- {id:'square',hot:'cast',side:'L',sub:'Town square',title:'Meet the Neighbors',main:true,sign:'post'},
- {id:'school',hot:'quiz',side:'R',sub:'Village School',title:'Village Quiz',h:230},
- {id:'post',hot:'world',side:'L',sub:'Village Post',title:'Around the World',h:210,street:true},
- {id:'grave',hot:'dash',side:'R',sub:'Old Bones Graveyard',zone:'B',sign:'post',sx:-60,yard:'bearcave'},
- {id:'hut',hot:'spell',side:'L',sub:'The Cauldron Hut',h:150,yard:'pond'},
+ {id:'belfry',hot:'bats',side:'L',sub:'Old Bell Tower',h:300},
+ {id:'tower',hot:'maker',side:'R',sub:'The Tower Lab',h:320},
+ {id:'theater',hot:'shorts',side:'L',sub:'Moonmere Theater',title:'Spooky Shorts',h:200,yard:'campfire'},
+ {id:'square',hot:'cast',side:'R',sub:'Town square',title:'Meet the Neighbors',main:true,sign:'post'},
+ {id:'school',hot:'quiz',side:'L',sub:'Village School',title:'Village Quiz',h:230},
+ {id:'post',hot:'world',side:'R',sub:'Village Post',title:'Around the World',h:210,street:true},
+ {id:'grave',hot:'dash',side:'L',sub:'Old Bones Graveyard',zone:'B',sign:'post',sx:60,yard:'bearcave'},
+ {id:'hut',hot:'spell',side:'R',sub:'The Cauldron Hut',h:150,yard:'pond'},
+ {id:'tomb',hot:'wrap',side:'L',sub:'The Lost Tomb',h:180},
  {id:'treehouse',hot:'findpip',side:'R',sub:'Hide-and-Seek Tree',title:'Find Pip',h:250,yard:'crows'},
  {id:'barn',hot:'carve',side:'L',sub:'Pumpkin Patch Barn',h:220,yard:'wolves'},
  {id:'shed',hot:'coloring',side:'R',sub:'Art Shed',title:'Coloring Pages',h:150,street:true},
  {id:'wagon',hot:'dressup',side:'L',sub:"Mabel's Wardrobe",title:'Dress Up Mabel',zone:'C',h:180,yard:'campfire'},
+ {id:'alley',hot:'bowl',side:'R',sub:'Strike Lanes',h:160},
 ];
 let ZB=0,ZC=0,MAIN_Y=0;const P={},MAINS=[];
 {let y=1100;for(const pl of PLACES){pl.y=y;pl.x=pl.side==='L'?LX:RX;pl.far=pl.side==='L'?LROAD:RROAD;P[pl.id]=pl;if(pl.zone==='B')ZB=y-250;if(pl.zone==='C')ZC=y-250;if(pl.main){MAIN_Y=y-20;MAINS.push(MAIN_Y);}y+=GAP;if(pl.street){MAINS.push(pl.y+226);y+=200;}}}
@@ -957,7 +960,7 @@ function drawRoad(ctx,top,bot,t,x0,x1){const pts=ROAD.pts;ctx.lineCap='round';ct
 /* hotspots: the hit area covers the building and the card that hangs under it */
 /* signs: 'hang' swings from a bracket on the building wall, out toward the street; 'post' stands on a wooden post in the yard */
 const HOT=[{id:'jam',x:130,y:830,w:200,h:220,sub:'Music Hall',kind:'post'}];
-for(const pl of PLACES){const o=pl.side==='L'?1:-1;if(pl.sign==='post')HOT.push({id:pl.hot,x:pl.x+(pl.sx!=null?pl.sx:o*40),y:pl.y+20,w:200,h:220,sub:pl.sub,title:pl.title,kind:'post'});
+for(const pl of PLACES){const o=pl.side==='L'?1:-1;if(pl.sign==='post')HOT.push({id:pl.hot,x:pl.x+o*(pl.sx!=null?pl.sx:40),y:pl.y+20,w:200,h:220,sub:pl.sub,title:pl.title,kind:'post'});
  else HOT.push({id:pl.hot,x:pl.x+o*218,y:pl.y-pl.h+200,w:200,h:200,sub:pl.sub,title:pl.title,kind:'hang'+(pl.side==='L'?' lft':' rgt')});}
 HOT.push({id:'tracker',x:400,y:LAUNCH_Y-110,w:330,h:260,sub:'Launch field · Oct 31',title:'Witch Tracker',kind:'tracker post'});
 const GHOSTS=PLACES.map((pl,i)=>[pl.side==='L'?740:60,pl.y-200+(i%3)*60]).concat([[60,300],[400,LAUNCH_Y+360]]).slice(0,13);
@@ -1012,7 +1015,7 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
   if(Math.hypot(x-60,y-540)<40){SFX.hoot();this.owlHoot=this.t;return;}
   for(const p of this.pumpkins){if(Math.hypot(x-p.x,y-p.y)<p.r*1.3){p.hop=this.t;SFX.tone(300,.12,'square',.05,null,600);return;}}
   if(Math.hypot(x-(P.inn.x+135),y-(P.inn.y-30))<50){SFX.meow();this.catHiss=this.t;return;}
-  if(Math.hypot(x-(P.grave.x-200),y-(P.grave.y-50))<80){SFX.boo();this.pipPeek=this.t;return;}
+  if(Math.hypot(x-(P.grave.x+(P.grave.side==='L'?200:-200)),y-(P.grave.y-50))<80){SFX.boo();this.pipPeek=this.t;return;}
   if(Math.hypot(x-ROAD.xAt(MAIN_Y)-70,y-MAIN_Y-120)<60){SFX.boo();CRIT.speak('Look both ways!',ROAD.xAt(MAIN_Y)+70,MAIN_Y+10);return;}
   for(const pl of PLACES){if(!pl.yard||pl.fx==null)continue;if(Math.hypot(x-pl.fx,y-pl.fy+20)<110){pl.at=this.t;({batcave:()=>SFX.flap(),bearcave:()=>{SFX.groan();CRIT.speak('Grrr. Who woke me?',pl.fx,pl.fy-90);},wolves:()=>SFX.howl(),pond:()=>SFX.tone(420,.12,'sine',.06,null,220),campfire:()=>SFX.flare(),crows:()=>{SFX.flap();SFX.tone(900,.08,'square',.04,null,700);}})[pl.yard]();return;}}},
  pumpkins:PLACES.map((pl,i)=>({x:pl.side==='L'?40+(i%2)*30:760-(i%2)*30,y:pl.y+(i%3)*10,r:18+(i%4)*3})).concat([{x:250,y:LAUNCH_Y+60,r:22},{x:560,y:LAUNCH_Y+70,r:26}]),
@@ -1083,10 +1086,10 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
      drawCrossGuard(ctx,ROAD.xAt(MAIN_Y)+75,MAIN_Y+124,t);break;}
     case 'school':big(ctx,x,y,1.3,()=>drawSchool(ctx,0,0,t));ctx.fillStyle='#8A5A2B';ctx.fillRect(x+90,y-18,60,8);ctx.fillRect(x+94,y-10,6,20);ctx.fillRect(x+140,y-10,6,20);ctx.fillRect(x+90,y-30,60,6);drawPumpkin(ctx,x+130,y+8,14,.6);drawFence(ctx,x-150,x-60,y+10);break;
     case 'post':big(ctx,x,y,1.3,()=>drawPostOffice(ctx,0,0,t));drawFence(ctx,x-130,x+130,y+10);drawTree(ctx,x-o*125,y+10,120,'#160A33');break;
-    case 'grave':for(let i=0;i<7;i++)drawPine(ctx,x-180+i*52,y-230+(i%2)*6,54+(i%3)*12,'#0F2A32','#133440');drawTree(ctx,x+130,y-110,100,'#0E2630');
-     drawGate(ctx,x-200,y,t);big(ctx,x+105,y-50,.85,()=>drawCrypt(ctx,0,0,t));drawFence(ctx,x-120,x+160,y,'#2E3A5C');for(let i=0;i<7;i++)drawGrave(ctx,x-110+i*40,y-10+(i%2)*14,22+(i%3)*6,'#4A5A7A');drawGrave(ctx,x+140,y-20,46,'#6F7C9A');
-     {const ph=BAND.playing?beat*TAU:t*2;drawSkeleton(ctx,x+40,y-12-Math.abs(Math.sin(ph))*8,40,ph*2);}
-     {const pk=t-this.pipPeek<1.5?1:(Math.sin(t*.7)>.6?1:0);drawGhost(ctx,x-200,y-50+(1-pk)*40,56,t,pk?1:.5);}
+    case 'grave':for(let i=0;i<7;i++)drawPine(ctx,x-180+i*52,y-230+(i%2)*6,54+(i%3)*12,'#0F2A32','#133440');drawTree(ctx,x-o*130,y-110,100,'#0E2630');
+     drawGate(ctx,x+o*200,y,t);big(ctx,x-o*105,y-50,.85,()=>drawCrypt(ctx,0,0,t));drawFence(ctx,x-140,x+140,y,'#2E3A5C');for(let i=0;i<7;i++)drawGrave(ctx,x-110+i*40,y-10+(i%2)*14,22+(i%3)*6,'#4A5A7A');drawGrave(ctx,x-o*140,y-20,46,'#6F7C9A');
+     {const ph=BAND.playing?beat*TAU:t*2;drawSkeleton(ctx,x-o*40,y-12-Math.abs(Math.sin(ph))*8,40,ph*2);}
+     {const pk=t-this.pipPeek<1.5?1:(Math.sin(t*.7)>.6?1:0);drawGhost(ctx,x+o*200,y-50+(1-pk)*40,56,t,pk?1:.5);}
      for(let i=0;i<3;i++)drawGhost(ctx,x-60+i*70+Math.sin(t*1.3+i)*14,y-190+Math.sin(t*2+i*2)*16,26+i*4,t+i,.55);break;
     case 'hut':big(ctx,x,y,1.35,()=>drawHut(ctx,0,0,t));drawTree(ctx,x-130,y+10,140,'#0E2630');drawTree(ctx,x+140,y-10,100,'#0E2630');for(let i=0;i<4;i++)drawGrave(ctx,x-110+i*36,y+30+(i%2)*8,20,'#3E5A6A');break;
     case 'treehouse':drawTreehouse(ctx,x,y,t);drawTree(ctx,x+120,y+10,110,'#0E2630');for(let i=0;i<4;i++)drawGrave(ctx,x-150+i*34,y+10+(i%2)*8,20,'#3E5A6A');break;
@@ -1094,7 +1097,10 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
      for(const[hx,hy]of[[x-110,y+6],[x-70,y-2]]){ctx.fillStyle='#C8A24A';ctx.fillRect(hx-22,hy-28,44,28);ctx.strokeStyle='#A8822A';ctx.lineWidth=2;ctx.strokeRect(hx-22,hy-28,44,28);}break;
     case 'shed':big(ctx,x,y,1.3,()=>drawShed(ctx,0,0,t));drawTree(ctx,x+120,y+10,110,'#0E2630');drawSil(ctx,x-130,y+10,70,56,t);break;
     case 'wagon':big(ctx,x,y,1.3,()=>drawWagon(ctx,0,0,t));drawTree(ctx,x-130,y-10,120,'#0B1638');drawSil(ctx,x+150,y,70,56,t);break;
-    case 'print':big(ctx,x,y,1.25,()=>drawPrintShop(ctx,0,0,t));drawTree(ctx,x+130,y+10,120,'#0B1638');break;
+    case 'print':big(ctx,x,y,1.25,()=>drawPrintShop(ctx,0,0,t));drawTree(ctx,x-o*130,y+10,120,'#160A33');break;
+    case 'belfry':drawBelfry(ctx,x,y,t,1);drawFence(ctx,x-90,x+90,y+10);for(let k=0;k<4;k++)drawGrave(ctx,x-70+k*46,y+4+(k%2)*8,20,'#4A3A70');drawTree(ctx,x-o*120,y+10,130,'#160A33');break;
+    case 'tomb':drawTomb(ctx,x,y,t);drawBush(ctx,x-o*130,y+8,1.1,'#143A2A','#1E4A36');for(let k=0;k<3;k++)drawRock(ctx,x-100+k*40,y+14+(k%2)*6,.7,'#8A6A3A');drawCat(ctx,x+o*120,y-30,t,.5);break;
+    case 'alley':drawAlley(ctx,x,y,t);drawTree(ctx,x-o*150,y+10,120,'#0B1638');drawLamp(ctx,x+o*140,y+8,t,80);break;
    }}
   if(top<ZC+100&&bot>ZB){for(const f of this.flies){if(!V(f.y,40))continue;const fx=f.x+Math.sin(t*.7+f.ph)*26,fy=f.y+Math.sin(t*1.1+f.ph*2)*14;ctx.fillStyle='rgba(180,255,120,'+(.25+.7*Math.abs(Math.sin(t*2.5+f.ph)))+')';ctx.beginPath();ctx.arc(fx,fy,2.4,0,TAU);ctx.fill();}}
   if(bot>ZC){for(let i=0;i<6;i++)drawPine(ctx,30+i*26,ZC+90+(i%2)*6,60+(i%3)*14,'#0B1638','#0F1C44');for(let i=0;i<6;i++)drawPine(ctx,640+i*28,ZC+86+(i%2)*8,60+(i%3)*14,'#0B1638','#0F1C44');}
@@ -1626,6 +1632,86 @@ SCENES.match={title:'Ghost Match',mount(stage){
  function finish(){clearInterval(iv);iv=null;const secs=Math.floor((Date.now()-t0)/1000);if(!bestV||n<bestV){bestV=n;store.set('hv-match-best',n);}upd();
   const o=overlay(stage,{host:'pip',tag:'All pairs found',title:'Ghost Match',text:'Finished in '+secs+' seconds.',btn:'Play again',cb:setup,score:n+' moves',stars:n<=12?3:n<=18?2:1});o.style.position='fixed';}
  setup();return()=>{if(iv)clearInterval(iv);};}};
+
+/* ---------- three more games: Bat Catch, Mummy Wrap, Pumpkin Bowling ---------- */
+GAMES.push({id:'bats',title:'Bat Catch',sub:'Game',day:5,host:'pip'},{id:'wrap',title:'Mummy Wrap',sub:'Game',day:10,host:'patches'},{id:'bowl',title:'Pumpkin Bowling',sub:'Game',day:14,host:'jack'});
+Object.assign(ICON,{bats:'🦇',wrap:'🧻',bowl:'🎳'});
+Object.assign(SAYS,{bats:'Tap the bats before they reach the bell tower!',wrap:'Spin your finger around the monster to wrap him up like a mummy!',bowl:'Flick the pumpkin down the lane and knock over the skeleton pins!'});
+TILES.splice(10,0,['bats','#3A2A7A'],['wrap','#8A6A2A'],['bowl','#C2304A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);
+Object.assign(PREV,{
+ bats(x,t,W,H){pvBg(x,W,H,false);drawBelfry(x,90,250,t,.55);for(let i=0;i<6;i++){const u=((t*.25+i*.17)%1);drawBat(x,W-u*(W-120),80+Math.sin(i*3+t*2)*60+i*20,22+(i%3)*6,t*14+i,'#120826');}x.strokeStyle='#FFC34D';x.lineWidth=5;x.beginPath();x.arc(300+Math.sin(t)*80,150+Math.cos(t*1.3)*40,26,0,TAU);x.stroke();},
+ wrap(x,t,W,H){pvBg(x,W,H);drawFrank(x,240,250,.9,0);const n=Math.floor((t*3)%14);x.fillStyle='#E9DDBF';for(let i=0;i<n;i++)x.fillRect(206,246-i*11,68,7);x.strokeStyle='rgba(255,244,230,.6)';x.lineWidth=3;x.setLineDash([8,8]);x.beginPath();x.ellipse(240,150,90,110,0,0,TAU);x.stroke();x.setLineDash([]);const a=t*4;x.font='30px serif';x.textAlign='center';x.fillText('👆',240+Math.cos(a)*90,160+Math.sin(a)*110);},
+ bowl(x,t,W,H){pvBg(x,W,H,false);x.fillStyle='#5A3A1A';x.fillRect(150,0,180,H);x.fillStyle='#8A5A2B';x.fillRect(170,0,140,H);for(let r=0;r<3;r++)for(let k=0;k<=r;k++){const fall=(t%4)>2.6&&(r+k)%2;x.save();x.translate(240+(k-r/2)*40,60+r*34);if(fall)x.rotate(1.2);drawSkeleton(x,0,0,22,0);x.restore();}const u=(t%4)/4;drawPumpkin(x,240,H-30-u*170,28,.7,true);},
+});
+function drawBelfry(ctx,x,y,t,s=1){ctx.save();ctx.translate(x,y);ctx.scale(s,s);const S='#5A5A7A',D='#3E3E5A';ctx.fillStyle=S;ctx.fillRect(-46,-250,92,250);ctx.fillStyle=D;for(let r=0;r<10;r++)for(let c=0;c<3;c++)if((r+c)%2)ctx.fillRect(-46+c*31,-250+r*25,30,24);ctx.fillStyle='#2A1548';ctx.beginPath();ctx.moveTo(-58,-250);ctx.lineTo(0,-330);ctx.lineTo(58,-250);ctx.closePath();ctx.fill();ctx.fillStyle='#0F0724';ctx.beginPath();ctx.moveTo(-24,-150);ctx.lineTo(-24,-210);ctx.arc(0,-210,24,Math.PI,0);ctx.lineTo(24,-150);ctx.closePath();ctx.fill();ctx.save();ctx.translate(0,-212);ctx.rotate(Math.sin(t*2.2)*.5);ctx.fillStyle='#C9962B';ctx.beginPath();ctx.moveTo(-14,30);ctx.quadraticCurveTo(-14,0,0,0);ctx.quadraticCurveTo(14,0,14,30);ctx.closePath();ctx.fill();ctx.fillStyle='#7A5A12';ctx.beginPath();ctx.arc(0,34,4,0,TAU);ctx.fill();ctx.restore();ctx.fillStyle='#0F0724';ctx.beginPath();ctx.moveTo(-16,0);ctx.lineTo(-16,-50);ctx.arc(0,-50,16,Math.PI,0);ctx.lineTo(16,0);ctx.closePath();ctx.fill();drawWindow(ctx,-10,-110,20,26,true,t,x,S);for(let i=0;i<3;i++)drawBat(ctx,Math.sin(t*1.5+i*2)*60,-290+Math.cos(t*2+i)*20,10,t*12+i,'#120826');ctx.restore();}
+function drawTomb(ctx,x,y,t){ctx.save();ctx.translate(x,y);ctx.fillStyle='#C8A878';ctx.fillRect(-90,-120,180,120);ctx.fillStyle='#A88858';ctx.beginPath();ctx.moveTo(-104,-120);ctx.lineTo(0,-190);ctx.lineTo(104,-120);ctx.closePath();ctx.fill();ctx.fillStyle='#8A6A3A';for(let i=0;i<4;i++){ctx.fillRect(-80+i*44,-104,8,8);ctx.fillRect(-76+i*44,-90,14,3);ctx.fillRect(-82+i*44,-80,6,10);ctx.beginPath();ctx.arc(-70+i*44,-64,5,0,TAU);ctx.fill();}ctx.fillStyle='#0F0724';ctx.beginPath();ctx.moveTo(-24,0);ctx.lineTo(-24,-70);ctx.arc(0,-70,24,Math.PI,0);ctx.lineTo(24,0);ctx.closePath();ctx.fill();for(const d of[-1,1]){ctx.fillStyle='#6A4423';ctx.fillRect(d*60-4,-60,8,60);const fl=1+Math.sin(t*11+d)*.15;ctx.fillStyle='#FFB830';ctx.beginPath();ctx.ellipse(d*60,-68,7*fl,13*fl,0,0,TAU);ctx.fill();const g=ctx.createRadialGradient(d*60,-68,2,d*60,-68,60);g.addColorStop(0,'rgba(255,180,60,.35)');g.addColorStop(1,'rgba(255,180,60,0)');ctx.fillStyle=g;ctx.fillRect(d*60-60,-128,120,120);}const pk=Math.sin(t*.8)>.5;drawMummy(ctx,0,2+(pk?0:30),.36,t);ctx.restore();}
+function drawAlley(ctx,x,y,t){ctx.save();ctx.translate(x,y);ctx.fillStyle='#4A2A8A';ctx.fillRect(-120,-110,240,110);ctx.fillStyle='#2A1548';ctx.fillRect(-128,-120,256,14);ctx.fillStyle='#FFC34D';for(let i=0;i<9;i++){ctx.globalAlpha=(Math.floor(t*5)+i)%3?1:.35;ctx.beginPath();ctx.arc(-112+i*28,-113,4,0,TAU);ctx.fill();}ctx.globalAlpha=1;drawWindow(ctx,-100,-90,44,36,true,t,x,'#4A2A8A');drawWindow(ctx,56,-90,44,36,true,t,x+1,'#4A2A8A');ctx.fillStyle='#2A1548';ctx.fillRect(-22,-60,44,60);ctx.fillStyle='#FFC34D';ctx.font='900 16px "Baloo 2"';ctx.textAlign='center';ctx.fillStyle='#FF4FA3';ctx.fillText('STRIKE!',0,-72);drawPumpkin(ctx,0,-150+Math.sin(t*2)*4,26,.9,true);for(let i=0;i<3;i++)drawSkeleton(ctx,-36+i*36,-126,18,0);ctx.restore();}
+
+/* ---- Bat Catch ---- */
+SCENES.bats={title:'Bat Catch',mount(stage){
+ const W=900,H=560;let bats=[],score=0,lives=3,time=45,spawn=0,state='ready',puffs=[],hudTxt='',mul=1;const stars=seedStars(70,W,H*.7,31);
+ const g=makeGame(stage,W,H,{update,draw});const hud=el('div',{class:'hud'});g.wrap.append(hud,el('div',{class:'hint'},'Tap or click the bats before they reach the bell tower'));
+ function reset(){bats=[];score=0;lives=3;time=45;spawn=0;puffs=[];mul=1;}
+ function start(){reset();state='play';}
+ function end(){state='over';SFX.over();overlay(g.wrap,{host:'pip',tag:lives>0?'Time!':'The belfry is full of bats',title:'Bat Catch',text:'You caught '+score+' bats.',btn:'Play again',cb:start,score,stars:starsFor(score,10,22,36)});}
+ function update(dt,t){if(state!=='play')return;time-=dt;if(time<=0){time=0;end();return;}mul+=dt*.02;spawn-=dt;
+  if(spawn<=0){spawn=Math.max(.35,1.1/mul);bats.push({x:W+30,y:70+Math.random()*(H-200),v:(90+Math.random()*80)*mul,s:16+Math.random()*12,ph:Math.random()*6,wob:30+Math.random()*40});}
+  for(const b of bats){b.x-=b.v*dt;b.yy=b.y+Math.sin(t*2.5+b.ph)*b.wob;}
+  bats=bats.filter(b=>{if(b.x<120){lives--;SFX.bad();puffs.push({x:b.x,y:b.yy,t:0,c:'#E2453F'});if(lives<=0)end();return false;}return true;});
+  for(const p of puffs)p.t+=dt;puffs=puffs.filter(p=>p.t<.5);
+  const h='<span>Caught '+score+'</span><span style="color:#ff6b8a">'+'♥'.repeat(Math.max(0,lives))+'</span><span>'+Math.ceil(time)+'s</span>';if(h!==hudTxt){hud.innerHTML=h;hudTxt=h;}}
+ function draw(ctx,t){skyGrad(ctx,W,H,'#0B0520','#241052','#4B2378');drawStars(ctx,stars,t);drawMoon(ctx,760,90,50);ctx.fillStyle='#1B0D3A';hills(ctx,H-110,18,.005,2,W,H);drawBelfry(ctx,90,H-40,t,1);ctx.fillStyle='#110724';ctx.fillRect(0,H-40,W,40);
+  for(const b of bats)drawBat(ctx,b.x,b.yy,b.s,t*14+b.ph,'#120826');
+  for(const p of puffs){ctx.strokeStyle=p.c;ctx.globalAlpha=1-p.t*2;ctx.lineWidth=4;ctx.beginPath();ctx.arc(p.x,p.y,10+p.t*80,0,TAU);ctx.stroke();ctx.globalAlpha=1;}}
+ g.canvas.addEventListener('pointerdown',e=>{e.preventDefault();SFX.get();if(state!=='play')return;const q=g.toWorld(e);let hit=-1,best=1e9;bats.forEach((b,i)=>{const d=Math.hypot(q.x-b.x,q.y-b.yy);if(d<b.s*2.4&&d<best){best=d;hit=i;}});if(hit>=0){const b=bats[hit];bats.splice(hit,1);score++;SFX.good();puffs.push({x:b.x,y:b.yy,t:0,c:'#FFD23F'});}else SFX.thud();});
+ overlay(g.wrap,{host:'pip',tag:'Pip hosts',title:'Bat Catch',text:'Bats are flying to the bell tower. Tap them before they get there. Three get through and the game is over.',btn:'Catch',cb:start});
+ return()=>g.destroy();}};
+
+/* ---- Mummy Wrap ---- */
+SCENES.wrap={title:'Mummy Wrap',mount(stage){
+ const W=900,H=560,CX=450,CY=300;let wraps=0,acc=0,lastA=null,time=30,state='ready',hudTxt='',spark=[],best=store.get('hv-wrap-best',0);
+ const g=makeGame(stage,W,H,{update,draw});const hud=el('div',{class:'hud'});g.wrap.append(hud,el('div',{class:'hint'},'Drag your finger or mouse in circles around the monster'));
+ function reset(){wraps=0;acc=0;lastA=null;time=30;spark=[];}
+ function start(){reset();state='play';}
+ function end(){state='over';SFX.over();if(wraps>best){best=wraps;store.set('hv-wrap-best',best);}overlay(g.wrap,{host:'patches',tag:'Time!',title:'Mummy Wrap',text:wraps+' wraps. '+(wraps>=30?'Fully mummified!':wraps>=18?'Nearly a mummy.':'He still has his knees showing.'),btn:'Wrap again',cb:start,score:wraps,stars:starsFor(wraps,10,18,30)});}
+ function update(dt,t){if(state!=='play')return;time-=dt;if(time<=0){time=0;end();return;}for(const s of spark)s.t+=dt;spark=spark.filter(s=>s.t<.6);
+  const h='<span>Wraps '+wraps+'</span><span style="color:#ffd23f">Best '+best+'</span><span>'+Math.ceil(time)+'s</span>';if(h!==hudTxt){hud.innerHTML=h;hudTxt=h;}}
+ function draw(ctx,t){skyGrad(ctx,W,H,'#2A1A0A','#5A3A1A','#8A6A3A');ctx.fillStyle='#C8A878';ctx.fillRect(0,0,W,H);ctx.fillStyle='#A88858';for(let i=0;i<12;i++)ctx.fillRect(0,i*48,W,4);for(let i=0;i<6;i++){ctx.fillStyle='#8A6A3A';ctx.fillRect(60+i*150,60,14,14);ctx.beginPath();ctx.arc(70+i*150,110,8,0,TAU);ctx.fill();ctx.fillRect(66+i*150,140,6,20);}
+  ctx.fillStyle='rgba(0,0,0,.25)';ctx.beginPath();ctx.ellipse(CX,CY+130,90,16,0,0,TAU);ctx.fill();drawFrank(ctx,CX,CY+130,1.15,state==='play'?t:0);
+  const n=Math.min(34,wraps);ctx.fillStyle='#E9DDBF';for(let i=0;i<n;i++){const yy=CY+124-i*9,w=i<6?36:i<22?70:i<28?30:60,off=(i%2?3:-3);ctx.fillRect(CX-w/2+off,yy,w,7);ctx.fillStyle='#BFAE86';ctx.fillRect(CX-w/2+off,yy+6,w,1.5);ctx.fillStyle='#E9DDBF';}
+  if(n>=30){ctx.fillStyle='#FFD34D';ctx.beginPath();ctx.arc(CX-9,CY-42,4,0,TAU);ctx.arc(CX+9,CY-42,4,0,TAU);ctx.fill();}
+  ctx.strokeStyle='rgba(255,244,230,.35)';ctx.lineWidth=3;ctx.setLineDash([10,10]);ctx.beginPath();ctx.ellipse(CX,CY+10,150,175,0,0,TAU);ctx.stroke();ctx.setLineDash([]);
+  for(const s of spark){ctx.fillStyle='rgba(255,211,77,'+(1-s.t/.6)+')';ctx.beginPath();ctx.arc(s.x,s.y,6-s.t*8,0,TAU);ctx.fill();}}
+ const pm=e=>{if(state!=='play'||!(e.buttons&1||e.pointerType==='touch'))return;const q=g.toWorld(e);const a=Math.atan2(q.y-(CY+10),q.x-CX);if(lastA!=null){let d=a-lastA;if(d>Math.PI)d-=TAU;if(d<-Math.PI)d+=TAU;acc+=Math.abs(d);if(acc>=TAU){acc-=TAU;wraps++;SFX.good();spark.push({x:q.x,y:q.y,t:0});}}lastA=a;};
+ g.canvas.addEventListener('pointerdown',e=>{e.preventDefault();SFX.get();g.canvas.setPointerCapture(e.pointerId);lastA=null;pm(e);});g.canvas.addEventListener('pointermove',pm);g.canvas.addEventListener('pointerup',()=>{lastA=null;});
+ overlay(g.wrap,{host:'patches',tag:'Patches hosts',title:'Mummy Wrap',text:'Spin your finger around the monster, round and round. Every full circle is one wrap. Thirty wraps makes a mummy.',btn:'Wrap',cb:start});
+ return()=>g.destroy();}};
+
+/* ---- Pumpkin Bowling ---- */
+SCENES.bowl={title:'Pumpkin Bowling',mount(stage){
+ const W=900,H=600,LX=250,LW=400;let pins=[],ball={x:450,y:500,vx:0,vy:0,rolling:false},rolls=0,score=0,state='ready',drag=null,hudTxt='',settle=0;
+ const g=makeGame(stage,W,H,{update,draw});const hud=el('div',{class:'hud'});g.wrap.append(hud,el('div',{class:'hint'},'Drag the pumpkin back and let go to roll it'));
+ function setPins(){pins=[];for(let r=0;r<4;r++)for(let k=0;k<=r;k++)pins.push({x:450+(k-r/2)*52,y:200-r*44,up:true,rot:0,t:0});}
+ function reset(){rolls=0;score=0;newBall();setPins();}
+ function newBall(){ball={x:450,y:500,vx:0,vy:0,rolling:false};settle=0;}
+ function start(){reset();state='play';}
+ function end(){state='over';SFX.over();overlay(g.wrap,{host:'jack',tag:'Five rolls',title:'Pumpkin Bowling',text:'You knocked down '+score+' of 50 skeleton pins.',btn:'Bowl again',cb:start,score,stars:starsFor(score,15,28,42)});}
+ function update(dt,t){if(state!=='play')return;
+  if(ball.rolling){ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;ball.vy*=Math.pow(.6,dt);ball.vx*=Math.pow(.5,dt);if(ball.x<LX+20){ball.x=LX+20;ball.vx=Math.abs(ball.vx)*.5;}if(ball.x>LX+LW-20){ball.x=LX+LW-20;ball.vx=-Math.abs(ball.vx)*.5;}
+   for(const p of pins){if(!p.up)continue;const d=Math.hypot(p.x-ball.x,p.y-ball.y);if(d<40){p.up=false;p.t=0;p.dir=p.x>=ball.x?1:-1;score++;SFX.hit();ball.vy*=.9;for(const q of pins){if(q.up&&q!==p&&Math.hypot(q.x-p.x,q.y-p.y)<70&&Math.random()<.55){q.up=false;q.t=-.12;q.dir=q.x>=p.x?1:-1;score++;}}}}
+   if(ball.y<40||Math.hypot(ball.vx,ball.vy)<25){settle+=dt;if(settle>.8){rolls++;if(rolls>=5){end();return;}newBall();setPins();}}}
+  for(const p of pins)if(!p.up){p.t+=dt;p.rot=Math.min(1.45,Math.max(0,p.t)*6)*p.dir;}
+  const h='<span>Pins '+score+'</span><span>Roll '+Math.min(5,rolls+1)+' of 5</span>';if(h!==hudTxt){hud.innerHTML=h;hudTxt=h;}}
+ function draw(ctx,t){ctx.fillStyle='#160A33';ctx.fillRect(0,0,W,H);ctx.fillStyle='#3A2460';ctx.fillRect(LX-40,0,LW+80,H);ctx.fillStyle='#5A3A1A';ctx.fillRect(LX,0,LW,H);ctx.fillStyle='#8A5A2B';ctx.fillRect(LX+20,0,LW-40,H);ctx.strokeStyle='rgba(0,0,0,.18)';ctx.lineWidth=2;for(let i=1;i<8;i++){ctx.beginPath();ctx.moveTo(LX+20+i*(LW-40)/8,0);ctx.lineTo(LX+20+i*(LW-40)/8,H);ctx.stroke();}
+  ctx.fillStyle='#FFC34D';for(let i=0;i<10;i++){ctx.globalAlpha=(Math.floor(t*4)+i)%4?1:.3;ctx.beginPath();ctx.arc(LX-20,40+i*56,5,0,TAU);ctx.arc(LX+LW+20,40+i*56,5,0,TAU);ctx.fill();}ctx.globalAlpha=1;
+  for(const p of pins){ctx.save();ctx.translate(p.x,p.y+22);ctx.rotate(p.rot);drawSkeleton(ctx,0,0,26,p.up?t*4:0);ctx.restore();}
+  if(drag){ctx.strokeStyle='rgba(255,244,230,.5)';ctx.lineWidth=4;ctx.setLineDash([8,8]);ctx.beginPath();ctx.moveTo(ball.x,ball.y);ctx.lineTo(ball.x-(drag.x-450)*1.2,ball.y-(drag.y-500)*1.2);ctx.stroke();ctx.setLineDash([]);}
+  ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(ball.x,ball.y+20,26,8,0,0,TAU);ctx.fill();ctx.save();ctx.translate(ball.x,ball.y);ctx.rotate(ball.rolling?-t*8:0);drawPumpkin(ctx,0,0,30,.7,true);ctx.restore();}
+ g.canvas.addEventListener('pointerdown',e=>{e.preventDefault();SFX.get();if(state!=='play'||ball.rolling)return;g.canvas.setPointerCapture(e.pointerId);drag=g.toWorld(e);});
+ g.canvas.addEventListener('pointermove',e=>{if(!drag)return;const q=g.toWorld(e);drag={x:clamp(q.x,300,600),y:clamp(q.y,480,600)};});
+ g.canvas.addEventListener('pointerup',()=>{if(!drag)return;const dx=450-drag.x,dy=drag.y-500;drag=null;if(dy<8){SFX.thud();return;}ball.vx=dx*6;ball.vy=-Math.max(260,dy*14);ball.rolling=true;SFX.swoosh();});
+ overlay(g.wrap,{host:'jack',tag:'Gourdon hosts',title:'Pumpkin Bowling',text:'Pull the pumpkin back and let go to roll it at the skeleton pins. Five rolls, ten pins each. Strike!',btn:'Bowl',cb:start});
+ return()=>g.destroy();}};
 
 /* ---------- Shorts ---------- */
 function shortScene(stage,scenes){
@@ -2216,6 +2302,9 @@ $('#menuBtn').addEventListener('click',()=>enter(true));
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
+
+
+
 
 
 
