@@ -316,7 +316,13 @@ const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.
 
 /* ---------- audio ---------- */
 const SFX={ctx:null,muted:false,noiseBuf:null,
- get(){try{if(!this.ctx)this.ctx=new (window.AudioContext||window.webkitAudioContext)();if(this.ctx.state==='suspended')this.ctx.resume();}catch(e){}return this.ctx;},
+ unlockIOS(){if(this._ios)return;this._ios=1;try{if(navigator.audioSession)navigator.audioSession.type='playback';}catch(e){}
+  try{const a=document.createElement('audio');a.setAttribute('playsinline','');a.loop=true;a.volume=0.01;
+   const n=2205,b=new Uint8Array(44+n*2),dv=new DataView(b.buffer);const s=(o,t)=>{for(let i=0;i<t.length;i++)b[o+i]=t.charCodeAt(i)};
+   s(0,'RIFF');dv.setUint32(4,36+n*2,true);s(8,'WAVEfmt ');dv.setUint32(16,16,true);dv.setUint16(20,1,true);dv.setUint16(22,1,true);dv.setUint32(24,22050,true);dv.setUint32(28,44100,true);dv.setUint16(32,2,true);dv.setUint16(34,16,true);s(36,'data');dv.setUint32(40,n*2,true);
+   for(let i=0;i<n;i++)dv.setInt16(44+i*2,i%2?3:-3,true);
+   a.src=URL.createObjectURL(new Blob([b],{type:'audio/wav'}));a.play().catch(()=>{});this._el=a;}catch(e){}},
+ get(){try{this.unlockIOS();if(!this.ctx)this.ctx=new (window.AudioContext||window.webkitAudioContext)();if(this.ctx.state!=='running')this.ctx.resume();}catch(e){}return this.ctx;},
  now(){const c=this.get();return c?c.currentTime:0},
  buf(){const c=this.ctx;if(!this.noiseBuf){const b=c.createBuffer(1,c.sampleRate,c.sampleRate);const d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;this.noiseBuf=b;}return this.noiseBuf;},
  tone(f,dur,type='sine',vol=.15,when=null,slide=null,dest=null){const c=this.get();if(!c||(this.muted&&!dest))return;const t=when==null?c.currentTime:when;const o=c.createOscillator(),g=c.createGain();o.type=type;o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+dur);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(vol,t+.012);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g).connect(dest||c.destination);o.start(t);o.stop(t+dur+.05);},
@@ -1227,7 +1233,7 @@ function drawTownCard(ctx,i,t,w,h){const s=w/340;ctx.save();ctx.scale(s,s);const
  else if(k===13){ctx.fillStyle='#1C2F5A';ctx.fillRect(0,H*.7,W,H*.2);ctx.fillStyle='#8A5A2B';ctx.fillRect(40,H*.66,180,10);for(let p=0;p<4;p++)ctx.fillRect(50+p*50,H*.68,8,H*.14);drawPumpkin(ctx,200,H*.64,22,.9);ctx.fillStyle='#FFC34D';ctx.globalAlpha=.3;ctx.beginPath();ctx.arc(200,H*.64,50,0,TAU);ctx.fill();ctx.globalAlpha=1;}
  ctx.restore();}
 /* ---------- boot ---------- */
-world.init();
+world.init();['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(SFX.ctx&&SFX.ctx.state!=='running')SFX.ctx.resume();},{passive:true}));
 const hashSong=songFromHash();if(hashSong)store.set('hv-song',hashSong);
 const song=hashSong||store.get('hv-song',null);
 $('#playBtn').onclick=()=>{SFX.get();SFX.click();const boot=$('#boot');boot.classList.add('out');setTimeout(()=>{boot.hidden=true;},650);SFX.ambient(true);
