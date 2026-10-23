@@ -1869,6 +1869,8 @@ SCENES.findpip={title:'Find Pip',mount(stage){
 
 
 
+
+
 /* ---------- HIDDEN SEARCH GAMES: begin ---------- */
 /* ==========================================================================
    HIDDEN SEARCH GAMES  (Santa Search style: wide, busy, animated scenes)
@@ -2823,6 +2825,7 @@ const SEEK=[
  {id:'seekcarnival',title:'Carnival Search',sub:'Rides, clowns and tents',day:6,host:'pip',icon:'🎡',col:'#8A2E5A',says:'Pip lost his friends at the haunted carnival. Check every ride and tent!'},
  {id:'seekyard',title:'Graveyard Search',sub:'Find the friends',day:2,host:'rattles',icon:'🪦',col:'#3A2E7A',says:'Rattles lost his friends in the busy graveyard. Find them all!'},
 ];
+SEEK.sort((a,b)=>a.day-b.day);
 for(const s of SEEK){if(!SCENES[s.id])continue;if(!GAMES.find(g=>g.id===s.id))GAMES.push({id:s.id,title:s.title,sub:s.sub,day:s.day,host:s.host});ICON[s.id]=s.icon;SAYS[s.id]=s.says;}
 const at=TILES.findIndex(t=>t[0]==='findpip');
 for(const s of SEEK){if(!SCENES[s.id]||TILES.find(t=>t[0]===s.id))continue;TILES.splice((at<0?TILES.length-1:at)+1+SEEK.indexOf(s),0,[s.id,s.col]);}
