@@ -980,14 +980,17 @@ for(const pl of PLACES){const o=pl.side==='L'?1:-1;if(pl.sign==='post')HOT.push(
  else HOT.push({id:pl.hot,x:pl.x+o*218,y:pl.y-pl.h+200,w:200,h:200,sub:pl.sub,title:pl.title,kind:'hang'+(pl.side==='L'?' lft':' rgt')});}
 HOT.push({id:'tracker',x:400,y:LAUNCH_Y-110,w:330,h:260,sub:'Launch field · Oct 31',title:'Witch Tracker',kind:'tracker post'});
 const GHOSTS=PLACES.map((pl,i)=>[pl.side==='L'?740:60,pl.y-200+(i%3)*60]).concat([[60,300],[400,LAUNCH_Y+360]]).slice(0,13);
-const HWALK=[{types:['lion','robin','shark','dino','cheer'],x:-200,v:38,dir:1,lane:1},{types:['ghost','bee','pinata','croc'],x:1000,v:34,dir:-1,lane:2},{fn:drawFrank,s:.6,x:900,v:24,dir:-1,lane:2,id:'frank3',say:'Fire bad. Candy good.',sfx:'zap'},{fn:drawDracula,s:.62,x:-150,v:28,dir:1,lane:0,id:'drac3',say:'I vant your candy!',sfx:'cackle'},{fn:drawMummy,s:.6,x:300,v:18,dir:1,lane:1,id:'mummy4',say:'Unravelled again.',sfx:'groan'},{types:['astro','fairy','hero','egg'],x:-500,v:42,dir:1,lane:0}];
+const HWALK=[{types:['lion','robin','shark','dino','cheer','mermaid'],x:-200,v:38,dir:1,lane:1},{types:['ghost','bee','pinata','croc','santa','alien'],x:1000,v:34,dir:-1,lane:2},{fn:drawFrank,s:.6,x:900,v:24,dir:-1,lane:2,id:'frank3',say:'Fire bad. Candy good.',sfx:'zap'},{fn:drawDracula,s:.62,x:-150,v:28,dir:1,lane:0,id:'drac3',say:'I vant your candy!',sfx:'cackle'},{fn:drawMummy,s:.6,x:300,v:18,dir:1,lane:1,id:'mummy4',say:'Unravelled again.',sfx:'groan'},{types:['astro','fairy','hero','egg','karate','lumber'],x:-500,v:42,dir:1,lane:0}];
 const WALKERS=[
- {kind:'kids',types:['dino','cowboy','mermaid','lion','alien'],d:300,v:46,dir:1,gap:62},
- {kind:'kids',types:['santa','astro','karate','rainbow'],d:3200,v:40,dir:-1,gap:66},
+ {kind:'kids',types:['dino','cowboy','mermaid','lion'],d:300,v:46,dir:1,gap:62},
+ {kind:'kids',types:['alien','bee','shark','hero'],d:1400,v:42,dir:-1,gap:64},
+ {kind:'kids',types:['santa','astro','karate','rainbow'],d:2600,v:40,dir:-1,gap:66},
+ {kind:'kids',types:['robin','cheer','egg','pinata'],d:3800,v:44,dir:1,gap:62},
  {kind:'one',fn:drawMummy,s:.62,d:4400,v:22,dir:1,id:'mummy2',say:'Mummy needs a hug.',sfx:'groan'},
  {kind:'one',fn:drawFrank,s:.56,d:5600,v:26,dir:-1,id:'frank2',say:"It's alive! It's ALIVE!",sfx:'zap'},
  {kind:'one',fn:drawDracula,s:.62,d:6800,v:30,dir:-1,id:'drac2',say:'Good eve-ning!',sfx:'cackle'},
- {kind:'kids',types:['ghost','lumber','ptero','prisoner','hippie','frankkid'],d:6200,v:44,dir:1,gap:64},
+ {kind:'kids',types:['ghost','lumber','ptero','prisoner'],d:5000,v:44,dir:1,gap:64},
+ {kind:'kids',types:['hippie','frankkid','fairy','croc'],d:6200,v:38,dir:-1,gap:66},
  {kind:'one',fn:drawMummy,s:.6,d:1700,v:20,dir:-1,id:'mummy3',say:'Which way is the graveyard?',sfx:'groan'},
 ];
 function hillsV(ctx,y0,amp,freq,ph,H){const x0=world.vx0-60,x1=world.vx1+60;ctx.beginPath();ctx.moveTo(x0,H+60);for(let x=x0;x<=x1;x+=16){ctx.lineTo(x,y0+Math.sin(x*freq+ph)*amp+Math.sin(x*freq*2.3+ph*1.7)*amp*.35);}ctx.lineTo(x1,H+60);ctx.closePath();ctx.fill();}
