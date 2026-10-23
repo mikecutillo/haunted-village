@@ -140,11 +140,17 @@ button{font-family:inherit}
 .drawer button.item span.s{font-size:12px;font-weight:800;color:var(--muted)}
 .drawer button.item.locked{color:var(--muted)}
 
-/* boot */
-.boot{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:radial-gradient(ellipse at 50% 70%,#3A1A6E 0%,#160B33 55%,#0B0520 100%);text-align:center;padding:24px}
-.boot .wm{width:min(560px,84vw)}
-.boot p{margin:0;font-weight:700;color:var(--muted);max-width:44ch;text-wrap:balance}
-.playbtn{width:150px;height:150px;border-radius:50%;border:0;background:#E2453F;color:#fff;font-family:var(--display);font-size:40px;letter-spacing:.04em;cursor:pointer;box-shadow:0 14px 0 #8E1F33,0 24px 50px rgba(0,0,0,.5);transition:transform .15s,box-shadow .15s}
+/* boot: the village shows through, like Google's landing */
+body.booting{overflow:hidden}
+body.booting #hots{display:none}
+.boot{position:fixed;inset:0;z-index:28;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:calc(env(safe-area-inset-top,0px) + clamp(64px,12vh,120px)) 24px 24px;text-align:center;
+ background:linear-gradient(180deg,rgba(11,5,32,.78) 0%,rgba(11,5,32,.42) 38%,rgba(11,5,32,.08) 62%,rgba(11,5,32,.34) 100%)}
+.boot .wm{width:min(500px,82vw);filter:drop-shadow(0 0 30px rgba(255,122,26,.5)) drop-shadow(0 6px 10px rgba(0,0,0,.7))}
+.boot p{margin:0;font-weight:800;font-size:clamp(15px,2.2vw,19px);color:#fff;max-width:40ch;text-wrap:balance;text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 24px rgba(0,0,0,.6)}
+.boot .small{font-size:13px;color:#fff;opacity:.85;text-shadow:0 2px 8px rgba(0,0,0,.9)}
+@keyframes bootfade{to{opacity:0;visibility:hidden}}
+.boot.out{animation:bootfade .6s ease forwards}
+.playbtn{margin-top:6px;width:132px;height:132px;border-radius:50%;border:0;background:#E2453F;color:#fff;font-family:var(--display);font-size:40px;letter-spacing:.04em;cursor:pointer;box-shadow:0 14px 0 #8E1F33,0 24px 50px rgba(0,0,0,.5);transition:transform .15s,box-shadow .15s}
 .playbtn:hover{transform:translateY(-4px);box-shadow:0 18px 0 #8E1F33,0 30px 60px rgba(0,0,0,.5)}
 .playbtn:active{transform:translateY(8px);box-shadow:0 6px 0 #8E1F33}
 .boot .small{font-size:13px;color:var(--muted)}
@@ -1964,16 +1970,19 @@ function hallExtras(){
 SCENES.jam={title:'Music Hall',keepSong:true,mount:(s,o={})=>JAM_MOUNT(s,o)};
 SCENES.board={title:'Music Hall',keepSong:true,mount:(s,o={})=>JAM_MOUNT(s,o)};
 /* ---------- boot ---------- */
-world.init();['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(SFX.ctx&&SFX.ctx.state!=='running')SFX.ctx.resume();},{passive:true}));
+document.body.classList.add('booting');world.init();['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(SFX.ctx&&SFX.ctx.state!=='running')SFX.ctx.resume();},{passive:true}));
 const hashSong=songFromHash();if(hashSong)store.set('hv-song',hashSong);
 const song=hashSong||store.get('hv-song',null);
-$('#playBtn').onclick=()=>{SFX.get();SFX.click();const boot=$('#boot');boot.classList.add('out');setTimeout(()=>{boot.hidden=true;},650);SFX.ambient(true);
- if(song&&song.m&&song.m.length){BAND.load(song);BAND.start();$('#songName').textContent=BAND.label();toast('Your song is playing. Click the menu to change it.');}
- else{BAND.load({m:[],bpm:108});openScene('jam',{force:true,compose:true,onDone:()=>{closeScene();toast('Your song is playing through the whole village.');}});}
- const h=location.hash.slice(1);if(h&&SCENES[h]&&h!=='jam')setTimeout(()=>openScene(h),700);};
+function enter(fromMenu){const boot=$('#boot');if(boot.hidden)return;SFX.get();SFX.click();boot.classList.add('out');document.body.classList.remove('booting');setTimeout(()=>{boot.hidden=true;},650);SFX.ambient(true);
+ if(song&&song.m&&song.m.length){BAND.load(song);BAND.start();$('#songName').textContent=BAND.label();if(!fromMenu)toast('Your song is playing. Open the menu to change it.');}
+ else{BAND.load({m:[],bpm:108});if(!fromMenu)openScene('jam',{force:true,compose:true,onDone:()=>{closeScene();toast('Your song is playing through the whole village.');}});}
+ const h=location.hash.slice(1);if(!fromMenu&&h&&SCENES[h]&&h!=='jam')setTimeout(()=>openScene(h),700);}
+$('#playBtn').onclick=()=>enter(false);
+$('#menuBtn').addEventListener('click',()=>enter(true));
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
+
 
 
 
