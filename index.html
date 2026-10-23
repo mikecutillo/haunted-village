@@ -1818,6 +1818,8 @@ const SHORT2=[
  {dur:5,cap:'The End',draw(ctx,p,t,e){endCard(ctx,e,p);}},
 ];
 
+
+
 /* ==== HAUNTED HAYRIDE START ==== */
 /* ---------- shared 3D loader (same as Candy Drop / Witch Flight; harmless if already present) ---------- */
 if(!window.__hvThree){window.__hvThree=()=>{if(!window.__hvThreeP){const urls=['https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js','https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js','https://unpkg.com/three@0.160.0/build/three.module.min.js'];window.__hvThreeP=urls.reduce((p,u)=>p.catch(()=>import(u)),Promise.reject()).catch(e=>{window.__hvThreeP=null;throw e;});}return window.__hvThreeP;};}
@@ -2286,6 +2288,43 @@ function HAYRIDE_BUILD(THREE,wrap){
   scene.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];for(const m of ms){if(m.map)m.map.dispose();m.dispose();}}});
   for(const k in GEO)GEO[k].dispose();renderer.dispose();try{renderer.forceContextLoss();}catch(e){}}};
 }
+/* the hayride stop drawn in the 2D village: wagon and tractor parked at the roadside, Frankie waving, Jack at the wheel */
+function HAYRIDE_STOP_DRAW(ctx,x,y,t){
+ ctx.save();ctx.translate(x,y);
+ /* lantern glow + ground shadow */
+ const g=ctx.createRadialGradient(-40,-70,4,-40,-70,110);g.addColorStop(0,'rgba(255,195,77,.32)');g.addColorStop(1,'rgba(255,195,77,0)');ctx.fillStyle=g;ctx.fillRect(-160,-190,260,260);
+ ctx.fillStyle='rgba(0,0,0,.28)';ctx.beginPath();ctx.ellipse(10,4,150,12,0,0,TAU);ctx.fill();
+ /* hitch */
+ ctx.strokeStyle='#5A3A1A';ctx.lineWidth=5;ctx.beginPath();ctx.moveTo(32,-22);ctx.lineTo(62,-26);ctx.stroke();
+ /* wagon bed */
+ ctx.fillStyle='#5A3A1A';ctx.fillRect(-120,-28,152,8);
+ ctx.fillStyle='#FF7F1F';ctx.fillRect(-124,-62,160,36);ctx.fillStyle='#D06A1A';for(let i=0;i<5;i++)ctx.fillRect(-120+i*38,-62,5,36);ctx.fillRect(-124,-66,160,5);
+ /* hay */
+ ctx.fillStyle='#E8C547';ctx.fillRect(-116,-84,56,24);ctx.fillRect(-40,-80,52,20);ctx.fillStyle='#D9B43A';for(let i=0;i<6;i++){ctx.fillRect(-112+i*9,-82,2,20);}for(let i=0;i<5;i++){ctx.fillRect(-36+i*10,-78,2,16);}
+ /* pumpkins on the hay */
+ drawPumpkin(ctx,-20,-82,9,.4,true);drawPumpkin(ctx,-2,-82,8,.5,false);
+ /* lantern pole */
+ ctx.strokeStyle='#2A2A44';ctx.lineWidth=4;ctx.beginPath();ctx.moveTo(-40,-62);ctx.lineTo(-40,-118);ctx.stroke();ctx.fillStyle='#2A2A44';ctx.fillRect(-49,-134,18,4);ctx.fillStyle='#FFC34D';ctx.globalAlpha=.85+.15*Math.sin(t*6);ctx.fillRect(-47,-130,14,14);ctx.globalAlpha=1;ctx.fillStyle='#2A2A44';ctx.beginPath();ctx.moveTo(-52,-134);ctx.lineTo(-40,-142);ctx.lineTo(-28,-134);ctx.fill();
+ /* Frankie standing on the hay, waving */
+ drawFrank(ctx,-88,-84,.5,t);
+ /* wagon wheels */
+ for(const wx of[-94,6]){ctx.fillStyle='#241A3A';ctx.beginPath();ctx.arc(wx,-14,17,0,TAU);ctx.fill();ctx.strokeStyle='#3EE6C8';ctx.lineWidth=3;ctx.beginPath();ctx.arc(wx,-14,13,0,TAU);ctx.stroke();ctx.fillStyle='#2AA6A4';ctx.beginPath();ctx.arc(wx,-14,4,0,TAU);ctx.fill();}
+ /* tractor */
+ ctx.fillStyle='#C2304A';ctx.fillRect(60,-60,52,34);ctx.fillRect(104,-50,34,24);ctx.fillStyle='#8A2030';ctx.fillRect(60,-30,78,6);
+ ctx.fillStyle='#2A2A44';ctx.fillRect(118,-74,7,26);/* smokestack */
+ ctx.fillStyle='#F6E9D2';ctx.fillRect(70,-66,26,6);/* seat back */
+ ctx.fillStyle='#FFE08A';ctx.fillRect(134,-46,5,8);/* headlight */
+ /* smoke puffs */
+ for(let i=0;i<3;i++){const u=((t*.5+i*.33)%1);ctx.fillStyle='rgba(154,138,184,'+(.45*(1-u))+')';ctx.beginPath();ctx.arc(121+u*10,-78-u*34,4+u*8,0,TAU);ctx.fill();}
+ /* Jack at the wheel */
+ ctx.fillStyle='#2A1548';ctx.fillRect(78,-84,22,22);ctx.strokeStyle='#2A1548';ctx.lineWidth=5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(96,-74);ctx.lineTo(110,-62);ctx.stroke();drawPumpkin(ctx,89,-84,12,.7,true);
+ ctx.fillStyle='#2A1548';ctx.fillRect(80,-107,18,4);ctx.beginPath();ctx.moveTo(82,-107);ctx.lineTo(89,-124);ctx.lineTo(96,-107);ctx.fill();
+ ctx.strokeStyle='#1A1024';ctx.lineWidth=3;ctx.beginPath();ctx.arc(112,-62,7,0,TAU);ctx.stroke();/* steering wheel */
+ /* tractor wheels */
+ ctx.fillStyle='#241A3A';ctx.beginPath();ctx.arc(74,-16,22,0,TAU);ctx.fill();ctx.fillStyle='#F6E9D2';ctx.beginPath();ctx.arc(74,-16,8,0,TAU);ctx.fill();
+ ctx.fillStyle='#241A3A';ctx.beginPath();ctx.arc(126,-12,13,0,TAU);ctx.fill();ctx.fillStyle='#F6E9D2';ctx.beginPath();ctx.arc(126,-12,5,0,TAU);ctx.fill();
+ ctx.restore();}
+
 const HR_KID_TYPES=['ghost','dino','astro','lion','pumpkin','vampire','mummy','witch','skeleton'];
 
 /* card thumbnail: perspective street, wagon at the bottom, kids with bags on both sides */
@@ -2312,7 +2351,9 @@ Object.assign(ICON,{hayride:'🚜'});
 Object.assign(SAYS,{hayride:'Hop on the hay wagon and toss candy into every trick-or-treat bag!'});
 TILES.splice(5,0,['hayride','#D06A1A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);
 PREV.hayride=(x,t,W,H)=>HAYRIDE_THUMB(x,t,W,H);
-HOT.push({id:'hayride',x:690,y:P.shed.y+226+300,w:200,h:220,sub:'Elm Street hayride',title:'Haunted Hayride',kind:'post'});
+HOT.push({id:'hayride',x:130,y:P.alley.y+210,w:200,h:220,sub:'Hayride stop',title:'Haunted Hayride',kind:'post'});
+/* the parked wagon at the bottom of the street, across the road from the sign */
+{const HR_STOP={x:640,y:P.alley.y+215};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(HR_STOP.y,top,bot,260))HAYRIDE_STOP_DRAW(ctx,HR_STOP.x,HR_STOP.y,t);};}
 /* ==== HAUNTED HAYRIDE END ==== */
 const SHORTS=[{id:'short1',title:'The Pumpkin Who Lost Its Glow',desc:'One pumpkin in the patch would not light. A small ghost decides to help. 38 seconds.',scenes:SHORT1,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');c.fillStyle='#14082C';c.fillRect(0,150,320,30);drawPumpkin(c,80,140,26,.6);drawPumpkin(c,250,140,26,.6);drawPumpkin(c,160,146,18,0);drawGhost(c,200,80,50,t);}},
  {id:'short2',title:'Midnight at Moonmere Manor',desc:'When the clock strikes twelve, the manor wakes up. 38 seconds.',scenes:SHORT2,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');drawMoon(c,270,36,18);c.fillStyle='#14082C';c.fillRect(0,165,320,15);drawManor(c,160,166,t,.32);}}];
