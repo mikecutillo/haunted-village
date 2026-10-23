@@ -4305,7 +4305,7 @@ const HALL_MOUNT=function(stage,opts={}){
   lvl*=Math.pow(.25,dt);beatGlow*=Math.pow(.05,dt);flash*=Math.pow(.02,dt);const organ=Math.max(0,1-(t-organAt)/10);hands=Math.max(hands*Math.pow(.3,dt),organ>0?.8:0);
   x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle='#150B2A';x.fillRect(0,0,cw,ch);x.setTransform(dpr*sc,0,0,dpr*sc,ox*dpr,oy*dpr);
   const ready=HALL_IMG.complete&&HALL_IMG.naturalWidth>0;
-  if(ready){x.drawImage(HALL_IMG,0,0,HW,1,-3000,-3000,HW+6000,3001);x.drawImage(HALL_IMG,0,0,1,HH,-3000,0,3001,HH);x.drawImage(HALL_IMG,HW-1,0,1,HH,HW-1,0,3001,HH);x.drawImage(HALL_IMG,0,0,HW,HH);}else{const g=x.createLinearGradient(0,0,0,HH);g.addColorStop(0,'#1A0F33');g.addColorStop(.7,'#3A2A6A');g.addColorStop(1,'#4A3A7A');x.fillStyle=g;x.fillRect(0,0,HW,HH);}
+  if(ready){x.drawImage(HALL_IMG,0,0,1,HH,-3000,0,3001,HH);x.drawImage(HALL_IMG,HW-1,0,1,HH,HW-1,0,3001,HH);x.drawImage(HALL_IMG,0,0,HW,HH);if(oy>0){x.fillStyle='rgb(27,14,39)';x.fillRect(-3000,-3000,HW+6000,3000);const tg=x.createLinearGradient(0,0,0,110);tg.addColorStop(0,'rgba(27,14,39,1)');tg.addColorStop(1,'rgba(27,14,39,0)');x.fillStyle=tg;x.fillRect(-3000,0,HW+6000,110);}}else{const g=x.createLinearGradient(0,0,0,HH);g.addColorStop(0,'#1A0F33');g.addColorStop(.7,'#3A2A6A');g.addColorStop(1,'#4A3A7A');x.fillStyle=g;x.fillRect(0,0,HW,HH);}
   const beat=BAND.playing?BAND.beat():0;
   x.save();x.globalCompositeOperation='lighter';
   /* candles flicker, the moon breathes */
