@@ -232,6 +232,20 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-si
 @keyframes jplus{50%{transform:scale(1.25);color:rgba(255,194,77,.6)}}
 .jam-bg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
 
+/* music hall */
+.hall{display:flex;flex-direction:column;height:100%;min-height:520px}
+.hall-tabs{display:flex;gap:8px;padding:10px 12px;background:#0F0826;border-bottom:1px solid var(--line);overflow-x:auto;flex:none}
+.hall-tab{flex:none;display:flex;align-items:center;gap:8px;border:2px solid transparent;background:var(--card);color:var(--ink);font-weight:800;font-size:14px;padding:9px 16px;border-radius:999px;cursor:pointer}
+.hall-tab .e{font-size:20px;line-height:1}
+.hall-tab.on{background:var(--pumpkin);color:#2A1008}
+.hall-body{flex:1;min-height:0;position:relative;overflow:auto}
+.hall-body>.jam{height:100%}
+.mix{max-width:560px;margin:0 auto;padding:14px 14px 26px}
+.mixrow{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);color:var(--ink);border:2px solid transparent;border-radius:16px;padding:12px 14px;margin-bottom:8px;cursor:pointer;font-weight:800;font-size:15px}
+.mixrow small{display:block;font-weight:700;font-size:11px;color:var(--muted)}
+.mixrow .s{margin-left:auto;font-weight:800;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.mixrow.on .s{color:var(--slime)}
+.mixrow.on{border-color:rgba(142,242,106,.45)}
 /* jamband */
 .jam{display:flex;flex-direction:column;height:100%;min-height:520px}
 .jam-stage{flex:1;position:relative;display:flex;justify-content:center;align-items:flex-end;gap:clamp(6px,2vw,22px);padding:30px 16px 24px;background:radial-gradient(ellipse at 50% 100%,#3A1A6E 0%,#160B33 60%,#0B0520 100%);overflow:hidden}
@@ -375,14 +389,12 @@ footer{position:relative;z-index:2;padding-block:28px 40px;color:var(--muted);fo
 
 <div class="top gutter">
   <button class="rbtn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7H20M4 12H20M4 17H20" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg></button>
-  <button class="rbtn" id="styleBtn" aria-label="Sound style: computer, real, or both" style="font-size:22px;line-height:1">🎙️</button>
   <button class="rbtn" id="soundBtn" aria-label="Sound on or off"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9V15H8L13 19V5L8 9Z" fill="#fff"/><path id="sndWave" d="M16 9Q19 12 16 15" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/><path id="sndSlash" d="M5 5L19 19" stroke="#FFC34D" stroke-width="2.6" stroke-linecap="round" opacity="0"/></svg></button>
   <span class="pill gh" id="ghostPill" title="Ghosts found"><svg viewBox="30 50 100 116" width="12" height="14" aria-hidden="true"><path d="M40 160Q36 120 40 96C44 52 116 52 120 96Q124 120 120 160Q110 150 100 160Q90 150 80 160Q70 150 60 160Q50 150 40 160Z" fill="currentColor"/></svg><span id="ghostCount">0 / 13</span></span>
   <span class="pill" id="songPill" hidden>♪ <span id="songName">Your song</span></span>
   <div class="count" id="count"><div><b>00</b><span>days</span></div><div><b>00</b><span>hrs</span></div><div><b>00</b><span>min</span></div><div><b>00</b><span>sec</span></div></div>
 </div>
 
-<div class="sndpop" id="sndPop" hidden></div>
 <div id="flash" aria-hidden="true"></div>
 <div class="boot" id="boot">
   <svg class="wm" viewBox="0 0 520 184" role="img" aria-label="Haunted Village" style="overflow:visible;filter:drop-shadow(0 0 30px rgba(255,122,26,.45))">
@@ -746,7 +758,7 @@ const FLIGHT_START=new Date(HY,9,31,0,0,0).getTime();
 const FLIGHT_END=FLIGHT_START+24*3600e3;
 const NOWD=new Date();
 const GAMES=[
- {id:'jam',title:'Monster Jamband',sub:'Your song',day:1,host:'band'},
+ {id:'jam',title:'Music Hall',sub:'Band, organ, sounds',day:1,host:'band'},
  {id:'candy',title:'Candy Drop',sub:'Game',day:1,host:'jack'},
  {id:'flight',title:'Witch Flight',sub:'Game',day:4,host:'mabel'},
  {id:'dash',title:'Skeleton Dash',sub:'Game',day:8,host:'rattles'},
@@ -944,13 +956,8 @@ const world={c:$('#world'),ctx:null,scale:1,camX:0,camY:0,vw:0,vh:0,dpr:1,hover:
 /* ---------- drawer ---------- */
 function openDrawer(){const p=$('#drawerPanel');p.innerHTML='';p.append(el('h2',{},'Haunted Village'));
  p.append(el('div',{class:'sec'},'Your song'));
- p.append(el('button',{class:'item',type:'button',onclick:()=>{closeDrawer();openScene('jam',{force:true});}},'Change the village song',el('span',{class:'s'},BAND.label())));
- p.append(el('div',{class:'sec'},'Spooky sounds'));
- p.append(el('button',{class:'item',type:'button',onclick:()=>{closeDrawer();openScene('board');}},'🎹  Spooky Organ: play the sounds',el('span',{class:'s'},'Open')));
- {const rows=[];const paint=()=>rows.forEach(([d,b])=>{const on=AMB.on[d[0]],sp=b.querySelector('.s');sp.textContent=on?'On':'Off';sp.style.color=on?'var(--slime)':'';});
-  {const M=[['real','Real sounds'],['synth','Computer sounds']];const mb=el('button',{class:'item',type:'button'},'Sound style',el('span',{class:'s'},''));const pm=()=>{mb.querySelector('.s').textContent=M.find(x=>x[0]===SMP.mode)[1];};mb.onclick=()=>{const i=(M.findIndex(x=>x[0]===SMP.mode)+1)%M.length;SMP.setMode(M[i][0]);pm();paintStyleBtn();SFX.click();};pm();p.append(mb);}
-  p.append(el('div',{style:'display:flex;gap:8px;padding:2px 12px 6px'},el('button',{class:'btn ghost small',type:'button',onclick:()=>{AMB.allOn();paint();SFX.click();}},'All on'),el('button',{class:'btn ghost small',type:'button',onclick:()=>{AMB.allOff();paint();SFX.click();}},'All off')));
-  AMB_DEFS.forEach(d=>{const b=el('button',{class:'item',type:'button',title:d[2]},d[1],el('span',{class:'s'},''));b.onclick=()=>{const v=!AMB.on[d[0]];AMB.set(d[0],v);paint();if(v)AMB.preview(d[0]);else SFX.click();};rows.push([d,b]);p.append(b);});paint();}
+ p.append(el('button',{class:'item',type:'button',onclick:()=>{closeDrawer();openScene('jam',{force:true});}},'Music Hall: band, organ, sounds',el('span',{class:'s'},BAND.label())));
+ p.append(el('button',{class:'item',type:'button',onclick:()=>{closeDrawer();openScene('board');}},'🎹  Organ and spooky sounds',el('span',{class:'s'},'Music Hall')));
  p.append(el('div',{class:'sec'},'Games'));
  for(const g of GAMES){if(g.id==='jam')continue;const st=unlockState(g);p.append(el('button',{class:'item'+(st==='locked'?' locked':''),type:'button',onclick:()=>{closeDrawer();openScene(g.id);}},g.title,el('span',{class:'s'},st==='locked'?'Oct '+g.day:st==='new'?'New':'')));}
  p.append(el('div',{class:'sec'},'Explore'));
@@ -962,13 +969,6 @@ function openDrawer(){const p=$('#drawerPanel');p.innerHTML='';p.append(el('h2',
  $('#drawer').hidden=false;}
 function closeDrawer(){$('#drawer').hidden=true;}
 $('#menuBtn').onclick=()=>{SFX.click();openDrawer();};$('#drawerVeil').onclick=closeDrawer;
-const STYLES=[['real','🎙️','Real sounds','Recorded in the real world'],['synth','🎛️','Computer sounds','Made by the computer']];
-function paintStyleBtn(){const e=STYLES.find(x=>x[0]===SMP.mode)[1];$('#styleBtn').textContent=e;}
-function openStylePop(){const p=$('#sndPop');p.innerHTML='';p.append(el('h4',{},'Sound style'));
- STYLES.forEach(([k,e,l,d])=>{const b=el('button',{class:'opt'+(SMP.mode===k?' on':''),type:'button'},el('span',{class:'e'},e),el('span',{},l,el('small',{},d)));b.onclick=()=>{SMP.setMode(k);paintStyleBtn();SFX.get();SFX.click();p.querySelectorAll('.opt').forEach((o,i)=>o.classList.toggle('on',STYLES[i][0]===k));AMB.fire('bell');};p.append(b);});p.append(el('div',{style:'font-size:11px;font-weight:700;color:var(--muted);margin:2px 4px 10px'},'Pick one. They never play together.'));
- p.append(el('button',{class:'go',type:'button',onclick:()=>{p.hidden=true;openScene('board');}},'🎹  Open the Organ'));p.hidden=false;}
-$('#styleBtn').onclick=e=>{e.stopPropagation();SFX.get();const p=$('#sndPop');if(p.hidden)openStylePop();else p.hidden=true;};
-document.addEventListener('pointerdown',e=>{const p=$('#sndPop');if(!p.hidden&&!p.contains(e.target)&&e.target!==$('#styleBtn'))p.hidden=true;});paintStyleBtn();
 $('#soundBtn').onclick=()=>{SFX.setMuted(!SFX.muted);if(!SFX.muted)SFX.click();};
 
 /* ---------- classic Halloween monsters: drawings ---------- */
@@ -1254,7 +1254,7 @@ SCENES.dash={title:'Skeleton Dash',mount(stage){
  return()=>g.destroy();}};
 
 /* ---------- Monster Jamband (song composer) ---------- */
-SCENES.jam={title:'Monster Jamband',keepSong:true,mount(stage,opts={}){
+const JAM_MOUNT=function(stage,opts={}){
  const root=el('div',{class:'jam'});stage.append(root);
  const st=el('div',{class:'jam-stage'}),roster=el('div',{class:'jam-roster'});root.append(st,roster);
  const slots={};let raf=0,alive=true;
@@ -1303,7 +1303,7 @@ SCENES.jam={title:'Monster Jamband',keepSong:true,mount(stage,opts={}){
  function sync(){for(const id in slots){const s=slots[id],on=BAND.members.has(id);s.slot.classList.toggle('on',on);s.cv.hidden=!on;s.slot.querySelector('.nm').textContent=on?s.m.name:'';s.btn.classList.toggle('on',on);}say();}
  BAND.onHit=id=>{const s=slots[id];if(!s||!alive)return;hitFx(id);s.slot.classList.remove('hit');void s.slot.offsetWidth;s.slot.classList.add('hit');};
  sync();const t0=performance.now();let tp=0;function anim(){if(!alive)return;const t=(performance.now()-t0)/1000;const dt=Math.min(.05,t-tp);tp=t;drawBack(t,dt);{const hx=hostCv.ctx;hx.clearRect(0,0,84,95);hx.save();hx.scale(.7,.7);drawHost(hx,'jack',t);hx.restore();}for(const id of BAND.members){const s=slots[id];if(!s)continue;const x=s.cv.ctx;x.clearRect(0,0,100,130);s.m.draw(x,t);}raf=requestAnimationFrame(anim);}anim();
- return()=>{alive=false;cancelAnimationFrame(raf);ro.disconnect();BAND.onHit=null;};}};
+ return()=>{alive=false;cancelAnimationFrame(raf);ro.disconnect();BAND.onHit=null;};};
 
 /* ---------- Monster Maker ---------- */
 SCENES.maker={title:'Monster Maker',mount(stage){
@@ -1840,7 +1840,7 @@ SCENES.print={title:'Print Shop',mount(stage){
  return()=>{alive=false;cancelAnimationFrame(raf);};}};
 
 /* ---------- Spooky Organ: a skeleton organist. Tap a stop to play a sound. ---------- */
-SCENES.board={title:'Spooky Organ',mount(stage){
+const ORGAN_MOUNT=function(stage){
  const root=el('div',{class:'sb'});stage.append(root);
  const T=[['crows','🐦‍⬛','Crow','#4A3A7A','#1E1240'],['owl','🦉','Owl','#6A4A2A','#2A1A10'],['wolf','🐺','Wolf','#3A4A8A','#141A3A'],['bell','🔔','Church bell','#8A6A1A','#3A2A08'],
   ['creak','🚪','Creaky door','#6A3A2A','#2A1410'],['chains','⛓️','Chains','#4A5A6A','#1A222A'],['thunder','⛈️','Thunder','#3A3A9A','#12123A'],['cackle','🧙','Witch cackle','#4A8A3A','#14300E'],
@@ -1848,7 +1848,7 @@ SCENES.board={title:'Spooky Organ',mount(stage){
  const W=640,H=250;const cv=miniCanvas(W,H);cv.className='sb-cv';cv.style.maxWidth='100%';cv.style.height='auto';
  const M=[['real','🎙️ Real sounds'],['synth','🎛️ Computer sounds']];const mode=el('div',{class:'sb-mode',role:'group','aria-label':'Sound style'});
  const paintM=()=>{mode.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('on',M[i][0]===SMP.mode));note.textContent=SMP.mode==='real'?'Real recordings from the real world':'Sounds made by the computer';};
- M.forEach(([k,l])=>{const bt=el('button',{type:'button'},l);bt.onclick=()=>{SMP.setMode(k);paintM();paintStyleBtn();SFX.click();};mode.append(bt);});
+ M.forEach(([k,l])=>{const bt=el('button',{type:'button'},l);bt.onclick=()=>{SMP.setMode(k);paintM();SFX.click();};mode.append(bt);});
  const note=el('div',{class:'sub'});
  root.append(el('h3',{},'Spooky Organ'),el('div',{class:'sub'},'Tap a picture and the organist plays it'),cv,mode,note);
  const grid=el('div',{class:'sb-grid'});root.append(grid);const autos=[];
@@ -1889,7 +1889,31 @@ SCENES.board={title:'Spooky Organ',mount(stage){
   for(let i=notes.length-1;i>=0;i--){const q=notes[i];q.life-=dt*.6;if(q.life<=0){notes.splice(i,1);continue;}q.x+=q.vx*dt;q.y+=q.vy*dt;x.globalAlpha=Math.min(1,q.life*1.6);x.fillStyle=q.col;x.font='800 '+q.sz+'px sans-serif';x.fillText(q.ch,q.x,q.y);}x.globalAlpha=1;}
  (function loop(){if(!alive)return;const t=(performance.now()-t0)/1000,dt=Math.min(.05,t-tp);tp=t;draw(t,dt);raf=requestAnimationFrame(loop);})();
  paintM();
- return()=>{alive=false;cancelAnimationFrame(raf);};}};
+ return()=>{alive=false;cancelAnimationFrame(raf);};};
+
+/* ---------- Village sounds: switch each background sound on or off ---------- */
+const MIX_MOUNT=function(stage){
+ const root=el('div',{class:'sb'});stage.append(root);const box=el('div',{class:'mix'});
+ const M=[['real','🎙️ Real sounds'],['synth','🎛️ Computer sounds']];const mode=el('div',{class:'sb-mode',role:'group','aria-label':'Sound style'});
+ const paintM=()=>mode.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('on',M[i][0]===SMP.mode));
+ M.forEach(([k,l])=>{const bt=el('button',{type:'button'},l);bt.onclick=()=>{SMP.setMode(k);paintM();SFX.click();};mode.append(bt);});
+ const rows=[];const paint=()=>rows.forEach(([d,b])=>{const on=!!AMB.on[d[0]];b.classList.toggle('on',on);b.querySelector('.s').textContent=on?'On':'Off';});
+ const bar=el('div',{style:'display:flex;gap:8px;justify-content:center;margin-bottom:14px'},el('button',{class:'btn ghost small',type:'button',onclick:()=>{AMB.allOn();paint();SFX.click();}},'All on'),el('button',{class:'btn ghost small',type:'button',onclick:()=>{AMB.allOff();paint();SFX.click();}},'All off'));
+ root.append(el('h3',{},'Village sounds'),el('div',{class:'sub'},'Choose what you hear around the village'),mode,bar,box);
+ AMB_DEFS.forEach(d=>{const b=el('button',{class:'mixrow',type:'button'},el('span',{},d[1],el('small',{},d[2])),el('span',{class:'s'},''));b.onclick=()=>{const v=!AMB.on[d[0]];AMB.set(d[0],v);paint();if(v)AMB.preview(d[0]);else SFX.click();};rows.push([d,b]);box.append(b);});
+ paint();paintM();return()=>{};};
+
+/* ---------- Music Hall: one place for the band, the organ and every sound ---------- */
+function hallMount(stage,opts,first){
+ if(opts.compose)return JAM_MOUNT(stage,opts);
+ const root=el('div',{class:'hall'}),tabs=el('div',{class:'hall-tabs'}),body=el('div',{class:'hall-body'});root.append(tabs,body);stage.append(root);
+ const TABS=[['band','🎸','Band',JAM_MOUNT],['organ','🎹','Organ',ORGAN_MOUNT],['mix','🌙','Village sounds',MIX_MOUNT]];
+ let un=null;const btns={};
+ function go(id){if(un){try{un();}catch(e){}un=null;}body.innerHTML='';TABS.forEach(([k])=>btns[k].classList.toggle('on',k===id));un=TABS.find(t=>t[0]===id)[3](body,opts)||null;}
+ TABS.forEach(([k,e,l])=>{const b=el('button',{class:'hall-tab',type:'button'},el('span',{class:'e'},e),l);b.onclick=()=>{SFX.get();SFX.click();go(k);};btns[k]=b;tabs.append(b);});
+ go(opts.tab||first);return()=>{if(un){try{un();}catch(e){}}};}
+SCENES.jam={title:'Music Hall',keepSong:true,mount:(s,o={})=>hallMount(s,o,'band')};
+SCENES.board={title:'Music Hall',keepSong:true,mount:(s,o={})=>hallMount(s,o,'organ')};
 /* ---------- boot ---------- */
 world.init();['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(SFX.ctx&&SFX.ctx.state!=='running')SFX.ctx.resume();},{passive:true}));
 const hashSong=songFromHash();if(hashSong)store.set('hv-song',hashSong);
@@ -1901,6 +1925,7 @@ $('#playBtn').onclick=()=>{SFX.get();SFX.click();const boot=$('#boot');boot.clas
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
+
 
 
 
