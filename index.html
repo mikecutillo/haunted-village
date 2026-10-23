@@ -540,6 +540,7 @@ const SFX={ctx:null,muted:false,noiseBuf:null,
  hoot(){const t=this.now();this.tone(420,.22,'sine',.12,t,380);this.tone(400,.3,'sine',.12,t+.3,340);},
  swoosh(){this.noise(.5,.12,null,'bandpass',1200);this.tone(600,.5,'sine',.04,null,1200);},
  hiss(){this.noise(.5,.12,null,'highpass',4000);},
+ kid(){this.tone(720,.12,'triangle',.07,null,980);},
  thud(){this.noise(.2,.2,null,'lowpass',300);this.tone(70,.25,'sine',.2,null,40);},
  meow(){const t=this.now();this.tone(700,.18,'sine',.1,t,520);this.tone(520,.3,'sine',.1,t+.18,680);},
  howl(){const c=this.get();if(!c||this.muted)return;const t=c.currentTime;const o=c.createOscillator(),g=c.createGain(),l=c.createOscillator(),lg=c.createGain();o.type='triangle';o.frequency.setValueAtTime(280,t);o.frequency.exponentialRampToValueAtTime(640,t+.6);o.frequency.exponentialRampToValueAtTime(480,t+1.3);l.frequency.value=6;lg.gain.value=14;l.connect(lg).connect(o.frequency);g.gain.setValueAtTime(.0001,t);g.gain.exponentialRampToValueAtTime(.14,t+.2);g.gain.exponentialRampToValueAtTime(.0001,t+1.4);o.connect(g).connect(c.destination);o.start(t);l.start(t);o.stop(t+1.5);l.stop(t+1.5);},
@@ -943,13 +944,13 @@ const GAP=560,LX=165,RX=635,LROAD=520,RROAD=280;
 /* h: how tall the building looks (the sign hangs near the top of its wall). street: a side street runs below this place. */
 const PLACES=[
  {id:'cottage',hot:'flight',side:'L',sub:'Crooked Cottage',h:240,yard:'batcave'},
+ {id:'square',hot:'cast',side:'R',sub:'Town square',title:'Meet the Neighbors',main:true,sign:'post'},
  {id:'bakery',hot:'candy',side:'R',sub:'Sweet Tooth Bakery',h:225},
  {id:'print',hot:'print',side:'L',sub:'3D Printer Workshop',title:'Print Shop',h:240,yard:'crows'},
  {id:'inn',hot:'match',side:'R',sub:'Haunted Inn',h:250,street:true},
  {id:'belfry',hot:'bats',side:'L',sub:'Old Bell Tower',h:300},
  {id:'tower',hot:'maker',side:'R',sub:'The Tower Lab',h:320},
  {id:'theater',hot:'shorts',side:'L',sub:'Moonmere Theater',title:'Spooky Shorts',h:200,yard:'campfire',street:true},
- {id:'square',hot:'cast',side:'R',sub:'Town square',title:'Meet the Neighbors',main:true,sign:'post'},
  {id:'school',hot:'quiz',side:'L',sub:'Village School',title:'Village Quiz',h:230},
  {id:'post',hot:'world',side:'R',sub:'Village Post',title:'Around the World',h:210,street:true},
  {id:'grave',hot:'dash',side:'L',sub:'Old Bones Graveyard',zone:'B',sign:'post',sx:60,yard:'bearcave'},
@@ -985,19 +986,30 @@ for(const pl of PLACES){const o=pl.side==='L'?1:-1;if(pl.sign==='post')HOT.push(
  else HOT.push({id:pl.hot,x:pl.x+o*218,y:pl.y-pl.h+200,w:200,h:200,sub:pl.sub,title:pl.title,kind:'hang'+(pl.side==='L'?' lft':' rgt')});}
 HOT.push({id:'tracker',x:400,y:LAUNCH_Y-110,w:330,h:260,sub:'Launch field · Oct 31',title:'Witch Tracker',kind:'tracker post'});
 const GHOSTS=PLACES.map((pl,i)=>[pl.side==='L'?740:60,pl.y-200+(i%3)*60]).concat([[60,300],[400,LAUNCH_Y+360]]).slice(0,13);
-const HWALK=[{types:['lion','robin','shark','dino','cheer','mermaid'],x:-200,v:38,dir:1,lane:1},{types:['ghost','bee','pinata','croc','santa','alien'],x:1000,v:34,dir:-1,lane:2},{types:['egg','hero','fairy'],x:300,v:36,dir:1,lane:3},{types:['alien','santa','cowboy','mermaid'],x:-400,v:40,dir:1,lane:4},{types:['karate','lumber','hippie'],x:1100,v:33,dir:-1,lane:5},{types:['ptero','rainbow','prisoner','cheer'],x:600,v:37,dir:-1,lane:6},{types:['dino','ghost'],x:-300,v:44,dir:1,lane:5},{types:['shark','bee','robin'],x:900,v:35,dir:-1,lane:0},{fn:drawMummy,s:.6,x:-100,v:20,dir:1,lane:3,id:'mummy5',say:'Which way is the tomb?',sfx:'groan'},{fn:drawDracula,s:.6,x:1200,v:26,dir:-1,lane:6,id:'drac4',say:'Lovely night for a stroll.',sfx:'cackle'},{fn:drawFrank,s:.6,x:900,v:24,dir:-1,lane:2,id:'frank3',say:'Fire bad. Candy good.',sfx:'zap'},{fn:drawDracula,s:.62,x:-150,v:28,dir:1,lane:0,id:'drac3',say:'I vant your candy!',sfx:'cackle'},{fn:drawMummy,s:.6,x:300,v:18,dir:1,lane:1,id:'mummy4',say:'Unravelled again.',sfx:'groan'},{types:['astro','fairy','hero','egg'],x:-500,v:42,dir:1,lane:0}];
+const HWALK=[{fn:drawMummy,s:.6,x:-100,v:20,dir:1,lane:3,id:'mummy5',say:'Which way is the tomb?',sfx:'groan'},{fn:drawDracula,s:.6,x:1200,v:26,dir:-1,lane:6,id:'drac4',say:'Lovely night for a stroll.',sfx:'cackle'},{fn:drawFrank,s:.6,x:900,v:24,dir:-1,lane:2,id:'frank3',say:'Fire bad. Candy good.',sfx:'zap'},{fn:drawDracula,s:.62,x:-150,v:28,dir:1,lane:0,id:'drac3',say:'I vant your candy!',sfx:'cackle'},{fn:drawMummy,s:.6,x:300,v:18,dir:1,lane:1,id:'mummy4',say:'Unravelled again.',sfx:'groan'}];
 const WALKERS=[
- {kind:'kids',types:['dino','cowboy','mermaid','lion'],d:300,v:46,dir:1,gap:62},
- {kind:'kids',types:['alien','bee','shark','hero'],d:1400,v:42,dir:-1,gap:64},
- {kind:'kids',types:['santa','astro','karate','rainbow'],d:2600,v:40,dir:-1,gap:66},
- {kind:'kids',types:['robin','cheer','egg','pinata'],d:3800,v:44,dir:1,gap:62},
  {kind:'one',fn:drawMummy,s:.62,d:4400,v:22,dir:1,id:'mummy2',say:'Mummy needs a hug.',sfx:'groan'},
  {kind:'one',fn:drawFrank,s:.56,d:5600,v:26,dir:-1,id:'frank2',say:"It's alive! It's ALIVE!",sfx:'zap'},
  {kind:'one',fn:drawDracula,s:.62,d:6800,v:30,dir:-1,id:'drac2',say:'Good eve-ning!',sfx:'cackle'},
- {kind:'kids',types:['ghost','lumber','ptero','prisoner'],d:5000,v:44,dir:1,gap:64},
- {kind:'kids',types:['hippie','frankkid','fairy','croc'],d:6200,v:38,dir:-1,gap:66},
  {kind:'one',fn:drawMummy,s:.6,d:1700,v:20,dir:-1,id:'mummy3',say:'Which way is the graveyard?',sfx:'groan'},
 ];
+/* ---------- trick-or-treaters live in the houses: out the door, down the street, back home ---------- */
+const KID_SAY={ghost:'Boo! Did I get you?',dino:'RAWR means trick or treat.',astro:'Houston, we have candy.',lion:'Hear me roar... please?',robin:'An arrow for every full-size bar!',cowboy:'Howdy, pumpkin.',karate:'Hi-YAH! Candy, please.',rainbow:'I am all six colors tonight.',prisoner:'I only escaped for the candy.',hippie:'Peace, love and chocolate.',frankkid:'Frankie says hi. I say hi too.',lumber:'Timber! Just kidding.',hero:'Super speed to the next porch!',santa:'Wrong tracker. Staying anyway.',fairy:'One wish: more candy.',ptero:'Still working on the flying part.',shark:'Dun dun. Dun dun. Trick or treat!',bee:'Bzzzzz. Honey sticks, please.',egg:'Sunny side up and ready.',pinata:'Please do not hit me with a stick.',cheer:'H-A-U-N-T-E-D! Gimme a treat!',alien:'I come in peace. And for candy.',mermaid:'Stairs are hard in a tail.',croc:'Chomp chomp.'};
+const KIDLIFE={kids:[],ready:false,
+ init(t){const homes=PLACES.filter(pl=>!pl.main),r=seeded(77);this.kids=KID_TYPES.map((ty,i)=>{const pl=homes[(i*7)%homes.length];const o=pl.side==='L'?1:-1;const door={x:pl.x+o*(pl.sx||0),y:pl.y+6};const entry=ROAD.at(ROAD.dAtY(pl.y-30));return{ty,pl,door,entry,dEntry:ROAD.dAtY(pl.y-30),x:door.x,y:door.y,st:'in',until:t+1.5+i*1.4+r()*2,d:0,dir:o,v:34+r()*18,k:0,face:1,r};});this.ready=true;},
+ draw(ctx,t,dt,V){if(!this.ready)this.init(t);
+  for(const k of this.kids){const r=k.r;
+   if(k.st==='in'){if(t>=k.until){k.st='out';k.k=0;k.x=k.door.x;k.y=k.door.y;}else continue;}
+   if(k.st==='out'){k.k=Math.min(1,k.k+dt*1.6);if(k.k>=1){k.st='toRoad';}}
+   else if(k.st==='toRoad'||k.st==='toDoor'){const tgt=k.st==='toRoad'?k.entry:k.door;const dx=tgt.x-k.x,dy=tgt.y-k.y,L=Math.hypot(dx,dy);const step=k.v*dt;k.face=dx<0?-1:1;if(L<=step){k.x=tgt.x;k.y=tgt.y;if(k.st==='toRoad'){k.st='road';k.d=k.dEntry;k.dir=r()<.5?-1:1;k.until=t+18+r()*30;}else{k.st='home';k.k=1;}}else{k.x+=dx/L*step;k.y+=dy/L*step;}}
+   else if(k.st==='road'){if(t>k.until){k.dir=k.d>k.dEntry?-1:1;if(Math.abs(k.d-k.dEntry)<k.v*dt*1.5){k.d=k.dEntry;k.st='toDoor';}}k.d+=k.dir*k.v*dt;if(k.d>ROAD.total-40){k.d=ROAD.total-40;k.dir=-1;}if(k.d<40){k.d=40;k.dir=1;}const q=ROAD.at(k.d);k.face=(q.dx*k.dir)<-0.1?-1:1;k.x=q.x+k.dir*12;k.y=q.y+8;}
+   else if(k.st==='home'){k.k=Math.max(0,k.k-dt*1.6);if(k.k<=0){k.st='in';k.until=t+8+r()*22;}}
+   if(!V(k.y,160))continue;
+   const sc=(k.st==='out'||k.st==='home')?.3+.75*k.k:1.05,moving=k.st==='toRoad'||k.st==='toDoor'||k.st==='road';
+   const jump=CRIT['j_'+k.ty]>t?Math.abs(Math.sin((CRIT['j_'+k.ty]-t)*12))*14:0;
+   ctx.save();if(sc<1.05)ctx.globalAlpha=Math.min(1,k.k*1.4);ctx.translate(k.x,k.y-jump);if(k.face<0)ctx.scale(-1,1);drawKid(ctx,0,0,k.ty,moving?t*7+k.d:0,sc);ctx.restore();
+   CRIT.actors.push({id:k.ty,x:k.x,y:k.y-50,r:60,say:KID_SAY[k.ty],sfx:'kid'});}}
+};
 function hillsV(ctx,y0,amp,freq,ph,H){const x0=world.vx0-60,x1=world.vx1+60;ctx.beginPath();ctx.moveTo(x0,H+60);for(let x=x0;x<=x1;x+=16){ctx.lineTo(x,y0+Math.sin(x*freq+ph)*amp+Math.sin(x*freq*2.3+ph*1.7)*amp*.35);}ctx.lineTo(x1,H+60);ctx.closePath();ctx.fill();}
 const DECOR=(()=>{const r=seeded(31),out=[];for(let y=800;y<LAUNCH_Y-200;y+=14){const x=WX0+60+r()*(WX1-WX0-120);const rx=ROAD.xAt(y);if(Math.abs(x-rx)<95||Math.abs(x+396)<50)continue;let near=false;for(const pl of PLACES){if(Math.abs(x-pl.x)<175&&y>pl.y-360&&y<pl.y+60)near=true;if(pl.fx!=null)continue;const fx=pl.side==='L'?1020+(PLACES.indexOf(pl)%2)*60:-220-(PLACES.indexOf(pl)%2)*60;if(Math.abs(x-fx)<140&&y>pl.y-280&&y<pl.y-90)near=true;const lx=pl.side==='L'?-230-(PLACES.indexOf(pl)%2)*50:1030+(PLACES.indexOf(pl)%2)*50;if(Math.abs(x-lx)<150&&y>pl.y-150&&y<pl.y+70)near=true;}for(const my of MAINS){if(Math.abs(y-my)<80)near=true;if((Math.abs(x+300)<150||Math.abs(x-1100)<150)&&y>my-200&&y<my+200)near=true;}if(near)continue;const k=r();out.push({x,y,k,s:.7+r()*.6});}return out;})();
 const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7))||.7,camX:null,camY:0,vw:0,vh:0,vx0:0,vx1:800,dpr:1,hover:null,last:0,t:0,found:store.get('hv-ghosts',{}),stars:seedStars(200,W,760,5),
@@ -1168,6 +1180,7 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
    const p=ROAD.at(w.d);if(!V(p.y,200))continue;const flip=p.dx<-0.2;
    if(w.kind==='kids'){w.types.forEach((ty,i)=>{const q=ROAD.at(w.d-w.dir*i*w.gap);ctx.save();ctx.translate(q.x+(i%2?-18:18),q.y+8);if(flip)ctx.scale(-1,1);drawKid(ctx,0,0,ty,t*7+i,1.05);ctx.restore();});}
    else{const jump=CRIT['j_'+w.id]>t?Math.abs(Math.sin((CRIT['j_'+w.id]-t)*12))*14:0;w.fn(ctx,p.x,p.y+10-jump,w.s,t);CRIT.actors.push({id:w.id,x:p.x,y:p.y-60,r:70,say:w.say,sfx:w.sfx});}}
+  KIDLIFE.draw(ctx,t,dt,V);
   /* fog in the graveyard, leaves everywhere */
   if(top<ZC&&bot>ZB)drawFog(ctx,this.fogs,t,W,.11+tier*.04);
   for(const l of this.leaves){l.y+=dt*l.v;l.x-=dt*14;if(l.y>H)l.y=-20;if(l.x<-20)l.x=W;if(l.y>top-20&&l.y<bot+20){ctx.save();ctx.translate(l.x,l.y);ctx.rotate(t*2+l.ph);ctx.fillStyle=['#E2603A','#F2A03C','#C2304A'][l.ph%3];ctx.beginPath();ctx.moveTo(0,-7);ctx.quadraticCurveTo(7,0,0,7);ctx.quadraticCurveTo(-7,0,0,-7);ctx.fill();ctx.restore();}}
@@ -1374,7 +1387,7 @@ addEventListener('keydown',e=>{if(e.key==='Escape'&&peekEl)closePeek();});
 
 /* ---------- full-screen picture menu ---------- */
 const TILE_COLOR={};
-const TILES=[['shorts','#6E2A8E',1],['tracker','#1B3A8A',1],['jam','#5B2DB0'],['candy','#C2304A'],['flight','#2E6E8E'],['dash','#4A4A6A'],['match','#3A2A7A'],['maker','#3C8A3A'],['carve','#D06A1A'],['spell','#2E8A6A'],['findpip','#2F5A3A'],['quiz','#8A5A1A'],['dressup','#8A2E6A'],['coloring','#C98A2A'],['cast','#6A3A9A'],['world','#1F6A9A'],['print','#3B5BA8']];
+const TILES=[['cast','#6A3A9A',1],['shorts','#6E2A8E',1],['tracker','#1B3A8A',1],['jam','#5B2DB0'],['candy','#C2304A'],['flight','#2E6E8E'],['dash','#4A4A6A'],['match','#3A2A7A'],['maker','#3C8A3A'],['carve','#D06A1A'],['spell','#2E8A6A'],['findpip','#2F5A3A'],['quiz','#8A5A1A'],['dressup','#8A2E6A'],['coloring','#C98A2A'],['world','#1F6A9A'],['print','#3B5BA8']];
 TILES.forEach(([id,c])=>TILE_COLOR[id]=c);
 function titleOf(id){const g=GAMES.find(x=>x.id===id),h=HOT.find(x=>x.id===id);return (h&&h.title)||(g&&g.title)||id;}
 function tilePic(id,w,h,tint){const cv=miniCanvas(w,h);const c=cv.ctx,fn=PREV[id];let raf=0;const seed=[...id].reduce((a,ch)=>a+ch.charCodeAt(0),0);
