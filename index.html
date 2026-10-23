@@ -61,6 +61,7 @@ button{font-family:inherit}
 .rbtn{width:46px;height:46px;border-radius:50%;border:0;background:#E2453F;color:#fff;cursor:pointer;display:grid;place-items:center;box-shadow:0 6px 16px rgba(0,0,0,.4);flex:none;transition:transform .15s}
 .rbtn:hover{transform:scale(1.08)}
 .rbtn.off{background:#5B4A86}
+.top .pill{display:none}
 .pill{display:inline-flex;align-items:center;gap:6px;background:rgba(14,7,38,.82);border:1px solid var(--line);border-radius:999px;padding:7px 12px;font-weight:800;font-size:13px;white-space:nowrap;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .pill.ok{color:var(--slime)}
 .count{margin-left:auto;display:flex;gap:4px;font-variant-numeric:tabular-nums}
@@ -903,6 +904,9 @@ const world={c:$('#world'),ctx:null,scale:1,camX:0,camY:0,vw:0,vh:0,dpr:1,hover:
  bats:Array.from({length:9},(_,i)=>({x:i*180,y:120+(i*97)%360,s:9+(i%4)*4,v:40+(i*13)%60,ph:i})),
  leaves:Array.from({length:18},(_,i)=>({x:(i*173)%W,y:(i*251)%H,v:30+(i%5)*12,ph:i})),
  kids:[{type:'dino',ph:0},{type:'ghost',ph:1},{type:'astro',ph:2},{type:'lion',ph:3}],kidX:-200,
+ kids2:[{type:'lion',ph:0},{type:'astro',ph:2},{type:'ghost',ph:1}],kid2X:1900,kids3:[{type:'ghost',ph:0},{type:'dino',ph:1.4},{type:'lion',ph:2.6},{type:'astro',ph:3.3}],kid3X:-500,
+ walkers:[{fn:drawMummy,x:200,y:1432,s:.56,dir:1,min:160,max:500,v:16},{fn:drawFrank,x:980,y:1302,s:.5,dir:-1,min:960,max:1150,v:13},{fn:drawDracula,x:1150,y:2036,s:.6,dir:1,min:1100,max:1210,v:11},{fn:drawMummy,x:470,y:2046,s:.56,dir:-1,min:440,max:640,v:15}],
+ flies:Array.from({length:24},(_,i)=>({x:(i*211)%1600,y:1180+(i*97)%440,ph:i*1.7})),
  witchT:-4,witchY:0,dragging:false,dragX:0,dragCam:0,
  init(){this.ctx=this.c.getContext('2d');new ResizeObserver(()=>this.resize()).observe(document.body);this.resize();this.buildHots();addEventListener('scroll',()=>{this.camY=scrollY/this.scale;},{passive:true});
   this.c.addEventListener('pointerdown',e=>{if(W*this.scale<=this.vw+2)return;this.dragging=true;this.dragX=e.clientX;this.dragCam=this.camX;this.c.setPointerCapture(e.pointerId);});
@@ -957,6 +961,8 @@ const world={c:$('#world'),ctx:null,scale:1,camX:0,camY:0,vw:0,vh:0,dpr:1,hover:
    for(const x of this.hotEls){if(this.hover===x.h.id&&x.h.y<1000){ctx.save();ctx.globalCompositeOperation='lighter';const gg=ctx.createRadialGradient(x.h.x,x.h.y-x.h.h/2,10,x.h.x,x.h.y-x.h.h/2,x.h.w*.8);gg.addColorStop(0,'rgba(255,195,77,.22)');gg.addColorStop(1,'rgba(255,195,77,0)');ctx.fillStyle=gg;ctx.fillRect(x.h.x-x.h.w,x.h.y-x.h.h*1.5,x.h.w*2,x.h.h*2);ctx.restore();}}
    drawFence(ctx,40,280,760);drawFence(ctx,1360,1560,760);if(tier>=1){drawBunting(ctx,400,760,700,20);drawBunting(ctx,840,1200,700,20);}
    drawScarecrow(ctx,1440,760,t);drawWell(ctx,100,790,t);for(const[px,pr]of[[60,16],[150,14],[1370,16],[1520,20]])drawPumpkin(ctx,px,790,pr,.6);
+   /* costumed kids walking the hill path */
+   this.kid2X-=dt*34;if(this.kid2X<-320)this.kid2X=W+320;this.kids2.forEach((k,i)=>{ctx.save();ctx.translate(this.kid2X+i*64,818);ctx.scale(-.8,.8);drawKid(ctx,0,0,k.type,t*7+k.ph,1);ctx.restore();});
    /* Rattles dancing by the manor */
    {const ph=BAND.playing?beat*TAU:t*3;drawSkeleton(ctx,980,700-Math.abs(Math.sin(ph))*(BAND.playing?14:4),46,ph*2);}
    drawFog(ctx,this.fogs.slice(0,4),t,W,.12+tier*.04);}
@@ -993,6 +999,8 @@ const world={c:$('#world'),ctx:null,scale:1,camX:0,camY:0,vw:0,vh:0,dpr:1,hover:
    {const ph=BAND.playing?beat*TAU:t*2;drawSkeleton(ctx,420,1418-Math.abs(Math.sin(ph))*8,40,ph*2);}
    /* pip peeking */
    {const pk=t-this.pipPeek<1.5?1:(Math.sin(t*.7)>.6?1:0);drawGhost(ctx,600,1300+(1-pk)*40,56,t,pk?1:.5);}
+   for(const w of this.walkers.slice(0,2)){w.x+=w.dir*w.v*dt;if(w.x>w.max){w.x=w.max;w.dir=-1;}if(w.x<w.min){w.x=w.min;w.dir=1;}w.fn(ctx,w.x,w.y+Math.abs(Math.sin(t*4))*-2,w.s,t);}
+   for(const f of this.flies){const fx=f.x+Math.sin(t*.7+f.ph)*26,fy=f.y+Math.sin(t*1.1+f.ph*2)*14;ctx.fillStyle='rgba(180,255,120,'+(.25+.7*Math.abs(Math.sin(t*2.5+f.ph)))+')';ctx.beginPath();ctx.arc(fx,fy,2.4,0,TAU);ctx.fill();}
    drawHut(ctx,800,1460,t);
    /* patch */
    ctx.strokeStyle='#2A1548';ctx.lineWidth=3;for(let y=1430;y<1500;y+=18){ctx.beginPath();ctx.moveTo(1080,y);ctx.quadraticCurveTo(1300,y+8,1540,y);ctx.stroke();}
@@ -1021,6 +1029,8 @@ const world={c:$('#world'),ctx:null,scale:1,camX:0,camY:0,vw:0,vh:0,dpr:1,hover:
    if(asleep){ctx.fillStyle='#C8A24A';ctx.fillRect(740,1900,120,36);ctx.save();ctx.translate(800,1896);ctx.rotate(Math.PI/2);drawWitch(ctx,0,0,40,0,0);ctx.restore();ctx.fillStyle='#FFF4E6';ctx.font='900 22px "Baloo 2"';for(let i=0;i<3;i++){const ph=(t*.7+i*.33)%1;ctx.globalAlpha=1-ph;ctx.fillText('z',840+ph*40+i*8,1860-ph*50-i*10);}ctx.globalAlpha=1;ctx.font='900 16px "Baloo 2"';ctx.fillText('Every town got its candy. Mabel is asleep until November.',800,1990);}
    else if(!live){drawWitch(ctx,800,1910+Math.sin(t*2)*4,52,-.05,t);ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(800,1950,70,12,0,0,TAU);ctx.fill();}
    else{ctx.fillStyle='#FFF4E6';ctx.font='900 18px "Baloo 2"';ctx.fillText('She is out flying right now. Open the tracker.',800,1920);}
+   for(const w of this.walkers.slice(2)){w.x+=w.dir*w.v*dt;if(w.x>w.max){w.x=w.max;w.dir=-1;}if(w.x<w.min){w.x=w.min;w.dir=1;}w.fn(ctx,w.x,w.y,w.s,t);}
+   this.kid3X+=dt*40;if(this.kid3X>W+360)this.kid3X=-500;this.kids3.forEach((k,i)=>drawKid(ctx,this.kid3X-i*66,2176,k.type,t*7+k.ph,.95));
    drawCat(ctx,920,1900,t,.5);drawPumpkin(ctx,680,1940,18,.6);drawSkeleton(ctx,1120,1960,40,BAND.playing?beat*TAU*2:t*3);drawGhost(ctx,480,1880+Math.sin(t*2)*8,40,t);
    for(let i=0;i<5;i++)drawBat(ctx,620+i*80+Math.sin(t*2+i)*10,1810+Math.sin(t*3+i)*14,14,t*12+i,'#0E0624');
    for(const p of this.pumpkins.filter(p=>p.y>1900)){const hop=Math.max(0,1-(t-(p.hop||-9))*2.2);drawPumpkin(ctx,p.x,p.y-Math.sin(hop*Math.PI)*22,p.r,.5+.5*Math.max(kick,.3+.3*Math.sin(t*5+p.x)));}
@@ -2019,6 +2029,7 @@ $('#menuBtn').addEventListener('click',()=>enter(true));
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
+
 
 
 
