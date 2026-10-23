@@ -2582,6 +2582,8 @@ HOT.push({id:'hayride',x:130,y:P.alley.y+210,w:200,h:220,sub:'Hayride stop',titl
 {const HR_STOP={x:640,y:P.alley.y+215};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(HR_STOP.y,top,bot,260))HAYRIDE_STOP_DRAW(ctx,HR_STOP.x,HR_STOP.y,t);};}
 /* ==== HAUNTED HAYRIDE END ==== */
 
+
+
 /* ==== MONSTER BOOGIE START ==== */
 /* ---------- GAME: Monster Boogie (code-a-dance, like Santa Tracker's Code Boogie) ---------- */
 if(!document.getElementById('hvbgcss')){const s=document.createElement('style');s.id='hvbgcss';s.textContent=`
@@ -2739,6 +2741,53 @@ function boogieBubble(c,x,y,move,a=1){if(!move)return;const M=BOOGIE_MOVES[move]
  c.fillStyle='#fff';if(move==='jump'){c.beginPath();for(let i=0;i<10;i++){const r=i%2?7:16,an=-Math.PI/2+i*Math.PI/5;c.lineTo(Math.cos(an)*r,Math.sin(an)*r);}c.closePath();c.fill();}
  else{c.rotate(M.rot*Math.PI/180);c.beginPath();c.moveTo(-15,-6);c.lineTo(2,-6);c.lineTo(2,-14);c.lineTo(16,0);c.lineTo(2,14);c.lineTo(2,6);c.lineTo(-15,6);c.closePath();c.fill();}c.restore();}
 
+/* ----- music: one looping song per dancer, 100 BPM so one move = one beat ----- */
+const BOOGIE_SONGS=[
+ {id:'bones',name:'Bone Rattle Rock',who:'rattles',drums:'x-h-s-h-x-x-s-h-',bassW:'triangle',leadW:'square',leadD:.12,
+  bass:'A2 - A2 - C3 - A2 - G2 - G2 - E2 - G2 - A2 - A2 - C3 - D3 - E3 - D3 - C3 - G2 -',
+  lead:'A4 C5 E5 - D5 C5 A4 - G4 - E4 G4 A4 - - - C5 E5 G5 E5 D5 C5 A4 - G4 A4 C5 - A4 - - -'},
+ {id:'mash',name:'Monster Mash-Up',who:'frank',drums:'k-h-s-hhk-h-s-h-',bassW:'triangle',leadW:'triangle',leadD:.26,
+  chords:[['C4','E4','G4'],['A3','C4','E4'],['F3','A3','C4'],['G3','B3','D4']],chordR:'x--x-x--',
+  bass:'C2 - E2 - G2 - E2 - A1 - C2 - E2 - C2 - F1 - A1 - C2 - A1 - G1 - B1 - D2 - B1 -',
+  lead:'E5 - G5 - C6 - - - C6 - B5 A5 - - E5 - F5 - A5 - C6 - A5 - G5 - F5 - D5 - B4 -'},
+ {id:'desert',name:'Desert Shuffle',who:'mummy',drums:'k-tts-t-k-tts-tt',bassW:'triangle',leadW:'sawtooth',leadD:.22,
+  bass:'E2 - - E2 B1 - E2 - E2 - - E2 B1 - E2 - F2 - - F2 C2 - F2 - E2 - - E2 B1 - D2 -',
+  lead:'E4 F4 G#4 A4 B4 - A4 G#4 F4 - E4 - - - - - B4 C5 B4 A4 G#4 A4 F4 G#4 E4 - - - - - - -'},
+ {id:'howl',name:'Howl at the Moon',who:'wolf',drums:'k-hhs-hkk-hhs-hh',bassW:'sawtooth',leadW:'square',leadD:.14,
+  bass:'D2 - D3 D2 - F2 G2 - D2 - D3 D2 - C3 A2 - D2 - D3 D2 - F2 G2 - A2 - G2 - F2 - E2 -',
+  lead:'- - A4 - - - C5 - - - A4 G4 F4 - - - - - A4 - - - D5 - HOWL - - - - - - -'},
+ {id:'organ',name:'Castle Organ Groove',who:'drac',drums:'k---s---k-k-s---',bassW:'sine',leadW:'organ',leadD:.27,
+  chords:[['D3','F3','A3'],['C#3','E3','A3'],['D3','F3','A3'],['C#3','E3','G3']],chordR:'x-------',
+  bass:'D2 - - - D2 - - - A1 - - - A1 - - - D2 - - - D2 - - - A1 - - - D2 - - -',
+  lead:'A5 G5 A5 - - - - - G5 F5 E5 D5 C#5 - D5 - A4 G4 A4 - - - - - E4 F4 C#4 - D4 - - -'},
+ {id:'broom',name:'Broomstick Boogie',who:'mabel',drums:'k-h-s-h-k-hks-h-',bassW:'triangle',leadW:'triangle',leadD:.2,
+  bass:'G2 B2 D3 E3 F3 E3 D3 B2 C3 E3 G3 A3 A#3 A3 G3 E3 G2 B2 D3 E3 F3 E3 D3 B2 D3 F#3 A3 F#3 G2 - G2 -',
+  lead:'G5 - B5 D6 - B5 - - E6 - D6 - B5 - G5 - G5 - B5 D6 - E6 - D6 B5 A5 G5 - - - - -'},
+];
+function boogieNote(n){const m=/^([A-G])(#?)(\d)$/.exec(n);if(!m)return 0;const k={C:0,D:2,E:4,F:5,G:7,A:9,B:11}[m[1]]+(m[2]?1:0);return 440*Math.pow(2,(k+12*(+m[3]+1)-69)/12);}
+function boogieMusic(){
+ const M={song:null,gain:null,timer:0,next:0,step:0,t0:0,on:true,loud:false,
+  start(song){const c=SFX.get();if(!c)return;if(!M.gain){M.gain=c.createGain();M.gain.gain.value=0;M.gain.connect(c.destination);}
+   if(!song.b){song.b=song.bass.split(' ');song.l=song.lead.split(' ');}
+   M.song=song;M.t0=c.currentTime+.1;M.next=M.t0;M.step=0;if(!M.timer)M.timer=setInterval(()=>M.pump(),25);M.pump();},
+  stop(){clearInterval(M.timer);M.timer=0;if(M.gain){const c=SFX.ctx,g=M.gain;try{g.gain.setTargetAtTime(0,c.currentTime,.08);setTimeout(()=>{try{g.disconnect();}catch(e){}},600);}catch(e){}M.gain=null;}},
+  beatAfter(sec){const c=SFX.ctx;if(!c||!M.timer)return null;const Q=.6,k=Math.ceil((c.currentTime+sec-M.t0)/Q);return M.t0+k*Q;},
+  pump(){const c=SFX.ctx;if(!c||!M.song||!M.gain)return;
+   const want=(SFX.muted||!M.on)?0:(M.loud?.9:.5);M.gain.gain.setTargetAtTime(want,c.currentTime,.12);
+   while(M.next<c.currentTime+.2){M.play(M.step%32,M.next);M.step++;M.next+=.3;}},
+  play(i,w){const S=M.song,d=M.gain,T=(f,dur,type,v,sl)=>SFX.tone(f,dur,type,v,w,sl||null,d),N=(dur,v,type,f)=>SFX.noise(dur,v,w,type,f,d);
+   const dc=S.drums[i%16];
+   if(dc==='k'||dc==='x')T(110,.18,'sine',.5,40);
+   if(dc==='s'){N(.14,.22,'highpass',1400);T(190,.08,'triangle',.08,120);}
+   if(dc==='h'||dc==='x')N(.035,.07,'highpass',7000);
+   if(dc==='t'){N(.06,.06,'bandpass',5200);N(.03,.05,'highpass',8000);}
+   const b=boogieNote(S.b[i]);if(b)T(b,.27,S.bassW,S.bassW==='sawtooth'?.07:.16);
+   const ln=S.l[i];
+   if(ln==='HOWL'){T(420,1.4,'sine',.08,900);T(424,1.4,'triangle',.04,880);}
+   else{const f=boogieNote(ln);if(f){if(S.leadW==='organ'){T(f,S.leadD,'square',.025);T(f*2,S.leadD,'sine',.03);T(f/2,S.leadD,'sine',.04);}else T(f,S.leadD,S.leadW,S.leadW==='square'?.035:S.leadW==='sawtooth'?.028:.07);}}
+   if(S.chords){const bar=Math.floor(i/8);if(S.chordR[i%8]==='x')for(const n of S.chords[bar%S.chords.length])T(boogieNote(n),S.chordR==='x-------'?2.2:.22,S.leadW==='organ'?'sine':'sawtooth',S.leadW==='organ'?.035:.018);}}};
+ return M;}
+
 SCENES.boogie={title:'Monster Boogie',card:{tag:'Game',desc:'Pick a monster, code its dance with arrows, or copy the moves.',thumb(ctx,t){BOOGIE_THUMB(ctx,t,480,270);}},mount(stage){
  const W=900,H=560,BEAT=.6,MAXS=8,LEVELS=[3,3,4,4,5,5,6,8];
  const root=el('div',{class:'bg-root'});stage.append(root);
@@ -2748,6 +2797,9 @@ SCENES.boogie={title:'Monster Boogie',card:{tag:'Game',desc:'Pick a monster, cod
  let play=null;/* {seq,who:'me'|'teacher'|'both',i,t,loop,onDone} */
  let preview=null,beatT=0,beatGlow=0,loop=false,confetti=[],sayT=0;
  try{const sv=localStorage.getItem('hv-boogie-me');if(sv&&BOOGIE_CAST.find(c=>c.id===sv))me=sv;}catch(e){}
+ const music=boogieMusic();let songIdx=-1;const songFor=id=>BOOGIE_SONGS.findIndex(x=>x.who===id);
+ try{BAND.setVolume(0);}catch(e){}
+ function playSong(i){songIdx=i;if(i<0){music.on=false;music.pump();}else{music.on=true;music.start(BOOGIE_SONGS[i]);}renderTop();}
  const cast=id=>BOOGIE_CAST.find(c=>c.id===id);
 
  /* stage canvas */
@@ -2780,17 +2832,21 @@ SCENES.boogie={title:'Monster Boogie',card:{tag:'Game',desc:'Pick a monster, cod
   left.innerHTML='';right.innerHTML='';
   const who=el('button',{class:'bg-chip',type:'button'},'🔄 Dancer');who.onclick=()=>{if(busy())return;SFX.click();pickScreen();};
   const md=el('button',{class:'bg-chip',type:'button'},mode==='copy'?'✏️ Make a dance':'🎯 Copy a dance');md.onclick=()=>{if(busy())return;SFX.click();startMode(mode==='copy'?'make':'copy');};
-  left.append(who);right.append(md);
+  const sg=el('button',{class:'bg-chip'+(songIdx>=0?' on':''),type:'button','aria-label':'Change the song'},songIdx>=0?'🎵 '+BOOGIE_SONGS[songIdx].name:'🔇 Music off');sg.onclick=()=>{SFX.click();const n=songIdx+1>=BOOGIE_SONGS.length?-1:songIdx+1;if(busy()&&n<0)return;playSong(n);if(n>=0)sayIt('🎵 '+BOOGIE_SONGS[n].name,2);};
+  left.append(who,sg);right.append(md);
   if(mode==='make'){const lp=el('button',{class:'bg-chip'+(loop?' on':''),type:'button'},'🔁 Loop');lp.onclick=()=>{loop=!loop;SFX.click();if(!loop&&play)play.loop=false;renderTop();};right.prepend(lp);}}
 
  function addMove(k){if(busy())return;const n=mode==='copy'?target.length:MAXS;const bad=marks.indexOf(false);if(code.length>=n&&bad<0)return;if(bad>=0){code[bad]=k;marks[bad]=null;}else{code.push(k);marks=[];}const M=BOOGIE_MOVES[k];SFX.tone(M.note,.18,'triangle',.08);preview={move:k,t:0};renderSlots();}
 
  /* playback */
- function startPlay(seq,who,onDone,lp=false){play={seq,who,i:0,t:0,loop:lp,onDone};beatT=0;tick(0);renderSlots();}
- function tick(i){const m=play.seq[i];if(m)SFX.tone(BOOGIE_MOVES[m].note,.22,'triangle',.09);SFX.tone(92,.14,'sine',.28,null,45);SFX.noise(.04,.04);beatGlow=1;if(play.who!=='teacher')highlight(i);}
- function stepPlay(dt){if(!play)return;play.t+=dt/BEAT;if(play.t>=1){
+ function startPlay(seq,who,onDone,lp=false){const clk=music.on&&songIdx>=0?music.beatAfter(.08):null;play={seq,who,i:0,t:0,loop:lp,onDone,clock:clk,el:0,waiting:clk!=null};beatT=0;music.loud=true;if(clk==null)tick(0);renderSlots();}
+ function tick(i){if(play.clock==null){const m=play.seq[i];if(m)SFX.tone(BOOGIE_MOVES[m].note,.22,'triangle',.09);SFX.tone(92,.14,'sine',.28,null,45);SFX.noise(.04,.04);}beatGlow=1;if(play.who!=='teacher')highlight(i);}
+ function stepPlay(dt){if(!play)return;let el;
+  if(play.clock!=null){el=SFX.now()-play.clock;if(el<0){play.t=0;return;}if(play.waiting){play.waiting=false;tick(0);}}else{play.el+=dt;el=play.el;}
+  let idx=Math.floor(el/BEAT);play.t=el/BEAT-idx;
+  while(play&&play.i<idx){
    if(play.who==='both'){const ok=code[play.i]===target[play.i];marks[play.i]=ok;if(ok)SFX.good();else SFX.bad();renderSlotsKeep(play.i);}
-   play.t=0;play.i++;if(play.i>=play.seq.length){if(play.loop&&loop){play.i=0;}else{const d=play.onDone;play=null;highlight(-1);renderSlots();if(d)d();return;}}
+   play.i++;if(play.i>=play.seq.length){if(play.loop&&loop){const L=play.seq.length*BEAT;if(play.clock!=null)play.clock+=L;else play.el-=L;idx-=play.seq.length;play.i=0;}else{const d=play.onDone;play=null;music.loud=false;highlight(-1);renderSlots();if(d)d();return;}}
    tick(play.i);}}
  function renderSlotsKeep(i){const b=slotsEl.children[i];if(b){b.classList.toggle('ok',marks[i]===true);b.classList.toggle('bad',marks[i]===false);}}
  function runCode(){if(busy()||!code.length)return;SFX.click();marks=[];
@@ -2807,7 +2863,8 @@ SCENES.boogie={title:'Monster Boogie',card:{tag:'Game',desc:'Pick a monster, cod
  function startLevel(i){level=i;levelTries=0;code=[];marks=[];target=makeTarget(LEVELS[i]);renderSlots();setTimeout(()=>{if(alive)showTarget(true);},500);}
  function showTarget(first){if(busy())return;if(!first)SFX.click();marks=[];renderSlots();const hint=level<3;sayIt('Watch '+cast(teacher).name+'!'+(hint?'':' Remember the moves'),2.5);startPlay(target.slice(),'teacher',()=>sayIt('Your turn! Tap the arrows to code the same dance',4));}
 
- function startMode(m){mode=m;code=[];marks=[];play=null;highlight(-1);try{localStorage.setItem('hv-boogie-mode',m);}catch(e){}
+ function startMode(m){if(!music.timer){const k=songFor(me);if(k>=0)playSong(k);}
+  mode=m;code=[];marks=[];play=null;highlight(-1);try{localStorage.setItem('hv-boogie-mode',m);}catch(e){}
   if(m==='copy'){teacher=me==='drac'?'rattles':'drac';stars=0;startLevel(0);}
   else{teacher=null;renderSlots();sayIt('Tap the arrows to build '+cast(me).name+"'s dance, then press Dance",4);}}
 
@@ -2816,7 +2873,7 @@ SCENES.boogie={title:'Monster Boogie',card:{tag:'Game',desc:'Pick a monster, cod
  function closePick(){if(pickEl){pickEl.remove();pickEl=null;}cancelAnimationFrame(pickRaf);}
  function pickScreen(){closePick();pickEl=el('div',{class:'bg-pick'});pickEl.append(el('h2',{},'Monster Boogie'),el('p',{},'Pick your dancer'));
   const cards=el('div',{class:'bg-cards'});const cvs=[];
-  for(const c of BOOGIE_CAST){const cv=el('canvas',{width:300,height:270});const b=el('button',{class:'bg-card',type:'button'},cv,c.name);b.onclick=()=>{SFX.click();me=c.id;try{localStorage.setItem('hv-boogie-me',me);}catch(e){}modeScreen();};cards.append(b);cvs.push([cv.getContext('2d'),c]);}
+  for(const c of BOOGIE_CAST){const cv=el('canvas',{width:300,height:270});const sn=BOOGIE_SONGS.find(x=>x.who===c.id);const b=el('button',{class:'bg-card',type:'button'},cv,c.name,el('small',{style:'font-size:12px;color:var(--candle);font-weight:800'},'🎵 '+(sn?sn.name:'')));b.onclick=()=>{SFX.click();if(me!==c.id&&songIdx>=0){me=c.id;playSong(songFor(c.id));}me=c.id;try{localStorage.setItem('hv-boogie-me',me);}catch(e){}modeScreen();};cards.append(b);cvs.push([cv.getContext('2d'),c]);}
   pickEl.append(cards);root.append(pickEl);
   let t0=performance.now();const anim=()=>{const t=(performance.now()-t0)/1000;cvs.forEach(([x,c],i)=>{x.clearRect(0,0,300,270);const mv=BOOGIE_KEYS[(Math.floor(t/BEAT)+i)%5];const u=(t/BEAT)%1;x.fillStyle='rgba(255,255,255,.05)';x.beginPath();x.ellipse(150,250,90,14,0,0,TAU);x.fill();boogiePuppet(x,150,250,1.2,c.skin,boogiePose(mv,u,t),t);});pickRaf=requestAnimationFrame(anim);};anim();}
  function modeScreen(){closePick();pickEl=el('div',{class:'bg-pick'});pickEl.append(el('h2',{},cast(me).name+' is ready'),el('p',{},'How do you want to dance?'));
@@ -2837,10 +2894,10 @@ SCENES.boogie={title:'Monster Boogie',card:{tag:'Game',desc:'Pick a monster, cod
   if(!me)return;
   /* who dances right now */
   let myMove=null,myU=0,tMove=null,tU=0;
-  if(play){const m=play.seq[play.i],u=play.t;if(play.who==='me'||play.who==='both'){myMove=m;myU=u;}if(play.who==='teacher'||play.who==='both'){tMove=play.who==='both'?target[play.i]:m;tU=u;}}
+  if(play&&!play.waiting){const m=play.seq[play.i],u=play.t;if(play.who==='me'||play.who==='both'){myMove=m;myU=u;}if(play.who==='teacher'||play.who==='both'){tMove=play.who==='both'?target[play.i]:m;tU=u;}}
   else if(preview){myMove=preview.move;myU=preview.t;}
   boogiePuppet(c,px,base,sc,cast(me).skin,boogiePose(myMove,myU,t),t);
-  if(myMove&&(play||preview))boogieBubble(c,px,base-235*sc/1.35-(myMove==='jump'?20:0),myMove,Math.min(1,myU*5));
+  if(myMove&&((play&&!play.waiting)||preview))boogieBubble(c,px,base-235*sc/1.35-(myMove==='jump'?20:0),myMove,Math.min(1,myU*5));
   if(two&&teacher){boogiePuppet(c,tx,base,sc,cast(teacher).skin,boogiePose(tMove,tU,t+1.3),t+1.3);
    const showB=tMove&&(play&&(play.who==='both'||level<3));if(showB)boogieBubble(c,tx,base-235-(tMove==='jump'?20:0),tMove,Math.min(1,tU*5));
    if(play&&play.who==='teacher'&&level>=3){c.fillStyle='rgba(255,255,255,.9)';c.font='900 30px "Baloo 2",sans-serif';c.textAlign='center';c.fillText((play.i+1)+'',tx,base-240);}
@@ -2849,7 +2906,7 @@ SCENES.boogie={title:'Monster Boogie',card:{tag:'Game',desc:'Pick a monster, cod
 
  let alive=true;
  renderSlots();if(me)modeScreen();else pickScreen();
- return()=>{alive=false;closePick();g.destroy();};
+ return()=>{alive=false;music.stop();closePick();g.destroy();};
 }};
 
 /* card thumbnail: a monster mid-dance with code tiles underneath */
