@@ -665,6 +665,15 @@ const AMB={on:Object.assign(Object.fromEntries(AMB_DEFS.map(d=>[d[0],!!d[3]])),s
    if(now>=this.next[id]){this.next[id]=now+this.R(this.gaps[id][0],this.gaps[id][1]);this.last=now;try{this[id]();}catch(e){}return;}}},
  preview(id){if(!SFX.get())return;if(!SFX.amb)SFX.ambient(true);setTimeout(()=>{try{if(id==='wind'){this.on.wind=true;this.windLevel();}else this[id]();}catch(e){}},60);}
 };
+
+/* ---------- real recordings (CC0, Freesound). Falls back to the synth if a file is missing ---------- */
+const SMP={files:{crows:['crow',.9],bell:['bell',.8],creak:['creak',.8],thunder:['thunder',1],chains:['chains',.7],wolf:['wolf',.8],cackle:['cackle',.8],owl:['owl',.9],organ:['organ',.7]},buf:{},loading:false,
+ load(){if(this.loading)return;const c=SFX.ctx;if(!c)return;this.loading=true;
+  Object.entries(this.files).forEach(([id,[f]])=>{fetch('audio/'+f+'.mp3').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(ab=>new Promise((ok,no)=>c.decodeAudioData(ab,ok,no))).then(b=>{this.buf[id]=b;}).catch(()=>{});});},
+ play(id,delay){const c=SFX.ctx,B=AMB.bus(),b=this.buf[id];if(!c||!B||!b)return false;const s=c.createBufferSource(),g=c.createGain();s.buffer=b;s.playbackRate.value=id==='organ'?1:.96+Math.random()*.08;g.gain.value=this.files[id][1];s.connect(g).connect(B);s.start(c.currentTime+(delay||0));return true;}};
+AMB.crows=AMB.caw;
+Object.keys(SMP.files).forEach(id=>{const syn=AMB[id];AMB[id]=function(){SMP.load();if(id==='thunder'){const fl=document.getElementById('flash');if(fl){fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go');}}
+ if(SMP.play(id,id==='thunder'?.4:0))return;return syn.call(this);};});
 SFX.ambient=function(on){const c=this.get();if(!c)return;
  if(!on){if(this.amb){try{this.amb.src.forEach(s=>s.stop());}catch(e){}clearInterval(this.amb.timer);this.amb=null;}return;}
  if(this.amb)return;
@@ -680,6 +689,7 @@ SFX.ambient=function(on){const c=this.get();if(!c)return;
  const l2=c.createOscillator(),lg2=c.createGain();l2.frequency.value=.13;lg2.gain.value=260;l2.connect(lg2).connect(f2.frequency);const l3=c.createOscillator(),lg3=c.createGain();l3.frequency.value=.06;lg3.gain.value=.04;l3.connect(lg3).connect(g2.gain);
  s2.connect(f2).connect(g2).connect(wg);
  [s1,s2,l1,l1b,l2,l3].forEach(n=>{n.start();src.push(n);});
+ SMP.load();
  const timer=setInterval(()=>AMB.tick(),450);
  this.amb={src,timer,bus,wg};};
 SFX.setMuted=function(m){this.muted=m;if(this.amb)this.amb.bus.gain.value=m?0:1;BAND.applyVolume();$('#sndSlash').setAttribute('opacity',m?1:0);$('#sndWave').setAttribute('opacity',m?0:1);$('#soundBtn').classList.toggle('off',m);};
@@ -1763,6 +1773,7 @@ $('#playBtn').onclick=()=>{SFX.get();SFX.click();const boot=$('#boot');boot.clas
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
+
 
 
 
