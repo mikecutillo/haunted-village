@@ -289,6 +289,26 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-si
 .mixrow.on{border-color:rgba(142,242,106,.45)}
 /* music hall: one grand room */
 .hall{position:relative;height:100%;min-height:420px;overflow:hidden;background:#120A1E;user-select:none;-webkit-user-select:none}
+/* Music Mansion top bar + effects tray */
+.hall-bar{display:flex;align-items:center;gap:6px;flex:none}
+.hb-btn{height:44px;min-width:44px;padding:0 10px;border-radius:999px;border:1px solid rgba(255,244,230,.14);background:rgba(255,244,230,.06);color:var(--ink);font-size:19px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-family:inherit}
+.hb-btn.on{border-color:rgba(142,242,106,.6);background:rgba(142,242,106,.16)}
+.hb-fx .hb-lab{font-size:14px}.hb-fx .hb-car{font-size:11px;opacity:.7}
+.hb-tempo{font-size:15px;min-width:64px}
+.hb-go{background:#8EF26A;color:#14381A;border-color:transparent}
+.hb-seg{display:flex;gap:2px;padding:3px;border-radius:999px;background:rgba(255,244,230,.06);border:1px solid rgba(255,244,230,.14)}
+.hb-seg button{width:40px;height:36px;border:0;border-radius:999px;background:transparent;font-size:18px;cursor:pointer}
+.hb-seg button.on{background:var(--pumpkin)}
+.fx-tray{position:absolute;top:8px;right:8px;z-index:4;display:flex;gap:8px;padding:8px;background:rgba(14,8,30,.92);border:1px solid rgba(255,244,230,.16);border-radius:20px;box-shadow:0 12px 30px rgba(0,0,0,.5);max-width:calc(100% - 16px);overflow-x:auto;-webkit-overflow-scrolling:touch}
+.fx-tray[hidden]{display:none}
+.fx-b{position:relative;flex:none;width:64px;height:70px;border-radius:16px;border:0;background:var(--c);color:#FFF4E6;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;font-family:inherit}
+.fx-b:active{transform:scale(.94)}
+.fx-b .em{font-size:28px;line-height:1;pointer-events:none}.fx-b .lb{font-size:11px;font-weight:800;pointer-events:none}
+.fx-dot{position:absolute;top:0;right:0;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,rgba(0,0,0,.55) 0 5px,rgba(255,244,230,.6) 6px 7px,transparent 8px)}
+.fx-dot.on{background:radial-gradient(circle,#8EF26A 0 5px,rgba(255,244,230,.8) 6px 7px,transparent 8px)}
+@media (max-width:860px){.hb-fx .hb-lab{display:none}}
+@media (max-width:640px){.hall-bar{gap:4px}.hb-btn{height:38px;min-width:38px;padding:0 6px;font-size:16px}.hb-tempo{display:none}.hb-seg button{width:32px;height:32px;font-size:15px}.fx-b{width:56px;height:62px}.fx-b .em{font-size:24px}}
+@media (max-width:520px){.hall-bar .hb-share{display:none}.modal-bar .title{font-size:20px}}
 .hall-cv{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:pointer}
 .hall-tr{position:absolute;top:8px;right:10px;z-index:3;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
 .sb-mode.seg3{margin:0;background:rgba(14,8,30,.88);border:1px solid rgba(255,244,230,.14);gap:2px;padding:3px}
@@ -4159,9 +4179,18 @@ MEMBERS.push(
  if(has('wolf')&&((bar===1&&b===0)||(bar===3&&b===4))){const o=c.createOscillator(),g=c.createGain();o.type='triangle';o.frequency.setValueAtTime(260,t);o.frequency.exponentialRampToValueAtTime(520,t+.5);o.frequency.exponentialRampToValueAtTime(380,t+1.4);g.gain.setValueAtTime(.001,t);g.gain.exponentialRampToValueAtTime(.12,t+.2);g.gain.setValueAtTime(.12,t+1);g.gain.exponentialRampToValueAtTime(.001,t+1.6);o.connect(g).connect(d);o.start(t);o.stop(t+1.7);this.fire('wolf',t);}
  if(has('cat')&&(b===2||b===6)){const f=this.LEAD[bar][b===2?0:1]*2;SFX.tone(f,.5,'triangle',.07,t,null,d);SFX.tone(f*3,.25,'sine',.02,t,null,d);this.fire('cat',t);}};}
 
-const HW=1200,HH=760,NP=8;
-const PIPE_X=i=>516+i*46,PIPE_H=i=>110+(3.5-Math.abs(i-3.5))*16,PIPE_BASE=256;
-const FLOOR_SLOTS=[[600,548],[478,552],[722,552],[356,562],[844,562],[538,642],[662,642],[416,652],[784,652],[296,626],[904,626]];
+/* the hall is one painted room (img/mansion-hall.webp, 1456x1092); code only adds what moves */
+const HW=1456,HH=1092;
+const HALL_IMG=new Image();HALL_IMG.decoding='async';HALL_IMG.src='img/mansion-hall.webp';
+const HALL_FX=HALL_SOUNDS.filter(s=>s[0]!=='organ');
+const FLOOR_SLOTS=[[728,832],[470,832],[986,832],[600,886],[856,886],[330,886],[1126,886],[728,946],[470,946],[986,946],[220,936],[1236,936]];
+const SLOT_S=y=>.95+(y-832)/114*.4;
+const ORG_X=652,ORG_Y=540,ORG_S=.7;
+const ORGAN_BOX=[596,318,856,505];
+const PIPE_SECT=[[612,665,365,486],[683,766,334,463],[780,833,365,486]];
+const RAIL_CLIP=[560,503,330,40];
+const CANDLES=[[727,244,70],[605,664,16],[840,664,16],[477,738,14],[610,736,14],[835,736,14],[972,738,14],[578,488,11],[862,488,11],[176,504,15],[352,482,13],[432,460,13],[1012,460,13],[1096,482,13],[1272,504,15],[40,680,16],[92,670,14],[1364,670,14],[1416,680,16],[376,664,14],[1077,664,14]];
+const HALL_WINDOWS=[[22,262,140,700],[206,302,310,700],[1146,302,1252,700],[1318,252,1440,700]];
 function drawOrganist(ctx,x,y,s,t,hands,lvl){ctx.save();ctx.translate(x,y);ctx.scale(s,s);const bob=Math.sin(t*(2+hands*5))*(1.5+hands*3);
  ctx.fillStyle='#3A2414';ctx.fillRect(-46,-26,80,10);ctx.fillRect(-40,-16,10,24);ctx.fillRect(18,-16,10,24);
  ctx.fillStyle='#2E2018';ctx.beginPath();ctx.moveTo(-34,-118+bob);ctx.quadraticCurveTo(-64,-70,-58,-10);for(let i=0;i<7;i++)ctx.lineTo(-58+i*14,-10+(i%2?8:0));ctx.lineTo(40,-26);ctx.quadraticCurveTo(44,-80,14,-116+bob);ctx.closePath();ctx.fill();
@@ -4189,133 +4218,128 @@ function drawBanner(ctx,x,y,t){ctx.save();ctx.translate(x,y);const w=Math.sin(t*
 const HALL_MOUNT=function(stage,opts={}){
  const root=el('div',{class:'hall'});stage.append(root);
  const cv=document.createElement('canvas');cv.className='hall-cv';root.append(cv);const x=cv.getContext('2d');
- const info=Object.fromEntries(HALL_SOUNDS.map(s=>[s[0],s]));
+ const FXI=Object.fromEntries(HALL_FX.map(s=>[s[0],s]));
  let cw=0,ch=0,dpr=1,sc=1,ox=0,oy=0,alive=true,raf=0,t0=performance.now(),tp=0;
  /* ----- state ----- */
- let seq=(store.get('hv-pipes',[])||[]).slice(0,NP);while(seq.length<NP)seq.push(null);seq=seq.map(v=>v&&info[v]?v:null);
- let armed=null,playing=false,pos=-1,next=0,hands=0,lvl=0,ghosts=[],notes=[],flashPipe=-1,flashAt=-9,beatGlow=0;
+ let hands=0,lvl=0,organAt=-99,flash=0,beatGlow=0,floaters=[],notes=[];
  const onFloor=[...BAND.members];const bump={};let drag=null;
  if(!BAND.playing&&BAND.members.size)BAND.start();
- /* ----- DOM controls ----- */
- const M=[['off','🔇 Off'],['synth','🎛️ Computer'],['real','🎙️ Real']];const seg=el('div',{class:'sb-mode seg3',role:'group','aria-label':'Sound style'});
- const curMode=()=>SFX.muted?'off':SMP.mode;const paintM=()=>seg.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('on',M[i][0]===curMode()));
- M.forEach(([k,l])=>{const b=el('button',{type:'button'},l);b.onclick=()=>{if(k==='off'){SFX.setMuted(true);}else{SFX.setMuted(false);SMP.setMode(k);SFX.get();SFX.click();}paintM();};seg.append(b);});
- const master=el('button',{class:'rail-master',type:'button'},el('span',{},'🌙 Village sounds'),el('span',{class:'s'},''));
- const paintMaster=()=>{const on=AMB.anyOn();master.classList.toggle('on',on);master.querySelector('.s').textContent=on?'On':'Off';};
- master.onclick=()=>{if(AMB.anyOn())AMB.allOff();else AMB.allOn();paintMaster();SFX.click();};
- const playB=el('button',{class:'stf-btn',type:'button','aria-label':'Play the organ loop'},'▶'),clrB=el('button',{class:'stf-btn g',type:'button','aria-label':'Clear the organ'},'🗑');
- const tempo=el('input',{type:'range',min:'80',max:'150',value:String(BAND.bpm),id:'jamTempo'});const tl=el('span',{},BAND.bpm+' bpm');tempo.oninput=()=>{BAND.bpm=+tempo.value;tl.textContent=BAND.bpm+' bpm';};
- root.append(el('div',{class:'hall-tr'},seg,master,el('div',{class:'hall-organ-ctl'},el('span',{class:'lab'},'Organ'),playB,clrB)),el('div',{class:'hall-br jam-tempo'},el('label',{for:'jamTempo'},'Tempo'),tempo,tl));
+ const now=()=>(performance.now()-t0)/1000;
+ /* ----- top bar: every control lives here, nothing floats over the room ----- */
+ const bar=el('div',{class:'hall-bar'});
+ const M=[['off','🔇','Sound off'],['synth','🎛️','Computer sounds'],['real','🎙️','Real recordings']];
+ const seg=el('div',{class:'hb-seg',role:'group','aria-label':'Sound style'});
+ const curMode=()=>SFX.muted?'off':SMP.mode;
+ const paintM=()=>seg.querySelectorAll('button').forEach((b,i)=>b.classList.toggle('on',M[i][0]===curMode()));
+ M.forEach(([k,ic,lb])=>{const b=el('button',{type:'button',title:lb,'aria-label':lb},ic);b.onclick=()=>{if(k==='off'){SFX.setMuted(true);}else{SFX.setMuted(false);SMP.setMode(k);SFX.get();SFX.click();}paintM();};seg.append(b);});
+ const moonB=el('button',{class:'hb-btn',type:'button',title:'Village sounds on or off','aria-label':'Village sounds'},'🌙');
+ const fxB=el('button',{class:'hb-btn hb-fx',type:'button',title:'Sound effects','aria-label':'Sound effects'},el('span',{},'✨'),el('span',{class:'hb-lab'},'Effects'),el('span',{class:'hb-car'},'▾'));
+ const orgB=el('button',{class:'hb-btn',type:'button',title:'Play the organ','aria-label':'Play the organ'},'🎹');
+ const TEMPOS=[90,108,126,144];
+ const tempoB=el('button',{class:'hb-btn hb-tempo',type:'button',title:'Band speed','aria-label':'Band speed'},'');
+ const paintTempo=()=>{tempoB.textContent='♩'+BAND.bpm;};
+ tempoB.onclick=()=>{const i=TEMPOS.findIndex(v=>v>=BAND.bpm+1);BAND.bpm=TEMPOS[i<0?0:i];paintTempo();SFX.click();};
+ const saveB=el('button',{class:'hb-btn hb-go',type:'button',title:opts.compose?'Use this song':'Save song','aria-label':opts.compose?'Use this song':'Save song'},opts.compose?'✔':'💾');
+ const shareB=el('button',{class:'hb-btn hb-share',type:'button',title:'Copy song link','aria-label':'Copy song link'},'🔗');
+ const saveSong=()=>{if(!BAND.members.size){toast('Add at least one monster first.');return;}BAND.save();$('#songName').textContent=BAND.label();SFX.good();if(opts.onDone)opts.onDone();else{toast('Song saved. It plays through the whole village.');closeScene();}};
+ saveB.onclick=saveSong;
+ shareB.onclick=()=>{if(!BAND.members.size){toast('Add a monster first.');return;}copyText(songLink(),'Song link copied. Anyone who opens it hears your band.');};
+ bar.append(seg,moonB,fxB,orgB,tempoB,saveB,shareB);
+ const mbar=document.querySelector('.modal-bar'),closeBtn=$('#modalClose');if(mbar)mbar.insertBefore(bar,closeBtn);
+ /* ----- effects tray: drops down under the bar, folds away when you tap the room ----- */
+ const tray=el('div',{class:'fx-tray',role:'menu','aria-label':'Sound effects'});tray.hidden=true;
+ const dots={};
+ HALL_FX.forEach(([id,em,lb,c1])=>{const dot=el('span',{class:'fx-dot',title:'Keep playing around the village'});dots[id]=dot;
+  const b=el('button',{class:'fx-b',type:'button',title:lb,'aria-label':lb,style:'--c:'+c1},el('span',{class:'em'},em),el('span',{class:'lb'},lb),dot);
+  b.onclick=e=>{if(e.target===dot){AMB.set(id,!AMB.on[id]);paintFx();SFX.click();return;}fireFx(id);};tray.append(b);});
+ root.append(tray);
+ const paintFx=()=>{for(const id in dots)dots[id].classList.toggle('on',!!AMB.on[id]);moonB.classList.toggle('on',AMB.anyOn());};
+ const openTray=v=>{tray.hidden=!v;fxB.classList.toggle('on',v);};
+ fxB.onclick=()=>{SFX.click();openTray(tray.hidden);};
+ moonB.onclick=()=>{if(AMB.anyOn())AMB.allOff();else AMB.allOn();paintFx();SFX.click();};
+ orgB.onclick=()=>playOrgan();
+ /* ----- Jack's tip, tucked in the corner ----- */
  const hostCv=miniCanvas(84,95);hostCv.className='host';const hostBtn=el('button',{class:'host-btn',type:'button','aria-label':'Show or hide the tip'},hostCv,el('span',{class:'q'},'?'));
  const bubTxt=el('div',{class:'jt'}),bubStep=el('div',{class:'js'});
- const done=el('button',{class:'btn slime',type:'button'},opts.compose?'Use this song':'Save song');done.onclick=()=>{if(!BAND.members.size){toast('Add at least one monster first.');return;}BAND.save();$('#songName').textContent=BAND.label();SFX.good();if(opts.onDone)opts.onDone();else{toast('Song saved. It plays through the whole village.');closeScene();}};
- const share=el('button',{class:'btn ghost small',type:'button'},'Copy song link');share.onclick=()=>{if(!BAND.members.size){toast('Add a monster first.');return;}copyText(songLink(),'Song link copied. Anyone who opens it hears your band.');};
- const acts=el('div',{class:'jam-actions'},done,share);const bub=el('div',{class:'jam-bubble'},bubStep,bubTxt,acts);const top=el('div',{class:'jam-top'},hostBtn,bub);root.append(top);
- let tipT=0;const tip=open=>{top.classList.toggle('min',!open);clearTimeout(tipT);};hostBtn.onclick=()=>{SFX.click();tip(top.classList.contains('min'));};if(!opts.compose)tipT=setTimeout(()=>tip(false),8000);
+ const done=el('button',{class:'btn slime',type:'button'},'Use this song');done.onclick=saveSong;
+ const acts=el('div',{class:'jam-actions'},done);const bub=el('div',{class:'jam-bubble'},bubStep,bubTxt,acts);const top=el('div',{class:'jam-top'},hostBtn,bub);root.append(top);
+ let tipT=0;const tip=open=>{top.classList.toggle('min',!open);clearTimeout(tipT);};hostBtn.onclick=()=>{SFX.click();tip(top.classList.contains('min'));};if(!opts.compose)tipT=setTimeout(()=>tip(false),7000);
  function say(){const n=BAND.members.size,names=[...BAND.members].map(id=>MEMBERS.find(m=>m.id===id).name);let step,txt;
-  if(!opts.compose){step='The Music Mansion';txt=n?'Drag monsters onto the dance floor to add them, or drag them back to the carpet. Upstairs, tap a sound picture, then an organ pipe, and the ghosts will sing it.':'The dance floor is empty. Drag a monster up from the red carpet to start the band.';}
-  else if(n===0){step='Step 1 of 3 · Wake the band';txt='Psst, brave one! The village only wakes up to music. Drag a monster from the red carpet onto the dance floor.';}
-  else if(n<3){step='Step 2 of 3 · Add friends';txt=names[names.length-1]+' is warming up! Each monster plays a different part. Drag in a couple more, then slide the tempo.';}
+  if(!opts.compose){step='The Music Mansion';txt=n?'Drag monsters onto the dance floor to add them, or back down to take them out. Tap the organ for the skeleton to play. ✨ Effects up top has the spooky sounds.':'The dance floor is empty. Drag a monster up from the bottom to start the band.';}
+  else if(n===0){step='Step 1 of 3 · Wake the band';txt='Psst, brave one! The village only wakes up to music. Drag a monster from the bottom onto the dance floor.';}
+  else if(n<3){step='Step 2 of 3 · Add friends';txt=names[names.length-1]+' is warming up! Each monster plays a different part. Drag in a couple more. ♩ up top changes the speed.';}
   else{step='Step 3 of 3 · Make it yours';txt='Ooh, that sounds spooky! This song follows you through the whole village. Happy with it? Tap the green button!';}
-  bubStep.textContent=step;bubTxt.textContent=txt;if(!top.classList.contains('min')){bub.classList.remove('bp');void bub.offsetWidth;bub.classList.add('bp');}acts.hidden=n===0;}
- /* ----- geometry ----- */
- function fit(){const r=root.getBoundingClientRect();if(!r.width)return;cw=r.width;ch=r.height;dpr=Math.min(2,devicePixelRatio||1);cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);sc=Math.min(cw/HW,ch/HH);ox=(cw-HW*sc)/2;oy=(ch-HH*sc)/2;}
+  bubStep.textContent=step;bubTxt.textContent=txt;if(!top.classList.contains('min')){bub.classList.remove('bp');void bub.offsetWidth;bub.classList.add('bp');}acts.hidden=!opts.compose||n===0;}
+ /* ----- geometry: cover the screen, crop the empty ceiling first ----- */
+ function fit(){const r=root.getBoundingClientRect();if(!r.width)return;cw=r.width;ch=r.height;dpr=Math.min(2,devicePixelRatio||1);cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);
+  sc=Math.max(cw/HW,ch/HH);if(HH*sc>ch/.8)sc=ch/(HH*.8);if(HW*sc>cw/.72)sc=cw/(HW*.72);
+  ox=(cw-HW*sc)/2;oy=HH*sc>ch?ch-HH*sc:(ch-HH*sc)/2;}
  const ro=new ResizeObserver(fit);ro.observe(root);
  const toW=e=>{const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left-ox)/sc,y:(e.clientY-r.top-oy)/sc};};
- const TILE_X=i=>324+i*46,TILE_Y=318;
- function lineup(){const ids=MEMBERS.map(m=>m.id).filter(id=>!onFloor.includes(id));const n=ids.length,gap=Math.min(104,1040/Math.max(1,n));return ids.map((id,i)=>({id,x:600+(i-(n-1)/2)*gap,y:744}));}
+ const view=()=>({x0:Math.max(0,-ox/sc),x1:Math.min(HW,(cw-ox)/sc),y1:Math.min(HH,(ch-oy)/sc)});
+ const LS=.74;
+ function lineup(){const v=view(),ids=MEMBERS.map(m=>m.id).filter(id=>!onFloor.includes(id));const n=ids.length,w=v.x1-v.x0-120,gap=Math.min(118,w/Math.max(1,n));const mid=(v.x0+v.x1)/2;return ids.map((id,i)=>({id,x:mid+(i-(n-1)/2)*gap,y:v.y1-26}));}
  function floorPos(id){const i=onFloor.indexOf(id);return i<0?null:FLOOR_SLOTS[Math.min(i,FLOOR_SLOTS.length-1)];}
- function onDance(p){return p.y>470&&p.y<706&&Math.abs(p.x-600)<360;}
- /* ----- organ ----- */
- function save(){store.set('hv-pipes',seq);}
- function arm(id){armed=armed===id?null:id;}
- function fire(id,pipe){lvl=1;hands=1;AMB.fire(id);if(pipe>=0){flashPipe=pipe;flashAt=performance.now()/1000;ghosts.push({x:PIPE_X(pipe),y:PIPE_BASE-PIPE_H(pipe),vx:(Math.random()-.5)*30,vy:-(30+Math.random()*24),em:info[id][1],age:0,ph:Math.random()*6});}
-  for(let k=0;k<3;k++)notes.push({x:560+Math.random()*300,y:200,vx:(Math.random()-.5)*20,vy:-(40+Math.random()*40),age:0,ch:Math.random()<.5?'♪':'♫',col:'#8EF2FF'});}
- function tapPipe(i){if(!seq[i]){if(!armed){SFX.thud();toast('Tap a sound picture first, then a pipe.');return;}seq[i]=armed;fire(armed,i);}else if(armed&&seq[i]!==armed){seq[i]=armed;fire(armed,i);}else{seq[i]=null;SFX.click();}save();if(seq.some(Boolean)&&!playing)start();if(!seq.some(Boolean))stop();}
- function stepMs(){return 60/Math.max(60,BAND.bpm)*1000;}
- function start(){playing=true;pos=-1;next=performance.now()+40;playB.textContent='⏸';}
- function stop(){playing=false;pos=-1;playB.textContent='▶';}
- playB.onclick=()=>{SFX.get();SFX.click();if(playing)stop();else{if(!seq.some(Boolean)){toast('Put a sound in a pipe first.');return;}start();}};
- clrB.onclick=()=>{seq=seq.map(()=>null);save();stop();armed=null;SFX.click();};
- const timer=setInterval(()=>{if(!alive||!playing)return;const now=performance.now();if(now<next)return;pos=(pos+1)%NP;const id=seq[pos];if(id)fire(id,pos);next+=stepMs();if(now>next+400)next=now+stepMs();},25);
- /* ----- pointer: tiles, pipes, organist, dragging monsters ----- */
- cv.addEventListener('pointerdown',e=>{e.preventDefault();SFX.get();const p=toW(e);
-  for(const m of lineup()){if(Math.hypot(p.x-m.x,p.y-(m.y-46))<52){drag={id:m.id,x:p.x,y:p.y,sx:p.x,sy:p.y,from:'carpet'};cv.setPointerCapture(e.pointerId);return;}}
-  for(const id of onFloor){const q=floorPos(id);if(q&&Math.hypot(p.x-q[0],p.y-(q[1]-70))<70){drag={id,x:p.x,y:p.y,sx:p.x,sy:p.y,from:'floor'};cv.setPointerCapture(e.pointerId);return;}}
-  for(let i=0;i<HALL_SOUNDS.length;i++){const tx=TILE_X(i);if(Math.abs(p.x-tx)<21&&Math.abs(p.y-TILE_Y)<21){const id=HALL_SOUNDS[i][0];if(p.x>tx+8&&p.y<TILE_Y-8){AMB.set(id,!AMB.on[id]);paintMaster();SFX.click();return;}arm(id);fire(id,-1);return;}}
-  for(let i=0;i<NP;i++){if(Math.abs(p.x-PIPE_X(i))<24&&p.y>PIPE_BASE-PIPE_H(i)-20&&p.y<PIPE_BASE+10)return tapPipe(i);}
-  if(p.x>360&&p.x<520&&p.y>90&&p.y<300){hands=1;lvl=1;AMB.fire('organ');return;}
-  if(p.x>540&&p.x<900&&p.y>258&&p.y<300){hands=1;lvl=1;AMB.fire('organ');}});
+ function onDance(p){return p.y>780&&p.y<1000&&p.x>150&&p.x<1306;}
+ /* ----- organ and effects ----- */
+ function playOrgan(){hands=1;lvl=1;organAt=now();AMB.fire('organ');for(let k=0;k<5;k++)notes.push({x:640+Math.random()*180,y:360+Math.random()*60,vx:(Math.random()-.5)*30,vy:-(40+Math.random()*40),age:0,ch:Math.random()<.5?'♪':'♫',col:'#C9A6FF'});}
+ function fireFx(id){AMB.fire(id);const s=FXI[id];if(!s)return;if(id==='thunder')flash=1;
+  const v=view();floaters.push({em:s[1],x:v.x0+80+Math.random()*(v.x1-v.x0-160),y:900,vx:(Math.random()-.5)*40,vy:-(60+Math.random()*40),age:0,ph:Math.random()*6,big:id==='ghosts'||id==='cackle'});}
+ /* ----- pointer: the room only. monsters drag, the organ plays ----- */
+ cv.addEventListener('pointerdown',e=>{e.preventDefault();SFX.get();if(!tray.hidden){openTray(false);}const p=toW(e);
+  for(const m of lineup()){if(Math.abs(p.x-m.x)<52&&p.y>m.y-120&&p.y<m.y+24){drag={id:m.id,x:p.x,y:p.y,sx:p.x,sy:p.y,from:'carpet'};cv.setPointerCapture(e.pointerId);return;}}
+  for(const id of onFloor){const q=floorPos(id),s=SLOT_S(q[1]);if(Math.abs(p.x-q[0])<46*s&&p.y>q[1]-130*s&&p.y<q[1]+10){drag={id,x:p.x,y:p.y,sx:p.x,sy:p.y,from:'floor'};cv.setPointerCapture(e.pointerId);return;}}
+  if(p.x>ORGAN_BOX[0]&&p.x<ORGAN_BOX[2]&&p.y>ORGAN_BOX[1]&&p.y<ORGAN_BOX[3]+40){playOrgan();return;}
+  if(Math.hypot(p.x-727,p.y-250)<120){SFX.tone(1320,.5,'sine',.05);SFX.tone(1980,.4,'sine',.03);}});
  cv.addEventListener('pointermove',e=>{if(!drag)return;const p=toW(e);drag.x=p.x;drag.y=p.y;});
  const up=e=>{if(!drag)return;const d=drag;drag=null;const moved=Math.hypot(d.x-d.sx,d.y-d.sy)>10;const want=moved?onDance(d):d.from==='carpet';const has=onFloor.includes(d.id);
-  if(want&&!has){onFloor.push(d.id);BAND.toggle(d.id);SFX.good();bump[d.id]=performance.now()/1000;}else if(!want&&has){onFloor.splice(onFloor.indexOf(d.id),1);BAND.toggle(d.id);SFX.click();}else if(!moved&&has){onFloor.splice(onFloor.indexOf(d.id),1);BAND.toggle(d.id);SFX.click();}
+  if(want&&!has){onFloor.push(d.id);BAND.toggle(d.id);SFX.good();bump[d.id]=now();}else if(!want&&has){onFloor.splice(onFloor.indexOf(d.id),1);BAND.toggle(d.id);SFX.click();}else if(!moved&&has){onFloor.splice(onFloor.indexOf(d.id),1);BAND.toggle(d.id);SFX.click();}
   say();};
  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
- BAND.onHit=id=>{if(!alive)return;bump[id]=performance.now()/1000;hands=Math.max(hands,.4);beatGlow=1;const q=floorPos(id);if(q)for(let k=0;k<2;k++)notes.push({x:q[0]+(Math.random()-.5)*40,y:q[1]-110,vx:(Math.random()-.5)*30,vy:-(50+Math.random()*50),age:0,ch:Math.random()<.5?'♪':'♫',col:pick(['#FFC34D','#FF7A1A','#B26BFF','#4FD8FF','#8EF26A','#FF4FA3'])});};
- /* ----- the member canvases, drawn into the big canvas via mini canvases ----- */
+ BAND.onHit=id=>{if(!alive)return;bump[id]=now();hands=Math.max(hands,.35);beatGlow=1;const q=floorPos(id);if(q){const s=SLOT_S(q[1]);for(let k=0;k<2;k++)notes.push({x:q[0]+(Math.random()-.5)*40,y:q[1]-130*s,vx:(Math.random()-.5)*30,vy:-(50+Math.random()*50),age:0,ch:Math.random()<.5?'♪':'♫',col:pick(['#FFC34D','#FF7A1A','#B26BFF','#4FD8FF','#8EF26A','#FF4FA3'])});}};
  const mini={};for(const m of MEMBERS){mini[m.id]=miniCanvas(100,130);}
- function drawMember(id,px,py,s,t,alpha=1){const m=MEMBERS.find(q=>q.id===id);const c=mini[id];c.ctx.clearRect(0,0,100,130);m.draw(c.ctx,t);const b=Math.max(0,Math.min(1,1-(performance.now()/1000-(bump[id]||-9))*4)),k=s*(1+b*.12);x.save();x.globalAlpha=alpha;x.translate(px,py);x.scale(k,k);x.drawImage(c,-50,-130,100,130);x.restore();}
- /* ----- draw the room ----- */
- function draw(){if(!alive)return;const t=(performance.now()-t0)/1000,dt=Math.min(.05,t-tp);tp=t;if(!cw){raf=requestAnimationFrame(draw);return;}lvl*=.95;hands*=.97;beatGlow*=.9;
-  x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle='#120A1E';x.fillRect(0,0,cw,ch);x.setTransform(dpr*sc,0,0,dpr*sc,ox*dpr,oy*dpr);
-  const beat=BAND.playing?BAND.beat():0,X0=-ox/sc,X1=HW+ox/sc,Y0=-oy/sc,Y1=HH+oy/sc;
-  /* walls: dark paneling, stone above */
-  x.fillStyle='#1C1838';x.fillRect(X0,Y0,X1-X0,460-Y0);x.strokeStyle='rgba(0,0,0,.22)';x.lineWidth=2;for(let yy=0;yy<460;yy+=36){x.beginPath();x.moveTo(X0,yy);x.lineTo(X1,yy);x.stroke();}
-  x.fillStyle='#2E1C12';x.fillRect(X0,300,X1-X0,180);x.fillStyle='#3A2418';for(let xx=Math.floor(X0/80)*80;xx<X1;xx+=80){x.fillRect(xx+6,310,68,160);}x.fillStyle='#4A3020';x.fillRect(X0,300,X1-X0,8);x.fillRect(X0,470,X1-X0,10);
-  /* floor: wood with a big checkered dance floor */
-  const fg=x.createLinearGradient(0,480,0,HH);fg.addColorStop(0,'#2A1A10');fg.addColorStop(1,'#160C08');x.fillStyle=fg;x.fillRect(X0,480,X1-X0,Y1-480);x.strokeStyle='rgba(0,0,0,.3)';for(let yy=490;yy<Y1;yy+=22){x.beginPath();x.moveTo(X0,yy);x.lineTo(X1,yy);x.stroke();}
-  x.save();x.beginPath();x.ellipse(600,600,340,100,0,0,TAU);x.clip();for(let r=0;r<8;r++)for(let c=0;c<24;c++){x.fillStyle=(r+c)%2?'#2A1858':'#120A2E';x.fillRect(240+c*30,500+r*25,30,25);}
-  if(BAND.playing){const gg=x.createRadialGradient(600,600,20,600,600,340);gg.addColorStop(0,'rgba(178,107,255,'+(.15+beatGlow*.25)+')');gg.addColorStop(1,'rgba(178,107,255,0)');x.fillStyle=gg;x.fillRect(240,500,720,200);}x.restore();
-  x.strokeStyle='#8A6A2A';x.lineWidth=5;x.beginPath();x.ellipse(600,600,340,100,0,0,TAU);x.stroke();
-  /* red carpet along the bottom where the monsters wait */
-  x.fillStyle='#7A1A28';x.fillRect(X0,712,X1-X0,Y1-712);x.fillStyle='#C9962B';x.fillRect(X0,712,X1-X0,4);x.fillRect(X0,HH-6,X1-X0,6);x.fillStyle='rgba(255,244,230,.5)';x.font='900 12px "Baloo 2"';x.textAlign='left';x.fillText('THE GREEN ROOM · drag a monster onto the dance floor',24,728);
-  /* windows, portraits, banners, chandeliers */
-  drawWindowArch(x,110,290,120,230,t,true);drawWindowArch(x,1090,290,120,230,t,false);
-  drawPortrait(x,230,150,60,76,t,0);drawPortrait(x,970,150,60,76,t,1);drawPortrait(x,230,250,52,40,t,2);drawPortrait(x,970,250,52,40,t,0);
-  drawBanner(x,300,40,t);drawBanner(x,900,40,t);
-  for(const sx of[180,1020]){x.fillStyle='#8A6A2A';x.fillRect(sx-3,380,6,26);x.fillStyle='#EADFC8';x.fillRect(sx-4,352,8,30);const f=1+Math.sin(t*11+sx)*.14;x.fillStyle='#FFB830';x.beginPath();x.ellipse(sx,346,5*f,10*f,0,0,TAU);x.fill();}
-  /* cobwebs in the top corners */
-  x.strokeStyle='rgba(220,210,240,.3)';x.lineWidth=1;for(const[wx,d]of[[X0,1],[X1,-1]]){x.beginPath();for(let i=0;i<5;i++){x.moveTo(wx,Y0);x.lineTo(wx+d*Math.cos(i*.32)*90,Y0+Math.sin(i*.32)*90);}for(let r=18;r<90;r+=18){x.moveTo(wx+d*r,Y0);x.quadraticCurveTo(wx+d*r*.72,Y0+r*.72,wx,Y0+r);}x.stroke();}
-  /* ===== the organ loft, top center ===== */
-  x.fillStyle='#2A1A12';x.fillRect(440,30,440,270);x.fillStyle='#3A2418';x.fillRect(450,40,420,250);x.fillStyle='#1E1210';x.beginPath();x.moveTo(440,30);x.lineTo(660,-10);x.lineTo(880,30);x.closePath();x.fill();
-  for(let i=0;i<NP;i++){const px=PIPE_X(i),ph=PIPE_H(i),top=PIPE_BASE-ph,glow=(seq[i]?.25:0)+(flashPipe===i?Math.max(0,1-(t-flashAt)*1.6):0)+(playing&&pos===i?.35:0);
-   if(i<NP-1){x.fillStyle='#8A7A6A';x.fillRect(px+18,top+30,8,ph-30);x.fillStyle='#5A4A3A';x.fillRect(px+18,top+30,3,ph-30);}
-   const pg=x.createLinearGradient(px-18,0,px+18,0);pg.addColorStop(0,'#5A4A5A');pg.addColorStop(.4,'#C8B8C8');pg.addColorStop(1,'#3A2A3A');x.fillStyle=pg;x.fillRect(px-18,top,36,ph);x.fillStyle='#1A1020';x.fillRect(px-13,top+ph-34,26,12);x.fillStyle='rgba(255,200,80,'+(.1+glow*.8)+')';x.fillRect(px-13,top+ph-34,26,12);
-   if(glow>.05){const rg=x.createRadialGradient(px,top+ph-28,2,px,top+ph-28,60);rg.addColorStop(0,'rgba(255,200,80,'+glow*.5+')');rg.addColorStop(1,'rgba(255,200,80,0)');x.fillStyle=rg;x.fillRect(px-60,top+ph-88,120,120);}
-   x.fillStyle='#E9DDBF';x.beginPath();x.ellipse(px,top-9,11,12,0,0,TAU);x.fill();x.fillRect(px-7,top-2,14,7);x.fillStyle='#120A18';x.beginPath();x.ellipse(px-4,top-11,3,3.5,0,0,TAU);x.ellipse(px+4,top-11,3,3.5,0,0,TAU);x.fill();
-   if(seq[i]){x.fillStyle='rgba(20,10,30,.82)';x.beginPath();x.arc(px,top+ph*.42,17,0,TAU);x.fill();x.strokeStyle=playing&&pos===i?'#FFC34D':'rgba(255,244,230,.3)';x.lineWidth=3;x.stroke();x.font='19px serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(info[seq[i]][1],px,top+ph*.42+1);x.textBaseline='alphabetic';}
-   else{x.strokeStyle='rgba(255,244,230,'+(armed?.55+.35*Math.sin(t*6):.18)+')';x.lineWidth=2;x.setLineDash([4,4]);x.beginPath();x.arc(px,top+ph*.42,15,0,TAU);x.stroke();x.setLineDash([]);x.fillStyle='rgba(255,244,230,.5)';x.font='900 20px "Baloo 2"';x.textAlign='center';x.fillText('+',px,top+ph*.42+7);}}
-  x.fillStyle='#2A1A12';x.fillRect(500,258,370,40);x.fillStyle='#4A3020';x.fillRect(500,258,370,6);
-  for(let i=0;i<20;i++){const kx=508+i*18,dn=(hands>.05&&Math.sin(t*14+i*1.7)>.45)?3:0;x.fillStyle='#F4EEDD';x.fillRect(kx,266+dn,16,26);if(i%7!==2&&i%7!==6){x.fillStyle='#120A18';x.fillRect(kx+11,266+dn,10,15);}}
-  for(const sx of[470,880]){x.fillStyle='#8A6A2A';x.fillRect(sx-9,250,18,6);x.fillStyle='#EADFC8';x.fillRect(sx-4,222,8,30);const f=1+Math.sin(t*12+sx)*.15;x.fillStyle='#FFB830';x.beginPath();x.ellipse(sx,216,5*f,10*f,0,0,TAU);x.fill();}
-  drawOrganist(x,452,300,1.05,t,Math.max(hands,beat>0?.45:0),lvl);
-  /* balcony with the sound pictures set into its front */
-  x.fillStyle='#3A2414';x.fillRect(300,300,600,50);x.fillStyle='#4A3020';x.fillRect(296,296,608,8);x.fillStyle='#8A6A2A';x.fillRect(296,344,608,6);
-  x.fillStyle='rgba(255,244,230,.55)';x.font='900 10px "Baloo 2"';x.textAlign='center';
-  for(let i=0;i<HALL_SOUNDS.length;i++){const[id,em,lb,c1]=HALL_SOUNDS[i],tx=TILE_X(i),ar=armed===id;x.fillStyle=c1;x.beginPath();x.roundRect?x.roundRect(tx-20,TILE_Y-20,40,40,9):x.rect(tx-20,TILE_Y-20,40,40);x.fill();if(ar){x.strokeStyle='#8EF26A';x.lineWidth=3;x.stroke();}x.font='22px serif';x.textAlign='center';x.textBaseline='middle';x.fillStyle='#fff';x.fillText(em,tx,TILE_Y+1);x.textBaseline='alphabetic';
-   x.fillStyle=AMB.on[id]?'#8EF26A':'rgba(0,0,0,.5)';x.beginPath();x.arc(tx+14,TILE_Y-14,5,0,TAU);x.fill();x.strokeStyle='rgba(255,244,230,.6)';x.lineWidth=1.5;x.stroke();}
-  x.fillStyle='#F6E9D2';x.font='900 10px "Baloo 2"';x.textAlign='center';x.fillText('SOUND PICTURES · tap one, then tap an organ pipe · the green dot plays it around the village',600,356+8);
-  /* the double staircase */
-  drawStair(x,300,300,140,500,150,330,-1);drawStair(x,900,300,1060,500,1050,330,1);
-  for(const sx of[140,1060]){x.fillStyle='#8A6A2A';x.beginPath();x.arc(sx,474,10,0,TAU);x.fill();}
-  drawChandelier(x,230,70,t);drawChandelier(x,970,70,t);
-  /* doors under the balcony */
-  for(const dx of[400,800]){x.fillStyle='#1A0F0A';x.beginPath();x.moveTo(dx-34,480);x.lineTo(dx-34,400);x.arc(dx,400,34,Math.PI,0);x.lineTo(dx+34,480);x.closePath();x.fill();x.fillStyle='#FFC34D';x.beginPath();x.arc(dx+18,440,3,0,TAU);x.fill();}
-  /* spotlights when the band plays */
-  if(BAND.playing){[[255,200,90],[180,110,255],[90,220,255]].forEach((c,i)=>{const ax=300+i*300,ang=Math.sin(t*.8+i*2)*.25;x.save();x.translate(ax,-10);x.rotate(ang);const g2=x.createLinearGradient(0,0,0,700);g2.addColorStop(0,'rgba('+c+','+(.14+beatGlow*.2)+')');g2.addColorStop(1,'rgba('+c+',0)');x.fillStyle=g2;x.beginPath();x.moveTo(-6,0);x.lineTo(6,0);x.lineTo(90,700);x.lineTo(-90,700);x.closePath();x.fill();x.restore();});}
-  /* ghosts out of the pipes, notes */
-  for(let i=ghosts.length-1;i>=0;i--){const g=ghosts[i];g.age+=dt;if(g.age>3){ghosts.splice(i,1);continue;}g.x+=g.vx*dt+Math.sin(t*3+g.ph)*.6;g.y+=g.vy*dt;x.globalAlpha=Math.min(1,g.age*3)*Math.min(1,(3-g.age)/1.2);drawGhost(x,g.x,g.y,40+g.age*6,t+g.ph,1);x.font='18px serif';x.textAlign='center';x.textBaseline='middle';x.fillText(g.em,g.x,g.y+5);x.textBaseline='alphabetic';x.globalAlpha=1;}
-  /* monsters: on the floor (back rows smaller), then on the carpet */
+ function drawMember(id,px,py,s,t,alpha=1){const m=MEMBERS.find(q=>q.id===id);const c=mini[id];c.ctx.clearRect(0,0,100,130);m.draw(c.ctx,t);const b=Math.max(0,Math.min(1,1-(now()-(bump[id]||-9))*4)),k=s*(1+b*.12);x.save();x.globalAlpha=alpha;x.translate(px,py);x.scale(k,k);x.drawImage(c,-50,-130,100,130);x.restore();}
+ function glow(cx,cy,r,col,a){const g=x.createRadialGradient(cx,cy,0,cx,cy,r);g.addColorStop(0,'rgba('+col+','+a+')');g.addColorStop(1,'rgba('+col+',0)');x.fillStyle=g;x.fillRect(cx-r,cy-r,r*2,r*2);}
+ /* ----- draw ----- */
+ function draw(){if(!alive)return;const t=now(),dt=Math.min(.05,t-tp);tp=t;if(!cw){raf=requestAnimationFrame(draw);return;}
+  lvl*=Math.pow(.25,dt);beatGlow*=Math.pow(.05,dt);flash*=Math.pow(.02,dt);const organ=Math.max(0,1-(t-organAt)/10);hands=Math.max(hands*Math.pow(.3,dt),organ>0?.8:0);
+  x.setTransform(dpr,0,0,dpr,0,0);x.fillStyle='#150B2A';x.fillRect(0,0,cw,ch);x.setTransform(dpr*sc,0,0,dpr*sc,ox*dpr,oy*dpr);
+  const ready=HALL_IMG.complete&&HALL_IMG.naturalWidth>0;
+  if(ready)x.drawImage(HALL_IMG,0,0,HW,HH);else{const g=x.createLinearGradient(0,0,0,HH);g.addColorStop(0,'#1A0F33');g.addColorStop(.7,'#3A2A6A');g.addColorStop(1,'#4A3A7A');x.fillStyle=g;x.fillRect(0,0,HW,HH);}
+  const beat=BAND.playing?BAND.beat():0;
+  x.save();x.globalCompositeOperation='lighter';
+  /* candles flicker, the moon breathes */
+  for(const[cx,cy,r]of CANDLES){const f=.6+.25*Math.sin(t*9+cx*.13)+.15*Math.sin(t*23+cy*.07);glow(cx,cy,r*2.4,'255,190,100',.16*f);}
+  glow(72,340,120,'200,190,255',.10+.05*Math.sin(t*.7));
+  /* organ pipes light up while it plays */
+  const pg=organ*(.45+.3*Math.sin(t*7))+lvl*.3+beatGlow*.12;
+  if(pg>.02)PIPE_SECT.forEach(([a,b,c,d],i)=>{const k=pg*(.75+.25*Math.sin(t*5+i*2));const g=x.createLinearGradient(0,d,0,c);g.addColorStop(0,'rgba(255,170,90,'+.5*k+')');g.addColorStop(.6,'rgba(190,120,255,'+.45*k+')');g.addColorStop(1,'rgba(190,120,255,0)');x.fillStyle=g;x.fillRect(a,c,b-a,d-c);glow((a+b)/2,d-20,90,'210,150,255',.25*k);});
+  /* lightning through the windows */
+  if(flash>.02)for(const[a,b,c,d]of HALL_WINDOWS){x.fillStyle='rgba(220,225,255,'+flash*.55+')';x.fillRect(a,b,c-a,d-b);}
+  /* dance floor glow and spotlights when the band plays */
+  if(BAND.playing){x.save();x.translate(728,892);x.scale(1,.2);glow(0,0,600,'178,107,255',.12+beatGlow*.18);x.restore();
+   [[255,200,90],[180,110,255],[90,220,255]].forEach((c,i)=>{const ax=360+i*368,ang=Math.sin(t*.8+i*2)*.28;x.save();x.translate(ax,120);x.rotate(ang);const g=x.createLinearGradient(0,0,0,800);g.addColorStop(0,'rgba('+c+',.16)');g.addColorStop(1,'rgba('+c+',0)');x.fillStyle=g;x.beginPath();x.moveTo(-14,0);x.lineTo(14,0);x.lineTo(150,800);x.lineTo(-150,800);x.closePath();x.fill();x.restore();});}
+  x.restore();
+  if(flash>.3){x.fillStyle='rgba(230,235,255,'+(flash-.3)*.25+')';x.fillRect(0,0,HW,HH);}
+  /* the organist sits at the console, behind the balcony rail */
+  drawOrganist(x,ORG_X,ORG_Y,ORG_S,t,Math.max(hands,beat>0?.4:0),lvl);
+  if(ready){const[a,b,w,h]=RAIL_CLIP;x.drawImage(HALL_IMG,a,b,w,h,a,b,w,h);}
+  /* effects float up from the floor */
+  for(let i=floaters.length-1;i>=0;i--){const f=floaters[i];f.age+=dt;if(f.age>3.2){floaters.splice(i,1);continue;}f.x+=f.vx*dt+Math.sin(t*3+f.ph)*.8;f.y+=f.vy*dt;x.globalAlpha=Math.min(1,f.age*4,(3.2-f.age)*1.2);x.font=(f.big?'72px':'54px')+' system-ui,"Apple Color Emoji","Segoe UI Emoji"';x.textAlign='center';x.fillText(f.em,f.x,f.y);x.globalAlpha=1;}
+  /* monsters on the floor, back rows first */
   const order=[...onFloor].sort((a,b)=>floorPos(a)[1]-floorPos(b)[1]);
-  for(const id of order){if(drag&&drag.id===id)continue;const q=floorPos(id);const s=q[1]<600?1.1:1.3;x.fillStyle='rgba(0,0,0,.3)';x.beginPath();x.ellipse(q[0],q[1],40*s,9*s,0,0,TAU);x.fill();drawMember(id,q[0],q[1],s,t);x.fillStyle='#FFC34D';x.font='900 11px "Baloo 2"';x.textAlign='center';x.fillText(MEMBERS.find(m=>m.id===id).name.toUpperCase(),q[0],q[1]-130*s-6);}
-  if(!onFloor.length){x.fillStyle='rgba(255,244,230,.5)';x.font='400 26px Creepster, Impact';x.textAlign='center';x.fillText('DRAG A MONSTER HERE',600,606);}
-  for(const m of lineup()){if(drag&&drag.id===m.id)continue;drawMember(m.id,m.x,m.y,.78,t);const mm=MEMBERS.find(q=>q.id===m.id);x.fillStyle='#FFF4E6';x.font='900 11px "Baloo 2"';x.textAlign='center';x.fillText(mm.name,m.x,m.y+11);x.fillStyle='rgba(255,244,230,.6)';x.font='800 8px "Baloo 2"';x.fillText(mm.role.toUpperCase(),m.x,m.y+20);}
-  if(drag){const ok=onDance(drag);x.strokeStyle=ok?'rgba(142,242,106,.9)':'rgba(255,244,230,.35)';x.lineWidth=5;x.setLineDash([12,10]);x.beginPath();x.ellipse(600,600,340,100,0,0,TAU);x.stroke();x.setLineDash([]);drawMember(drag.id,drag.x,drag.y+50,1.2,t,.92);}
-  for(let i=notes.length-1;i>=0;i--){const n=notes[i];n.age+=dt;if(n.age>1.8){notes.splice(i,1);continue;}n.x+=n.vx*dt;n.y+=n.vy*dt;x.globalAlpha=1-n.age/1.8;x.fillStyle=n.col;x.font='800 22px sans-serif';x.textAlign='center';x.fillText(n.ch,n.x,n.y);x.globalAlpha=1;}
+  for(const id of order){if(drag&&drag.id===id)continue;const q=floorPos(id),s=SLOT_S(q[1]);x.fillStyle='rgba(0,0,0,.32)';x.beginPath();x.ellipse(q[0],q[1],40*s,9*s,0,0,TAU);x.fill();drawMember(id,q[0],q[1],s,t);x.fillStyle='#FFC34D';x.font='900 13px "Baloo 2"';x.textAlign='center';x.fillText(MEMBERS.find(m=>m.id===id).name.toUpperCase(),q[0],q[1]-130*s-6);}
+  if(!onFloor.length){x.fillStyle='rgba(255,244,230,'+(.45+.15*Math.sin(t*3))+')';x.font='400 38px Creepster, Impact';x.textAlign='center';x.fillText('DRAG A MONSTER HERE',728,900);}
+  /* waiting monsters along the bottom edge */
+  const lu=lineup();if(lu.length){const v=view();const g=x.createLinearGradient(0,v.y1-150,0,v.y1);g.addColorStop(0,'rgba(12,6,26,0)');g.addColorStop(1,'rgba(12,6,26,.55)');x.fillStyle=g;x.fillRect(v.x0,v.y1-150,v.x1-v.x0,150);}
+  for(const m of lu){if(drag&&drag.id===m.id)continue;drawMember(m.id,m.x,m.y,LS,t);const mm=MEMBERS.find(q=>q.id===m.id);x.fillStyle='#FFF4E6';x.font='900 13px "Baloo 2"';x.textAlign='center';x.fillText(mm.name,m.x,m.y+14);}
+  if(drag){const ok=onDance(drag);x.strokeStyle=ok?'rgba(142,242,106,.9)':'rgba(255,244,230,.4)';x.lineWidth=5;x.setLineDash([14,12]);x.beginPath();x.ellipse(728,892,570,120,0,0,TAU);x.stroke();x.setLineDash([]);drawMember(drag.id,drag.x,drag.y+60,1.25,t,.92);}
+  for(let i=notes.length-1;i>=0;i--){const n=notes[i];n.age+=dt;if(n.age>1.8){notes.splice(i,1);continue;}n.x+=n.vx*dt;n.y+=n.vy*dt;x.globalAlpha=1-n.age/1.8;x.fillStyle=n.col;x.font='900 30px serif';x.textAlign='center';x.fillText(n.ch,n.x,n.y);x.globalAlpha=1;}
   {const hx=hostCv.ctx;hx.clearRect(0,0,84,95);hx.save();hx.scale(.7,.7);drawHost(hx,'jack',t);hx.restore();}
   raf=requestAnimationFrame(draw);}
- raf=requestAnimationFrame(draw);say();paintM();paintMaster();const mt=setInterval(()=>{paintM();},600);
- return()=>{alive=false;clearInterval(timer);clearInterval(mt);clearTimeout(tipT);cancelAnimationFrame(raf);ro.disconnect();BAND.onHit=null;};};
+ if(!HALL_IMG.complete)HALL_IMG.addEventListener('load',()=>{},{once:true});
+ raf=requestAnimationFrame(draw);say();paintM();paintFx();paintTempo();const mt=setInterval(()=>{paintM();paintFx();},800);
+ return()=>{alive=false;clearInterval(mt);clearTimeout(tipT);cancelAnimationFrame(raf);ro.disconnect();BAND.onHit=null;bar.remove();};};
 SCENES.jam={title:'Music Mansion',keepSong:true,mount:(s,o={})=>HALL_MOUNT(s,o)};
 SCENES.board={title:'Music Mansion',keepSong:true,mount:(s,o={})=>HALL_MOUNT(s,o)};
 
