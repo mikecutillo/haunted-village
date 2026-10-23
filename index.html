@@ -129,17 +129,24 @@ button{font-family:inherit}
 .peekbtn.go{flex:1;height:68px;font-size:26px;background:var(--slime);box-shadow:0 8px 24px rgba(142,230,91,.35);animation:peekpulse 1.6s ease-in-out infinite}
 .peekbtn.go.lock{background:#4B3A78;color:#fff;animation:none;box-shadow:none}
 @keyframes peekpulse{50%{transform:scale(1.04)}}
-/* drawer */
-.drawer{position:fixed;inset:0;z-index:35;display:flex}
-.drawer .veil{flex:1;background:rgba(5,2,15,.6)}
-.drawer .panel{width:min(360px,88vw);background:#0E0726;border-right:1px solid var(--line);padding:calc(env(safe-area-inset-top,0px) + 16px) 18px 24px;overflow:auto;display:flex;flex-direction:column;gap:6px}
-.drawer h2{font-family:var(--display);font-weight:400;font-size:34px;margin:0 0 6px;color:var(--pumpkin);letter-spacing:.03em}
-.drawer .sec{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--candle);margin-top:12px}
-.drawer button.item{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;background:none;border:0;border-radius:12px;padding:10px 12px;color:var(--ink);font-weight:800;font-size:16px;cursor:pointer}
-.drawer button.item:hover{background:rgba(255,244,230,.08)}
-.drawer button.item span.s{font-size:12px;font-weight:800;color:var(--muted)}
-.drawer button.item.locked{color:var(--muted)}
-
+/* menu: full-screen picture tiles */
+.menu{position:fixed;inset:0;z-index:29;overflow:auto;-webkit-overflow-scrolling:touch;background:#2B0F5E;background-image:radial-gradient(circle at 12% 8%,rgba(255,122,26,.22),transparent 36%),radial-gradient(circle at 88% 92%,rgba(142,230,91,.14),transparent 40%),radial-gradient(circle at 80% 12%,rgba(178,107,255,.25),transparent 34%);padding:calc(env(safe-area-inset-top,0px) + 72px) 0 calc(40px + env(safe-area-inset-bottom,0px));animation:menuin .22s ease-out}
+@keyframes menuin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(184px,1fr));gap:14px;max-width:1240px;margin:0 auto}
+.tile{position:relative;aspect-ratio:4/3;border-radius:24px;overflow:hidden;border:0;padding:0;cursor:pointer;background:var(--c,#4B2A96);box-shadow:0 12px 26px rgba(0,0,0,.4);transition:transform .2s;font-family:inherit;color:#fff;text-align:center}
+.tile:hover,.tile:focus-visible{transform:translateY(-6px) scale(1.03)}
+.tile canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
+.tile::after{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(180deg,transparent 42%,rgba(10,3,25,.88) 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.12);pointer-events:none}
+.tile b{position:absolute;left:8px;right:8px;bottom:10px;z-index:2;font-family:var(--display);font-weight:400;font-size:clamp(21px,2.3vw,28px);line-height:1.05;letter-spacing:.04em;text-shadow:0 2px 6px rgba(0,0,0,.85),0 0 16px rgba(0,0,0,.5)}
+.tile .lk{position:absolute;top:10px;left:10px;z-index:2;background:rgba(10,3,25,.78);border-radius:999px;padding:4px 10px;font-size:12px;font-weight:900;letter-spacing:.04em}
+.tile.locked canvas{filter:saturate(.3) brightness(.65)}
+.tile.new .lk{background:var(--candle);color:#2A1548}
+.tile.wide{grid-column:span 2;aspect-ratio:8/3}
+.menu-foot{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:26px auto 0;max-width:1240px}
+.menu-foot button{background:rgba(255,244,230,.1);border:1px solid rgba(255,244,230,.2);color:var(--ink);border-radius:999px;padding:9px 16px;font-weight:800;font-size:14px;cursor:pointer}
+.menu-foot button:hover{background:rgba(255,244,230,.18)}
+#menuBtn .mx{display:none}body.menu-open #menuBtn .mi{display:none}body.menu-open #menuBtn .mx{display:block}
+@media (max-width:560px){.menu-grid{grid-template-columns:repeat(2,1fr);gap:10px}.tile{border-radius:18px}.tile b{font-size:19px}.tile .lk{font-size:11px;padding:3px 8px}}
 /* boot: the village shows through, like Google's landing */
 body.booting{overflow:hidden}
 body.booting #hots{display:none}
@@ -443,7 +450,7 @@ footer{position:relative;z-index:2;padding-block:28px 40px;color:var(--muted);fo
 <div id="spacer"></div>
 
 <div class="top gutter">
-  <button class="rbtn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 7H20M4 12H20M4 17H20" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg></button>
+  <button class="rbtn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path class="mi" d="M4 7H20M4 12H20M4 17H20" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path class="mx" d="M6 6L18 18M18 6L6 18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg></button>
   <button class="rbtn" id="soundBtn" aria-label="Sound on or off"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9V15H8L13 19V5L8 9Z" fill="#fff"/><path id="sndWave" d="M16 9Q19 12 16 15" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/><path id="sndSlash" d="M5 5L19 19" stroke="#FFC34D" stroke-width="2.6" stroke-linecap="round" opacity="0"/></svg></button>
   <span class="pill gh" id="ghostPill" title="Ghosts found"><svg viewBox="30 50 100 116" width="12" height="14" aria-hidden="true"><path d="M40 160Q36 120 40 96C44 52 116 52 120 96Q124 120 120 160Q110 150 100 160Q90 150 80 160Q70 150 60 160Q50 150 40 160Z" fill="currentColor"/></svg><span id="ghostCount">0 / 13</span></span>
   <span class="pill" id="songPill" hidden>♪ <span id="songName">Your song</span></span>
@@ -472,9 +479,8 @@ footer{position:relative;z-index:2;padding-block:28px 40px;color:var(--muted);fo
   <div id="stage" class="stage"></div>
 </div>
 
-<div id="drawer" class="drawer" hidden>
-  <div class="panel gutter" id="drawerPanel"></div>
-  <div class="veil" id="drawerVeil"></div>
+<div id="menu" class="menu" hidden aria-label="Village menu">
+  <div class="gutter"><div class="menu-grid" id="menuGrid"></div><div class="menu-foot" id="menuFoot"></div></div>
 </div>
 
 <footer class="gutter">Haunted Village is an original Halloween experience. Everything here is drawn and played in your browser.</footer>
@@ -840,7 +846,7 @@ function openScene(id,opts={}){const s=SCENES[id];if(!s)return;const g=GAMES.fin
  closeScene(true);current=id;$('#modalTitle').textContent=s.title;modal.hidden=false;document.body.style.overflow='hidden';stage.innerHTML='';BAND.setVolume(s.keepSong?.55:.22);SFX.door();unmount=s.mount(stage,opts)||null;try{history.replaceState(null,'',location.pathname+'#'+id);}catch(e){}}
 function closeScene(silent){if(unmount){try{unmount();}catch(e){}unmount=null;}stage.innerHTML='';modal.hidden=true;document.body.style.overflow='';current=null;BAND.setVolume(.55);if(window.__vidMuted){window.__vidMuted=false;SFX.setMuted(false);}if(!silent){try{history.replaceState(null,'',location.pathname);}catch(e){}}}
 $('#modalBack').onclick=()=>closeScene();$('#modalClose').onclick=()=>closeScene();
-addEventListener('keydown',e=>{if(e.key==='Escape'){if(current)closeScene();else if(!$('#drawer').hidden)closeDrawer();}});
+addEventListener('keydown',e=>{if(e.key==='Escape'){if(current)closeScene();else if(!$('#menu').hidden)closeMenu();}});
 const keys={};addEventListener('keydown',e=>{keys[e.key]=true;if(current&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();});addEventListener('keyup',e=>{keys[e.key]=false;});
 let toastEl=null,toastT=0;
 function toast(msg){if(!toastEl){toastEl=el('div',{style:'position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:60;background:#F6E9D2;color:#2A1548;font-weight:800;padding:10px 18px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.5);max-width:90vw;text-align:center;transition:opacity .3s'});document.body.append(toastEl);}toastEl.textContent=msg;toastEl.style.opacity='1';clearTimeout(toastT);toastT=setTimeout(()=>{toastEl.style.opacity='0';},2600);}
@@ -1008,22 +1014,8 @@ const world={c:$('#world'),ctx:null,scale:1,camX:0,camY:0,vw:0,vh:0,dpr:1,hover:
  }
 };
 
-/* ---------- drawer ---------- */
-function openDrawer(){const p=$('#drawerPanel');p.innerHTML='';p.append(el('h2',{},'Haunted Village'));
- p.append(el('div',{class:'sec'},'Your song'));
- p.append(el('button',{class:'item',type:'button',onclick:()=>{closeDrawer();openScene('jam',{force:true});}},'Music Hall: band, organ, sounds',el('span',{class:'s'},BAND.label())));
- p.append(el('button',{class:'item',type:'button',onclick:()=>{closeDrawer();openScene('board');}},'🎹  Organ and spooky sounds',el('span',{class:'s'},'Music Hall')));
- p.append(el('div',{class:'sec'},'Games'));
- for(const g of GAMES){if(g.id==='jam')continue;const st=unlockState(g);p.append(el('button',{class:'item'+(st==='locked'?' locked':''),type:'button',onclick:()=>{closeDrawer();openScene(g.id);}},g.title,el('span',{class:'s'},st==='locked'?'Oct '+g.day:st==='new'?'New':'')));}
- p.append(el('div',{class:'sec'},'Explore'));
- [['findpip','Find Pip'],['quiz','Village Quiz'],['dressup','Dress Up Mabel'],['shorts','Spooky Shorts and videos'],['cast','Meet the Neighbors'],['world','Halloween Around the World'],['coloring','Coloring Pages'],['print','Print Shop (3D printing)'],['tracker','Witch Tracker']].forEach(([id,n])=>p.append(el('button',{class:'item',type:'button',onclick:()=>{closeDrawer();openScene(id);}},n)));
- p.append(el('div',{class:'sec'},'Ghost hunt'));
- p.append(el('button',{class:'item',type:'button',onclick:()=>{world.resetGhosts();toast('Ghost hunt reset.');closeDrawer();}},'Reset the ghost hunt',el('span',{class:'s'},Object.keys(world.found).length+' / 13')));
- p.append(el('div',{class:'sec'},'Calendar'));
- const ua=store.get('hv-unlock-all',false);p.append(el('button',{class:'item',type:'button',onclick:()=>{store.set('hv-unlock-all',!ua);world.refreshHots();closeDrawer();toast(!ua?'Every door is open.':'Doors open on their dates again.');}},ua?'Lock games to their dates':'Open every door now (preview)'));
- $('#drawer').hidden=false;}
-function closeDrawer(){$('#drawer').hidden=true;}
-$('#menuBtn').onclick=()=>{SFX.click();openDrawer();};$('#drawerVeil').onclick=closeDrawer;
+/* ---------- menu button ---------- */
+$('#menuBtn').onclick=()=>{SFX.click();if($('#menu').hidden)openMenu();else closeMenu();};
 $('#soundBtn').onclick=()=>{SFX.setMuted(!SFX.muted);if(!SFX.muted)SFX.click();};
 
 /* ---------- classic Halloween monsters: drawings ---------- */
@@ -1166,7 +1158,12 @@ const VOICE={on:false,
  stop(){try{speechSynthesis.cancel();}catch(e){}},
  set(v){this.on=false;this.stop();}};
 
-function pvBg(x,W,H,ground=true){skyGrad(x,W,H,'#1B0D44','#35186E','#5A2A9A');drawMoon(x,W-125,52,26);if(ground){x.fillStyle='#1B0F3A';x.fillRect(0,H*.8,W,H);}}
+let pvTint=null,pvSeed=0;
+function hexMix(h,k){const n=parseInt(h.slice(1),16);const r=(n>>16)&255,g=(n>>8)&255,b=n&255;return 'rgb('+Math.round(r*k)+','+Math.round(g*k)+','+Math.round(b*k)+')';}
+function pvBg(x,W,H,ground=true){const u=((pvSeed*9301+49297)%233280)/233280;
+ if(pvTint)skyGrad(x,W,H,hexMix(pvTint,.28),hexMix(pvTint,.55),hexMix(pvTint,.95));else skyGrad(x,W,H,'#1B0D44','#35186E','#5A2A9A');
+ if(u<.75)drawMoon(x,W*(.18+u*.72),40+u*40,22+u*12);
+ if(ground){x.fillStyle=pvTint?hexMix(pvTint,.3):'#1B0F3A';x.fillRect(0,H*.8,W,H);}}
 const PREV={
  candy(x,t,W,H){pvBg(x,W,H);for(let i=0;i<7;i++){const yy=((t*95+i*70)%330)-30,xx=50+i*62+Math.sin(i*2)*14;drawCandy(x,xx,yy,i%4,t*3+i);}drawPumpkin(x,240+Math.sin(t*1.4)*150,222,38,.8);},
  flight(x,t,W,H){pvBg(x,W,H,false);for(let i=0;i<3;i++){const bx=W+40-((t*130+i*210)%720);drawBat(x,bx,70+i*60+Math.sin(t*3+i)*14,26,t*14+i,'#120826');}for(let i=0;i<4;i++){const cx=W-((t*110+i*130)%560);drawCandy(x,cx,150+Math.sin(i*3)*50,i%4,t*3);}drawWitch(x,150,140+Math.sin(t*2)*26,52,.1+Math.sin(t*2)*.1,t);},
@@ -1204,6 +1201,28 @@ function openPeek(id){const g=GAMES.find(x=>x.id===id),h=HOT.find(x=>x.id===id),
  const c=cv.ctx,t0=performance.now();const fn=PREV[id];const anim=()=>{const t=(performance.now()-t0)/1000;c.clearRect(0,0,480,270);try{if(fn)fn(c,t,480,270);}catch(e){}c.save();c.translate(372,148);c.scale(.82,.82);drawHost(c,'jack',t);c.restore();peekRaf=requestAnimationFrame(anim);};anim();
  play.focus();}
 addEventListener('keydown',e=>{if(e.key==='Escape'&&peekEl)closePeek();});
+
+/* ---------- full-screen picture menu ---------- */
+const TILES=[['shorts','#6E2A8E',1],['tracker','#1B3A8A',1],['jam','#5B2DB0'],['candy','#C2304A'],['flight','#2E6E8E'],['dash','#4A4A6A'],['match','#3A2A7A'],['maker','#3C8A3A'],['carve','#D06A1A'],['spell','#2E8A6A'],['findpip','#2F5A3A'],['quiz','#8A5A1A'],['dressup','#8A2E6A'],['coloring','#C98A2A'],['cast','#6A3A9A'],['world','#1F6A9A'],['print','#3B5BA8']];
+function titleOf(id){const g=GAMES.find(x=>x.id===id),h=HOT.find(x=>x.id===id);return (h&&h.title)||(g&&g.title)||id;}
+function tilePic(id,w,h,tint){const cv=miniCanvas(w,h);const c=cv.ctx,fn=PREV[id];let raf=0;const seed=[...id].reduce((a,ch)=>a+ch.charCodeAt(0),0);
+ const draw=t=>{c.save();c.clearRect(0,0,w,h);c.scale(w/480,h/270);pvTint=tint||null;pvSeed=seed;try{if(fn)fn(c,t,480,270);}catch(e){}pvTint=null;pvSeed=0;c.restore();};
+ cv.play=()=>{if(raf)return;const t0=performance.now()-1700;const tick=()=>{draw((performance.now()-t0)/1000);raf=requestAnimationFrame(tick);};tick();};
+ cv.stop=()=>{if(raf)cancelAnimationFrame(raf);raf=0;draw(1.7);};
+ draw(1.7);return cv;}
+let menuTiles=[];
+function openMenu(){const m=$('#menu'),grid=$('#menuGrid'),foot=$('#menuFoot');closePeek();grid.innerHTML='';foot.innerHTML='';menuTiles=[];
+ for(const[id,col,wide]of TILES){const g=GAMES.find(x=>x.id===id),st=g?unlockState(g):'open';const cv=tilePic(id,wide?480:300,wide?270:225,col);
+  const b=el('button',{class:'tile'+(wide?' wide':'')+(st==='locked'?' locked':st==='new'?' new':''),type:'button',style:'--c:'+col,'aria-label':titleOf(id)+(st==='locked'?', opens October '+g.day:'')},cv,el('b',{},titleOf(id)));
+  if(st==='locked')b.append(el('span',{class:'lk'},'🔒 Oct '+g.day));else if(st==='new')b.append(el('span',{class:'lk'},'New today'));
+  b.addEventListener('pointerenter',()=>cv.play());b.addEventListener('pointerleave',()=>cv.stop());
+  b.onclick=()=>{if(st==='locked'){SFX.thud();toast('Opens October '+g.day+'. Come back then.');return;}closeMenu();openScene(id);};
+  grid.append(b);menuTiles.push(cv);}
+ const n=Object.keys(world.found).length;
+ foot.append(el('button',{type:'button',onclick:()=>{world.resetGhosts();toast('Ghost hunt reset.');closeMenu();}},'👻 Ghosts found: '+n+' / 13 · reset'));
+ const ua=store.get('hv-unlock-all',false);foot.append(el('button',{type:'button',onclick:()=>{store.set('hv-unlock-all',!ua);world.refreshHots();closeMenu();toast(!ua?'Every door is open.':'Doors open on their dates again.');}},ua?'🔒 Lock games to their dates':'🔓 Open every door now (preview)'));
+ m.hidden=false;m.scrollTop=0;document.body.classList.add('menu-open');document.body.style.overflow='hidden';}
+function closeMenu(){const m=$('#menu');if(m.hidden)return;menuTiles.forEach(c=>c.stop());m.hidden=true;document.body.classList.remove('menu-open');if(!current)document.body.style.overflow='';}
 
 /* ---------- game harness ---------- */
 function makeGame(parent,W,H,opts={}){
@@ -1982,6 +2001,8 @@ $('#menuBtn').addEventListener('click',()=>enter(true));
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
+
+
 
 
 
