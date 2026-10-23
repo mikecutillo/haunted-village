@@ -614,6 +614,7 @@ const AMB_DEFS=[
  ['ghosts','Ghostly whispers','Ooooooo',1],
  ['musicbox','Haunted music box','A tiny waltz from nowhere',1],
  ['thunder','Thunder and lightning','Distant storm, with a flash',1],
+ ['organ','Haunted pipe organ','Bach\'s Toccata, from the old church',1],
  ['horse','Galloping hooves','Something is riding by',1],
  ['cackle','Witch cackles','Mabel is having fun',0],
  ['crickets','Crickets','Chirp chirp chirp',0]
@@ -641,11 +642,22 @@ const AMB={on:Object.assign(Object.fromEntries(AMB_DEFS.map(d=>[d[0],!!d[3]])),s
  musicbox(){const t=SFX.now(),B=this.bus(),N=[659,784,880,784,659,587,523,587,659,784,659,523,494,523,587,494];N.forEach((f,i)=>{const w=t+i*.34;SFX.tone(f,.7,'sine',.045,w,null,B);SFX.tone(f*2,.4,'sine',.014,w,null,B);});},
  thunder(){const c=SFX.ctx;const fl=document.getElementById('flash');if(fl){fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go');}
   const t=SFX.now()+.5+Math.random()*.7,B=this.bus();SFX.noise(2.8,.3,t,'lowpass',160,B);SFX.noise(1.4,.16,t+.7,'lowpass',240,B);SFX.tone(62,2.2,'sine',.16,t,34,B);},
+ organ(){const c=SFX.ctx,B=this.bus();if(!c||!B)return;
+  if(this.revBus!==B){const len=Math.floor(c.sampleRate*2.8),b=c.createBuffer(2,len,c.sampleRate);for(let ch=0;ch<2;ch++){const d=b.getChannelData(ch);for(let i=0;i<len;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.6);}
+   const cv=c.createConvolver();cv.buffer=b;const wet=c.createGain();wet.gain.value=.7;cv.connect(wet).connect(B);this.rev=cv;this.revBus=B;}
+  const P=[[1,1],[2,.55],[3,.3],[4,.38],[6,.16],[8,.1]];
+  const note=(f,t,d,v)=>{const g=c.createGain();g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+.03);g.gain.setValueAtTime(v,t+Math.max(.04,d-.12));g.gain.linearRampToValueAtTime(.0001,t+d+.35);g.connect(B);g.connect(this.rev);
+   P.forEach(([m,w])=>{const o=c.createOscillator(),pg=c.createGain();o.type='sine';o.frequency.value=f*m*(1+(Math.random()-.5)*.003);pg.gain.value=w*.22;o.connect(pg).connect(g);o.start(t);o.stop(t+d+.4);});};
+  const both=(f,t,d,v)=>{note(f,t,d,v);note(f/2,t,d,v*.8);};
+  const t=SFX.now()+.1,A=880,G=784,F=699.5,E=659.3,D=587.3,Cs=554.4;
+  both(A,t,.12,.1);both(G,t+.12,.12,.1);both(A,t+.24,1.5,.12);
+  let w=t+2.1;[[G,.26],[F,.26],[E,.26],[D,.26],[Cs,.26]].forEach(([f,d])=>{both(f,w,d,.1);w+=d;});both(D,w,1.9,.12);
+  const k=w+2.3;[73.4,146.8,220,293.7,349.2,440,587.3].forEach((f,i)=>note(f,k,2.6,i<2?.13:.07));},
  horse(){const t=SFX.now(),B=this.bus();for(let r=0;r<4;r++)[0,.14,.26,.5].forEach(w=>{const v=.2-r*.04;SFX.noise(.08,v,t+r*.7+w,'lowpass',420,B);SFX.tone(90,.1,'sine',.14-r*.025,t+r*.7+w,50,B);});},
  cackle(){const t=SFX.now(),B=this.bus();[700,620,540,460,520,430].forEach((f,i)=>SFX.tone(f,.12,'square',.04,t+i*.11,f*.8,B));},
  crickets(){const t=SFX.now(),B=this.bus();for(let i=0;i<3;i++)SFX.tone(4200+Math.random()*300,.03,'sine',.012,t+i*.07,null,B);},
  /* ----- scheduler ----- */
- gaps:{crows:[14,30],owl:[22,45],wolf:[50,95],bell:[80,130],creak:[18,40],chains:[28,55],ghosts:[32,64],musicbox:[70,120],thunder:[55,105],horse:[85,150],cackle:[60,100]},
+ gaps:{crows:[14,30],owl:[22,45],wolf:[50,95],bell:[80,130],creak:[18,40],chains:[28,55],ghosts:[32,64],musicbox:[70,120],thunder:[55,105],horse:[85,150],organ:[120,200],cackle:[60,100]},
  tick(){if(SFX.muted||!SFX.amb)return;const now=performance.now()/1000;
   if(this.on.crickets&&Math.random()<.5)this.crickets();
   if(now-this.last<4)return;
@@ -1751,6 +1763,7 @@ $('#playBtn').onclick=()=>{SFX.get();SFX.click();const boot=$('#boot');boot.clas
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
+
 
 
 
