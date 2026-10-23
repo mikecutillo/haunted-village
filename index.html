@@ -1353,7 +1353,9 @@ SCENES.shorts={title:'Moonmere Theater',mount(stage){
   for(const s of SHORTS){const cv=miniCanvas(320,180);s.thumb(cv.ctx,0);grid.append(poster(cv,s.title,'Made in the village',"Our short",()=>{stage.innerHTML='';unmount=shortScene(stage,s.scenes);$('#modalTitle').textContent=s.title;}));}
   for(const[id,title,ch,len,src]of VIDEOS){const IA=src==='ia';const img=el('img',{src:IA?'https://archive.org/services/img/'+id:'https://i.ytimg.com/vi/'+id+'/hqdefault.jpg',alt:'',loading:'lazy'});img.onerror=()=>{img.remove();};
    const watch=IA?'https://archive.org/details/'+id:'https://www.youtube.com/watch?v='+id;
-   grid.append(poster(img,title,ch+' · '+len,IA?'Classic':null,SELF_HOSTED?()=>screening(id,title,ch,src):null,SELF_HOSTED?null:watch));}
+   const fb=miniCanvas(320,180);{const x=fb.ctx;skyGrad(x,320,180,'#2A1152','#3B1A62','#5A2A78');drawMoon(x,250,40,22);x.fillStyle='#14082C';x.fillRect(0,150,320,30);drawPumpkin(x,90,142,28,.7);drawGhost(x,190,100,52,0);}
+   const art=el('div',{style:'position:absolute;inset:0'},fb,img);
+   grid.append(poster(art,title,ch+' · '+len,IA?'Classic':null,SELF_HOSTED?()=>screening(id,title,ch,src):null,SELF_HOSTED?null:watch));}
   body.append(grid);}
  lobby();
  return()=>{unmute();};}};
@@ -1596,6 +1598,7 @@ $('#playBtn').onclick=()=>{SFX.get();SFX.click();const boot=$('#boot');boot.clas
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
+
 
 
 
