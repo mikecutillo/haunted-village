@@ -3781,11 +3781,22 @@ mount(stage){
    const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t;})();
   const ballMesh=new THREE.Group();const bm=new THREE.Mesh(new THREE.SphereGeometry(BR,28,20),new THREE.MeshStandardMaterial({color:0xff7f1f,map:ribTex,roughness:.45,metalness:.05}));bm.scale.set(1,.92,1);bm.castShadow=true;bm.receiveShadow=true;const stem=new THREE.Mesh(new THREE.CylinderGeometry(.012,.018,.05,6),M(0x4e8a2a));stem.position.y=BR*.95;ballMesh.add(bm,stem);scene.add(ballMesh);
   const ballLight=new THREE.PointLight(0xff8c2a,3,2.5,2);scene.add(ballLight);
-  const pinPts=[];for(let i=0;i<=16;i++){const t=i/16,y=t*.38;const r=t<.08?.05*(t/.08):t<.55?.052-Math.pow((t-.3)/.25,2)*.012:t<.72?.028+Math.pow((t-.72)/.17,2)*.012:t<.9?.028+Math.sin((t-.72)/.18*Math.PI)*.022:.028*(1-(t-.9)/.1);pinPts.push(new THREE.Vector2(Math.max(.004,r),y));}
-  const pinGeo=new THREE.LatheGeometry(pinPts,18);
-  const pinMat=new THREE.MeshStandardMaterial({color:0xf4f0ff,roughness:.5});const bandMat=new THREE.MeshStandardMaterial({color:0x8a5cf5,roughness:.5});
-  for(const p of pins){const g=new THREE.Group();const m=new THREE.Mesh(pinGeo,pinMat);m.castShadow=true;m.receiveShadow=true;const band=new THREE.Mesh(new THREE.CylinderGeometry(.033,.033,.03,14),bandMat);band.position.y=.255;const band2=band.clone();band2.position.y=.215;
-   const e=new THREE.Mesh(new THREE.SphereGeometry(.009,6,6),new THREE.MeshBasicMaterial({color:0x2a1548}));e.position.set(-.014,.335,.04);const e2=e.clone();e2.position.x=.014;g.add(m,band,band2,e,e2);scene.add(g);p.mesh=g;}
+  // ghost pins: flat base, soft sheet body, smooth round dome head (no point on top)
+  const pinPts=[new THREE.Vector2(0,0)];{const HC=.322,HR=.058;for(let i=0;i<=12;i++){const t=i/12;pinPts.push(new THREE.Vector2(.049+.017*Math.pow(1-t,2.5)+.009*t*t*t,t*HC));}
+   for(let i=1;i<=14;i++){const a=(i/14)*Math.PI/2;pinPts.push(new THREE.Vector2(i===14?0:HR*Math.cos(a),HC+HR*Math.sin(a)));}}
+  const pinGeo=new THREE.LatheGeometry(pinPts,24);
+  const pinMat=new THREE.MeshStandardMaterial({color:0xf4f0ff,roughness:.45,emissive:0x2a1f48,emissiveIntensity:.25});
+  const faceMat=new THREE.MeshBasicMaterial({color:0x2a1548}),cheekMat=new THREE.MeshBasicMaterial({color:0xff9ec8});
+  const hemGeo=new THREE.SphereGeometry(.021,10,8,0,Math.PI*2,0,Math.PI/2),armGeo=new THREE.SphereGeometry(.018,10,8),eyeGeo=new THREE.SphereGeometry(.011,10,8);
+  for(const p of pins){const g=new THREE.Group();const m=new THREE.Mesh(pinGeo,pinMat);m.castShadow=true;m.receiveShadow=true;g.add(m);
+   // scalloped sheet hem around the base
+   for(let k=0;k<8;k++){const a=k/8*Math.PI*2;const h=new THREE.Mesh(hemGeo,pinMat);h.scale.set(1,.6,1);h.position.set(Math.cos(a)*.058,0,Math.sin(a)*.058);h.castShadow=true;g.add(h);}
+   // little arm nubs
+   for(const sx of[-1,1]){const a=new THREE.Mesh(armGeo,pinMat);a.scale.set(1.3,.8,.9);a.position.set(sx*.05,.2,.004);a.rotation.z=sx*.5;a.castShadow=true;g.add(a);}
+   // big oval eyes, round "oo" mouth, pink cheeks
+   for(const sx of[-1,1]){const e=new THREE.Mesh(eyeGeo,faceMat);e.scale.set(.8,1.4,.5);e.position.set(sx*.02,.33,.052);g.add(e);const c=new THREE.Mesh(eyeGeo,cheekMat);c.scale.set(.9,.5,.3);c.position.set(sx*.034,.306,.047);g.add(c);}
+   const mo=new THREE.Mesh(eyeGeo,faceMat);mo.scale.set(.7,.9,.4);mo.position.set(0,.3,.056);g.add(mo);
+   scene.add(g);p.mesh=g;}
   const aimLine=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(0,0,-6)]),new THREE.LineDashedMaterial({color:0xffb347,dashSize:.2,gapSize:.15,transparent:true,opacity:.6}));aimLine.computeLineDistances();scene.add(aimLine);
   // cheering section: Pip and Rattles on a bench
   const crowd=new THREE.Group();crowd.position.set(-(LW+GUT_W+1.6),-.3,1.2);scene.add(crowd);
