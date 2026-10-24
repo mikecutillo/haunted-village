@@ -934,23 +934,23 @@ function drawHost(ctx,id,t){const c=ctx;switch(id){case 'jack':drawPumpkin(c,60,
 
 /* ---------- ambience mixer: every background sound can be switched on or off ---------- */
 const AMB_DEFS=[
- ['wind','Spooky whistling wind','Always blowing through the village',1],
- ['crows','Crows cawing','A few black birds on the roofs',1],
- ['owl','Owl hoots','Pip says it is not a ghost, it is an owl',1],
- ['wolf','Wolf howls','Far away, up by the moon',1],
- ['bell','Midnight church bell','Three slow gongs',1],
- ['creak','Creaky doors and floors','The manor is old',1],
- ['chains','Rattling chains','Somebody is up in the attic',1],
- ['ghosts','Ghostly whispers','Ooooooo',1],
- ['musicbox','Haunted music box','A tiny waltz from nowhere',1],
- ['thunder','Thunder and lightning','Distant storm, with a flash',1],
- ['organ','Haunted pipe organ','Bach\'s Toccata, from the old church',1],
- ['horse','Galloping hooves','Something is riding by',1],
- ['cackle','Witch cackles','Mabel is having fun',1],
+ ['wind','Spooky whistling wind','Always blowing through the village',0],
+ ['crows','Crows cawing','A few black birds on the roofs',0],
+ ['owl','Owl hoots','Pip says it is not a ghost, it is an owl',0],
+ ['wolf','Wolf howls','Far away, up by the moon',0],
+ ['bell','Midnight church bell','Three slow gongs',0],
+ ['creak','Creaky doors and floors','The manor is old',0],
+ ['chains','Rattling chains','Somebody is up in the attic',0],
+ ['ghosts','Ghostly whispers','Ooooooo',0],
+ ['musicbox','Haunted music box','A tiny waltz from nowhere',0],
+ ['thunder','Thunder and lightning','Distant storm, with a flash',0],
+ ['organ','Haunted pipe organ','Bach\'s Toccata, from the old church',0],
+ ['horse','Galloping hooves','Something is riding by',0],
+ ['cackle','Witch cackles','Mabel is having fun',0],
  ['crickets','Crickets','Chirp chirp chirp',0]
 ];
-const AMB={on:Object.assign(Object.fromEntries(AMB_DEFS.map(d=>[d[0],!!d[3]])),store.get('hv-amb2',{})),next:{},last:0,
- save(){store.set('hv-amb2',this.on);},
+const AMB={on:Object.assign(Object.fromEntries(AMB_DEFS.map(d=>[d[0],!!d[3]])),store.get('hv-amb3',{})),next:{},last:0,
+ save(){store.set('hv-amb3',this.on);},
  set(id,v){this.on[id]=v;this.save();if(id==='wind')this.windLevel();},
  allOff(){AMB_DEFS.forEach(d=>this.on[d[0]]=false);this.save();this.windLevel();},
  allOn(){AMB_DEFS.forEach(d=>this.on[d[0]]=true);this.save();this.windLevel();},
@@ -997,7 +997,7 @@ const AMB={on:Object.assign(Object.fromEntries(AMB_DEFS.map(d=>[d[0],!!d[3]])),s
 };
 
 /* ---------- real recordings (CC0, Freesound). Falls back to the synth if a file is missing ---------- */
-const SMP={mode:(store.get('hv-smode','real')==='synth'?'synth':'real'),setMode(m){this.mode=m;store.set('hv-smode',m);},files:{crows:['crow',.9],bell:['bell',.8],creak:['creak',.8],thunder:['thunder',1],chains:['chains',.7],wolf:['wolf',.8],cackle:['cackle',.8],owl:['owl',.9],organ:['organ',.7]},buf:{},syn:{},loading:false,
+const SMP={mode:(store.get('hv-smode2','synth')==='real'?'real':'synth'),setMode(m){this.mode=m;store.set('hv-smode2',m);},files:{crows:['crow',.9],bell:['bell',.8],creak:['creak',.8],thunder:['thunder',1],chains:['chains',.7],wolf:['wolf',.8],cackle:['cackle',.8],owl:['owl',.9],organ:['organ',.7]},buf:{},syn:{},loading:false,
  load(){if(this.loading)return;const c=SFX.ctx;if(!c)return;this.loading=true;
   Object.entries(this.files).forEach(([id,[f]])=>{fetch('audio/'+f+'.mp3').then(r=>{if(!r.ok)throw 0;return r.arrayBuffer();}).then(ab=>new Promise((ok,no)=>c.decodeAudioData(ab,ok,no))).then(b=>{this.buf[id]=b;}).catch(()=>{});});},
  play(id,delay){const c=SFX.ctx,B=AMB.bus(),b=this.buf[id];if(!c||!B||!b)return false;const s=c.createBufferSource(),g=c.createGain();s.buffer=b;s.playbackRate.value=id==='organ'?1:.96+Math.random()*.08;g.gain.value=this.files[id][1];s.connect(g).connect(B);s.start(c.currentTime+(delay||0));return true;}};
@@ -1070,7 +1070,8 @@ const SCENES={};
 const modal=$('#modal'),stage=$('#stage');let unmount=null,current=null;
 function openScene(id,opts={}){const s=SCENES[id];if(!s)return;const g=GAMES.find(x=>x.id===id);if(g&&unlockState(g)==='locked'&&!opts.force){SFX.thud();toast('Opens October '+g.day+'. Come back then.');return;}
  closeScene(true);current=id;$('#modalTitle').textContent=s.title;modal.hidden=false;document.body.style.overflow='hidden';stage.innerHTML='';BAND.setVolume(s.keepSong?.55:.22);SFX.door();unmount=s.mount(stage,opts)||null;try{history.replaceState(null,'',location.pathname+'#'+id);}catch(e){}}
-function closeScene(silent){if(unmount){try{unmount();}catch(e){}unmount=null;}stage.innerHTML='';modal.hidden=true;document.body.style.overflow='';current=null;BAND.setVolume(.55);if(window.__vidMuted){window.__vidMuted=false;SFX.setMuted(false);}if(!silent){try{history.replaceState(null,'',location.pathname);}catch(e){}}}
+let sceneGuard=null;
+function closeScene(silent){if(!silent&&sceneGuard&&sceneGuard()===false)return;sceneGuard=null;if(unmount){try{unmount();}catch(e){}unmount=null;}stage.innerHTML='';modal.hidden=true;document.body.style.overflow='';current=null;BAND.setVolume(.55);if(window.__vidMuted){window.__vidMuted=false;SFX.setMuted(false);}if(!silent){try{history.replaceState(null,'',location.pathname);}catch(e){}}}
 $('#modalBack').onclick=()=>closeScene();$('#modalClose').onclick=()=>closeScene();
 addEventListener('keydown',e=>{if(e.key==='Escape'){if(current)closeScene();else if(!$('#menu').hidden)closeMenu();}});
 const keys={};addEventListener('keydown',e=>{keys[e.key]=true;if(current&&['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key))e.preventDefault();});addEventListener('keyup',e=>{keys[e.key]=false;});
@@ -5925,6 +5926,8 @@ const HALL_MOUNT=function(stage,opts={}){
  const tempoB=el('button',{class:'hb-btn hb-tempo',type:'button',title:'Band speed','aria-label':'Band speed'},'');
  const paintTempo=()=>{tempoB.textContent='♩'+BAND.bpm;};
  tempoB.onclick=()=>{const i=TEMPOS.findIndex(v=>v>=BAND.bpm+1);BAND.bpm=TEMPOS[i<0?0:i];paintTempo();SFX.click();};
+ if(opts.compose)sceneGuard=()=>{if(!BAND.members.size){SFX.thud();toast('👇 Drag a monster onto the dance floor first!');nudge=now();return false;}sceneGuard=null;saveSong();return false;};
+ let nudge=-9;
  const saveB=el('button',{class:'hb-btn hb-go',type:'button',title:opts.compose?'Use this song':'Save song','aria-label':opts.compose?'Use this song':'Save song'},opts.compose?'✔':'💾');
  const shareB=el('button',{class:'hb-btn hb-share',type:'button',title:'Copy song link','aria-label':'Copy song link'},'🔗');
  const saveSong=()=>{if(!BAND.members.size){toast('Add at least one monster first.');return;}BAND.save();$('#songName').textContent=BAND.label();SFX.good();if(opts.onDone)opts.onDone();else{toast('Song saved. It plays through the whole village.');closeScene();}};
@@ -6018,14 +6021,14 @@ const HALL_MOUNT=function(stage,opts={}){
   if(!onFloor.length){x.fillStyle='rgba(255,244,230,'+(.45+.15*Math.sin(t*3))+')';x.font='400 38px Creepster, Impact';x.textAlign='center';x.fillText('DRAG A MONSTER HERE',728,900);}
   /* waiting monsters along the bottom edge */
   const lu=lineup();if(lu.length){const v=view();const g=x.createLinearGradient(0,v.y1-150,0,v.y1);g.addColorStop(0,'rgba(12,6,26,0)');g.addColorStop(1,'rgba(12,6,26,.55)');x.fillStyle=g;x.fillRect(v.x0,v.y1-150,v.x1-v.x0,150);}
-  for(const m of lu){if(drag&&drag.id===m.id)continue;drawMember(m.id,m.x,m.y,LS,t);const mm=MEMBERS.find(q=>q.id===m.id);x.fillStyle='#FFF4E6';x.font='900 13px "Baloo 2"';x.textAlign='center';x.fillText(mm.name,m.x,m.y+14);}
+  const nk=Math.max(0,1-(t-nudge)/1.2);for(const m of lu){if(drag&&drag.id===m.id)continue;drawMember(m.id,m.x,m.y-Math.abs(Math.sin((t-nudge)*12))*30*nk,LS,t);const mm=MEMBERS.find(q=>q.id===m.id);x.fillStyle='#FFF4E6';x.font='900 13px "Baloo 2"';x.textAlign='center';x.fillText(mm.name,m.x,m.y+14);}
   if(drag){const ok=onDance(drag);x.strokeStyle=ok?'rgba(142,242,106,.9)':'rgba(255,244,230,.4)';x.lineWidth=5;x.setLineDash([14,12]);x.beginPath();x.ellipse(728,892,570,120,0,0,TAU);x.stroke();x.setLineDash([]);drawMember(drag.id,drag.x,drag.y+60,1.25,t,.92);}
   for(let i=notes.length-1;i>=0;i--){const n=notes[i];n.age+=dt;if(n.age>1.8){notes.splice(i,1);continue;}n.x+=n.vx*dt;n.y+=n.vy*dt;x.globalAlpha=1-n.age/1.8;x.fillStyle=n.col;x.font='900 30px serif';x.textAlign='center';x.fillText(n.ch,n.x,n.y);x.globalAlpha=1;}
   {const hx=hostCv.ctx;hx.clearRect(0,0,84,95);hx.save();hx.scale(.7,.7);drawHost(hx,'jack',t);hx.restore();}
   raf=requestAnimationFrame(draw);}
  if(!HALL_IMG.complete)HALL_IMG.addEventListener('load',()=>{},{once:true});
- raf=requestAnimationFrame(draw);say();paintM();paintFx();paintTempo();const mt=setInterval(()=>{paintM();paintFx();},800);
- return()=>{alive=false;clearInterval(mt);clearTimeout(tipT);cancelAnimationFrame(raf);ro.disconnect();BAND.onHit=null;bar.remove();};};
+ raf=requestAnimationFrame(draw);say();paintM();paintFx();paintTempo();const mt=setInterval(()=>{paintM();paintFx();if(opts.compose){[$('#modalClose'),$('#modalBack')].forEach(b=>b&&(b.style.opacity=BAND.members.size?'':'.3'));}},400);
+ return()=>{alive=false;if(opts.compose){sceneGuard=null;[$('#modalClose'),$('#modalBack')].forEach(b=>b&&(b.style.opacity=''));}clearInterval(mt);clearTimeout(tipT);cancelAnimationFrame(raf);ro.disconnect();BAND.onHit=null;bar.remove();};};
 SCENES.jam={title:'Music Mansion',keepSong:true,mount:(s,o={})=>HALL_MOUNT(s,o)};
 SCENES.board={title:'Music Mansion',keepSong:true,mount:(s,o={})=>HALL_MOUNT(s,o)};
 
@@ -6146,9 +6149,10 @@ document.body.classList.add('booting');world.init();LIFE.init();['pointerdown','
 const hashSong=songFromHash();if(hashSong)store.set('hv-song',hashSong);
 const song=hashSong||store.get('hv-song',null);
 function enter(fromMenu){const boot=$('#boot');if(boot.hidden)return;SFX.get();SFX.click();boot.classList.add('out');document.body.classList.remove('booting');setTimeout(()=>{boot.hidden=true;},650);SFX.ambient(true);
- if(song&&song.m&&song.m.length){BAND.load(song);BAND.start();$('#songName').textContent=BAND.label();if(!fromMenu)toast('Your song is playing. Open the menu to change it.');}
- else{BAND.load({m:[],bpm:108});if(!fromMenu)openScene('jam',{force:true,compose:true,onDone:()=>{closeScene();toast('Your song is playing through the whole village.');}});}
- const h=location.hash.slice(1);if(!fromMenu&&h&&SCENES[h]&&h!=='jam')setTimeout(()=>openScene(h),700);}
+ const has=song&&song.m&&song.m.length;BAND.load(has?song:{m:[],bpm:108});if(has){BAND.start();$('#songName').textContent=BAND.label();}
+ const h=location.hash.slice(1),after=()=>{if(h&&SCENES[h]&&h!=='jam'&&h!=='board')setTimeout(()=>openScene(h),500);};
+ if(fromMenu){if(!has)openScene('jam',{force:true,compose:true,onDone:()=>{closeScene();toast('Your song is playing through the whole village.');}});return;}
+ openScene('jam',{force:true,compose:true,onDone:()=>{closeScene();toast('Your song is playing through the whole village.');after();}});}
 $('#playBtn').onclick=()=>enter(false);
 $('#menuBtn').addEventListener('click',()=>enter(true));
 if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
