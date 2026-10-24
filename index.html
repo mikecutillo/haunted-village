@@ -142,6 +142,9 @@ body.booting .zoom{display:none}
 .prt-stat{min-height:24px;font-weight:800;font-size:15px;color:var(--candle)}
 .prt-b.prt-big{min-width:132px;padding:12px 14px 10px}.prt-b.prt-big .e{font-size:42px}
 .prt-grp{display:flex;flex-direction:column;gap:14px}.prt-grp[hidden]{display:none}
+.prt-tagin{font-size:28px!important;letter-spacing:6px;text-transform:uppercase;text-align:center;max-width:180px}.prt-tagin.ok{border-color:var(--slime)}
+.prt-taghelp{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}.prt-taghelp span{background:var(--card);border-radius:12px;padding:5px 10px;font-weight:800;font-size:14px}
+.prt-tagnote{display:block;color:var(--muted);font-weight:700;font-size:14px}
 .prt-help{background:var(--card);border:2px solid var(--line);border-radius:18px;padding:12px 16px;transition:box-shadow .3s,border-color .3s}
 .prt-help.flash{border-color:var(--slime);box-shadow:0 0 0 4px rgba(111,209,74,.35)}
 .prt-help b{display:block;font-size:16px;color:var(--candle);font-weight:900;margin-bottom:6px}
@@ -7799,7 +7802,7 @@ function b64(u8){let s='';const C=0x8000;for(let i=0;i<u8.length;i+=C)s+=String.
 
 
 SCENES.print={title:'Print Shop',mount(stage){
- const o={kind:'flat',shape:'pumpkin',face:0,size:1,puffy:true,cut:true,key:true,char:'ghost',sface:0,hat:0,base:1,pop:false,nick:store.get('hv-nick','')};
+ const o={kind:'flat',shape:'pumpkin',face:0,size:1,puffy:true,cut:true,key:true,char:'ghost',sface:0,hat:0,base:1,pop:false,nick:store.get('hv-tag','')};
  let P=null,raf=0,alive=true,ang=.6,drag=false,lastX=0;
  const root=el('div',{class:'prt'});const left=el('div',{class:'prt-view'}),right=el('div',{class:'prt-ctl'});root.append(left,right);stage.append(root);
  const cv=miniCanvas(520,440);cv.className='prt-cv';left.append(cv);
@@ -7830,8 +7833,12 @@ SCENES.print={title:'Print Shop',mount(stage){
  /* size: the emoji itself grows so non-readers can see it */
  const sizeB=PSIZES.map(([n],i)=>{const b=mk('',n,()=>{o.size=i;},()=>o.size===i);b.querySelector('.e').style.fontSize=[18,28,40][i]+'px';return b;});
  right.append(sec('How big?',row(...sizeB)));
- const nick=el('input',{class:'prt-in',type:'text',maxlength:'14',placeholder:'Your nickname',value:o.nick,'aria-label':'Your nickname'});nick.oninput=()=>{o.nick=nick.value.replace(/[^\w \-]/g,'').slice(0,14);store.set('hv-nick',o.nick);};
- right.append(el('div',{class:'prt-sec'},el('b',{},'Your nickname'),nick,el('small',{style:'color:var(--muted)'},'Use a nickname. Not your real name. It goes in the file name.')));
+ const tagOK=v=>/^[A-Z]{2}(K|[1-9])$/.test(v);
+ const nick=el('input',{class:'prt-in prt-tagin',type:'text',maxlength:'3',placeholder:'MC3',value:o.nick,autocapitalize:'characters',autocomplete:'off',autocorrect:'off',spellcheck:'false','aria-label':'Your initials and grade'});
+ nick.oninput=()=>{o.nick=nick.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);nick.value=o.nick;store.set('hv-tag',o.nick);nick.classList.toggle('ok',tagOK(o.nick));};nick.classList.toggle('ok',tagOK(o.nick));
+ right.append(el('div',{class:'prt-sec'},el('b',{},'Your initials and grade'),nick,
+  el('div',{class:'prt-taghelp'},el('span',{},'1️⃣ First initial'),el('span',{},'2️⃣ Last initial'),el('span',{},'3️⃣ Your grade')),
+  el('small',{class:'prt-tagnote'},'Example: Mike Cutillo in grade 3 types ',el('strong',{},'MC3'),'. Kindergarten uses K, like ',el('strong',{},'MCK'),'.')));
  const stat=el('div',{class:'prt-stat',role:'status'});
  const save=el('button',{class:'btn slime prt-send',type:'button'},'💾  Save my model');
  const help=el('div',{class:'prt-help'},el('b',{},'📲 How to save on an iPad'),
@@ -7869,9 +7876,9 @@ SCENES.print={title:'Print Shop',mount(stage){
   c.fillStyle='#FFC34D';c.font='900 17px "Baloo 2",sans-serif';c.textAlign='left';c.fillText('📏 '+PSIZES[o.size][0]+': '+(st?(mm/10)+' cm tall':'about '+(mm/10)+' cm'),24,35);}
  let last=performance.now();function loop(){if(!alive)return;const now=performance.now();if(!drag)ang+=(now-last)/1000*.7;last=now;draw();raf=requestAnimationFrame(loop);}
  cv.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;cv.setPointerCapture(e.pointerId);});cv.addEventListener('pointermove',e=>{if(drag){ang+=(e.clientX-lastX)*.012;lastX=e.clientX;}});cv.addEventListener('pointerup',()=>{drag=false;});cv.addEventListener('pointercancel',()=>{drag=false;});
- const fname=()=>('halloween-'+(o.kind==='stand'?'buddy-'+o.char:o.shape)+'-'+PSIZES[o.size][0]+'-'+(o.nick||'print')).replace(/[^\w\-]+/g,'-').toLowerCase()+'.stl';
+ const fname=()=>(o.nick+'-halloween-'+(o.kind==='stand'?'buddy-'+o.char:o.shape)+'-'+PSIZES[o.size][0].toLowerCase()).replace(/[^\w\-]+/g,'-')+'.stl';
  const finalStl=()=>stlBytes(o.kind==='stand'?buildStand(standOpts(),.016):buildSolid(flatOpts(),88));
- save.onclick=async()=>{SFX.click();const bytes=finalStl(),file=new File([bytes],fname(),{type:'model/stl'});const done=()=>{stat.textContent='Saved! Now send it the way your class shares work. 📤';help.classList.add('flash');setTimeout(()=>help.classList.remove('flash'),2400);SFX.good();};
+ save.onclick=async()=>{SFX.click();if(!tagOK(o.nick)){stat.textContent='Type your initials and grade first, like MC3.';nick.focus();SFX.bad();return;}const bytes=finalStl(),file=new File([bytes],fname(),{type:'model/stl'});const done=()=>{stat.textContent='Saved! Now send it the way your class shares work. 📤';help.classList.add('flash');setTimeout(()=>help.classList.remove('flash'),2400);SFX.good();};
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'My Halloween print'});done();return;}}catch(e){if(e&&e.name==='AbortError')return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'model/stl'}));a.download=fname();document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);done();};
  rebuild();paint();loop();
