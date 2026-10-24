@@ -1188,11 +1188,35 @@ const ROAD=(()=>{const Pt=ROAD_PTS,pts=[];const cr=(p0,p1,p2,p3,u)=>{const u2=u*
 const NH_COUNT=28;
 function nhList(){if(nhList.c)return nhList.c;const L=[];MAINS.forEach((my,k)=>{for(const[hx,o]of[[-300,1],[1100,-1]]){L.push({x:hx,y:my-70,s:1.1});L.push({x:hx+o*40,y:my+150,s:.95});}});L.forEach((h,i)=>{h.id='house'+(i%NH_COUNT);h.i=i;});return nhList.c=L;}
 function nhBadge(ctx,x,y,s,i,t){const id='house'+(i%NH_COUNT);if(!SCENES[id])return;const done=store.get('hv-best-'+id,null)!=null;const by=y-(96+64)*s+Math.sin(t*2.2+i)*4;ctx.save();ctx.translate(x,by);const g=ctx.createRadialGradient(0,0,6,0,0,40);g.addColorStop(0,'rgba(255,200,77,.5)');g.addColorStop(1,'rgba(255,200,77,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,40+Math.sin(t*3+i)*3,0,Math.PI*2);ctx.fill();ctx.fillStyle=done?'#8EE65B':'#FFC34D';ctx.strokeStyle='#2A1548';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,22,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.strokeStyle='#2A1548';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.arc(-3,-3,9,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(4,4);ctx.lineTo(12,12);ctx.stroke();if(done){ctx.fillStyle='#2A1548';ctx.font='900 14px "Baloo 2"';ctx.textAlign='center';ctx.fillText('✓',-3,2);}ctx.restore();}
+/* ==== COBBLE PATH START ==== */
+/* rustic cobblestone lanes instead of a painted street: no lane lines, no crosswalks.
+   stones are built once (seeded), grouped by y band, and drawn as a few batched paths. */
+const COB={tones:['#B3A28E','#A39280','#C2B29C','#998674'],shade:'#7C6A5E',mortar:'#4A3B52',edge:'#6E5D58',edgeShade:'#54444A',moss:['#3A8A5A','#2C6E4A'],bands:null,
+ build(){const r=seeded(4242),S=[],E=[],M=[];
+  const add=(x,y,rx,ry,rot,arr)=>arr.push([x,y,rx,ry,rot,Math.floor(r()*4)]);
+  const lane=(px,py,nx,ny,tx,ty,half,row)=>{const off=row%2?12:0;for(let o=-half+13+off;o<=half-12;o+=25){const j=(r()-.5)*4;add(px+nx*(o+j)+tx*(r()-.5)*4,py+ny*(o+j)+ty*(r()-.5)*4,11.5+r()*2.5,9+r()*2,Math.atan2(ty,tx)+(r()-.5)*.35,S);}
+   for(const sd of[-1,1]){add(px+nx*sd*(half+3),py+ny*sd*(half+3),13+r()*2,9+r()*1.5,Math.atan2(ty,tx)+(r()-.5)*.2,E);if(r()<.14)M.push([px+nx*sd*(half+13+r()*4),py+ny*sd*(half+13+r()*4),3.5+r()*3,Math.floor(r()*2)]);}};
+  /* the winding path */
+  let row=0;for(let d=0;d<=ROAD.total;d+=23){const p=ROAD.at(d),L=Math.hypot(p.dx,p.dy)||1,tx=p.dx/L,ty=p.dy/L;lane(p.x,p.y,-ty,tx,tx,ty,48,row++);}
+  /* keep the winding path from double-stacking where it crosses a street */
+  const inX=(x,y)=>MAINS.some(my=>Math.abs(y-my)<56&&Math.abs(x-ROAD.xAt(my))>=44);for(let i=S.length-1;i>=0;i--)if(inX(S[i][0],S[i][1]))S.splice(i,1);for(let i=E.length-1;i>=0;i--)if(MAINS.some(my=>Math.abs(E[i][1]-my)<60))E.splice(i,1);for(let i=M.length-1;i>=0;i--)if(MAINS.some(my=>Math.abs(M[i][1]-my)<62))M.splice(i,1);
+  /* the cross streets */
+  for(const my of MAINS){row=0;const cx=ROAD.xAt(my);for(let x=WX0-900;x<=WX1+900;x+=23){row++;if(Math.abs(x-cx)<44){if(r()<.5)r();continue;}lane(x,my,0,1,1,0,50,row);}}
+  const B={};const put=(arr,k)=>arr.forEach(st=>{const b=Math.floor(st[1]/400);(B[b]||(B[b]={s:[],e:[],m:[]}))[k].push(st);});put(S,'s');put(E,'e');put(M,'m');this.bands=B;},
+ draw(ctx,top,bot){if(!this.bands)this.build();const b0=Math.floor((top-80)/400),b1=Math.floor((bot+80)/400);
+  const fill=(list,col,dx,dy,grow,pick)=>{ctx.fillStyle=col;ctx.beginPath();for(const b of list){for(const st of b){if(pick!=null&&st[5]!==pick)continue;ctx.moveTo(st[0]+dx+st[2]+grow,st[1]+dy);ctx.ellipse(st[0]+dx,st[1]+dy,st[2]+grow,st[3]+grow,st[4],0,TAU);}}ctx.fill();};
+  const S=[],E=[],M=[];for(let b=b0;b<=b1;b++){const k=this.bands[b];if(k){S.push(k.s);E.push(k.e);M.push(k.m);}}
+  fill(E,this.edgeShade,2.5,2.5,0);for(let i=0;i<4;i++)fill(E,this.edge,0,0,0,i);
+  fill(S,this.shade,2,2,0);for(let i=0;i<4;i++)fill(S,this.tones[i],0,0,0,i);
+  /* moss tufts along the edges */
+  for(let i=0;i<2;i++){ctx.fillStyle=this.moss[i];ctx.beginPath();for(const b of M)for(const m of b){if(m[3]!==i)continue;const[x,y,r]=m;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,TAU);ctx.moveTo(x+r*1.4+r*.6,y+2);ctx.arc(x+r*1.4,y+2,r*.6,0,TAU);}ctx.fill();}}};
 function drawRoad(ctx,top,bot,t,x0,x1){const pts=ROAD.pts;ctx.lineCap='round';ctx.lineJoin='round';
- const seg=(w,col,dash)=>{ctx.strokeStyle=col;ctx.lineWidth=w;if(dash)ctx.setLineDash(dash);ctx.beginPath();let on=false;for(let i=0;i<pts.length;i++){const p=pts[i];if(p[1]<top-200||p[1]>bot+200){on=false;continue;}if(!on){ctx.moveTo(p[0],p[1]);on=true;}else ctx.lineTo(p[0],p[1]);}ctx.stroke();if(dash)ctx.setLineDash([]);};
- for(const my of MAINS){if(my+90<top||my-90>bot)continue;ctx.fillStyle='#D8C3A0';ctx.fillRect(x0,my-66,x1-x0,132);ctx.fillStyle='#3E3458';ctx.fillRect(x0,my-52,x1-x0,104);ctx.strokeStyle='rgba(246,233,210,.55)';ctx.lineWidth=4;ctx.setLineDash([30,30]);ctx.beginPath();ctx.moveTo(x0,my);ctx.lineTo(x1,my);ctx.stroke();ctx.setLineDash([]);}
- seg(124,'#D8C3A0');seg(100,'#3E3458');seg(4,'rgba(246,233,210,.55)',[26,26]);
- for(const my of MAINS){if(my+90<top||my-90>bot)continue;const cx=ROAD.xAt(my);ctx.fillStyle='rgba(246,233,210,.75)';for(let i=-4;i<=4;i++){ctx.fillRect(cx-6+i*14,my-56,8,22);ctx.fillRect(cx-6+i*14,my+34,8,22);}}}
+ const seg=(w,col)=>{ctx.strokeStyle=col;ctx.lineWidth=w;ctx.beginPath();let on=false;for(let i=0;i<pts.length;i++){const p=pts[i];if(p[1]<top-200||p[1]>bot+200){on=false;continue;}if(!on){ctx.moveTo(p[0],p[1]);on=true;}else ctx.lineTo(p[0],p[1]);}ctx.stroke();};
+ /* packed dirt verge, then dark mortar bed under the stones */
+ for(const my of MAINS){if(my+90<top||my-90>bot)continue;ctx.fillStyle='#3A2C3E';ctx.fillRect(x0,my-66,x1-x0,132);ctx.fillStyle=COB.mortar;ctx.fillRect(x0,my-56,x1-x0,112);}
+ seg(126,'#3A2C3E');seg(108,COB.mortar);
+ COB.draw(ctx,top,bot);}
+/* ==== COBBLE PATH END ==== */
 
 /* hotspots: the hit area covers the building and the card that hangs under it */
 /* signs: 'hang' swings from a bracket on the building wall, out toward the street; 'post' stands on a wooden post in the yard */
