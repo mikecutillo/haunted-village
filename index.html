@@ -5673,11 +5673,16 @@ function wVoice(){if(!('speechSynthesis' in window))return null;const vs=speechS
   if(/compact|eloquence|Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Fred|Junior|Ralph|Kathy|Grandma|Grandpa|Rocko|Shelley|Flo|Reed|Sandy/i.test(n))s-=80;return s;};
  return vs.sort((a,b)=>score(b)-score(a))[0];}
 if('speechSynthesis' in window){try{speechSynthesis.getVoices();speechSynthesis.addEventListener('voiceschanged',()=>speechSynthesis.getVoices());}catch(e){}}
-const WTALK={cb:null,
- stop(){this.tok=null;try{speechSynthesis.cancel();}catch(e){}const c=this.cb;this.cb=null;if(c)c(-1);},
- play(lines,cb){this.stop();if(!('speechSynthesis' in window))return;this.cb=cb;const v=wVoice();const me={};this.tok=me;
-  lines.forEach((ln,i)=>{const u=new SpeechSynthesisUtterance(wSpeak(ln));u.rate=v&&/premium|enhanced|natural|neural|siri/i.test(v.name)?.95:.88;u.pitch=1;u.volume=1;u.lang=v?v.lang:'en-US';if(v)u.voice=v;
-   u.onstart=()=>{if(this.tok===me&&this.cb)this.cb(i);};u.onend=()=>{if(this.tok===me&&i===lines.length-1){const c=this.cb;this.cb=null;if(c)c(-1);}};try{speechSynthesis.speak(u);}catch(e){}});}};
+const WTALK={cb:null,au:null,
+ stop(){this.tok=null;if(this.au){try{this.au.pause();}catch(e){}}try{speechSynthesis.cancel();}catch(e){}const c=this.cb;this.cb=null;if(c)c(-1);},
+ play(lines,cb,srcs){this.stop();this.cb=cb;const me={};this.tok=me;if(!this.au){this.au=new Audio();this.au.preload='auto';}const au=this.au;
+  const done=()=>{if(this.tok!==me)return;const c=this.cb;this.cb=null;this.tok=null;if(c)c(-1);};
+  const speak=i=>{if(!('speechSynthesis' in window)){next(i+1);return;}const v=wVoice();const u=new SpeechSynthesisUtterance(wSpeak(lines[i]));u.rate=v&&/premium|enhanced|natural|neural|siri/i.test(v.name)?.95:.88;u.pitch=1;u.lang=v?v.lang:'en-US';if(v)u.voice=v;u.onend=()=>{if(this.tok===me)next(i+1);};try{speechSynthesis.speak(u);}catch(e){next(i+1);}};
+  const next=i=>{if(this.tok!==me)return;if(i>=lines.length){done();return;}if(this.cb)this.cb(i);const src=srcs&&srcs[i];
+   if(!src){speak(i);return;}let fell=false;const fall=()=>{if(fell||this.tok!==me)return;fell=true;au.onended=au.onerror=null;speak(i);};
+   au.onended=()=>{if(this.tok===me)setTimeout(()=>next(i+1),180);};au.onerror=fall;au.src=src;const pr=au.play();if(pr&&pr.catch)pr.catch(fall);};
+  next(0);}};
+const wAud=(w,key)=>'audio/world/'+w.ill+'-'+key+'.mp3';
 const SPK_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path class="w1" d="M16 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path class="w2" d="M18.6 5.8a9 9 0 0 1 0 12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
 const STOP_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="3" fill="currentColor"/></svg>';
 /* flat illustrations */
@@ -5779,7 +5784,7 @@ SCENES.world={title:'Halloween Around the World',mount(stage){
   const card=el('div',{class:'stamp wstamp',role:'button',tabindex:'0','aria-label':w.place+', '+w.name},
    el('div',{class:'band',style:'background:'+w.color}),cv,el('span',{class:'place'},w.place),el('h4',{},w.name),el('p',{},w.blurb),
    el('div',{class:'wrow'},spk,more,el('span',{class:'mark','aria-hidden':'true'},w.date)));
-  spk.onclick=e=>{e.stopPropagation();SFX.click&&SFX.click();if(cardSpk===spk){stopAll();return;}stopAll();cardSpk=spk;setTalking(spk,true);WTALK.play([w.place+'. '+w.name+'.',w.blurb],k=>{if(k<0){setTalking(spk,false);if(cardSpk===spk)cardSpk=null;}});};
+  spk.onclick=e=>{e.stopPropagation();SFX.click&&SFX.click();if(cardSpk===spk){stopAll();return;}stopAll();cardSpk=spk;setTalking(spk,true);WTALK.play([w.place+'. '+w.name+'.',w.blurb],k=>{if(k<0){setTalking(spk,false);if(cardSpk===spk)cardSpk=null;}},[wAud(w,'t'),wAud(w,'b')]);};
   card.onclick=()=>{SFX.click&&SFX.click();open(i);};card.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();open(i);}};
   grid.append(card);cards.push([cv,w]);});
  function open(i){stopAll();close(true);popIdx=i;const w=WORLDS[i];
@@ -5787,12 +5792,12 @@ SCENES.world={title:'Halloween Around the World',mount(stage){
   const closeB=el('button',{class:'wx',type:'button','aria-label':'Close'},'✕');
   const all=el('button',{class:'wspk wall',type:'button','aria-label':'Read everything out loud'});all.innerHTML=SPK_SVG;
   const rows=w.facts.map((f,k)=>{const s=spkBtn('small','Read this fact out loud');const r=el('li',{class:'wfact',style:'--c:'+w.color},el('span',{class:'wico','aria-hidden':'true'},f[0]),el('p',{},f[1]),s);
-   s.onclick=()=>{if(s.classList.contains('talking')){stopAll();return;}play([f[1]],k,s);};return r;});
-  const lines=[w.place+'. '+w.name+'.',w.blurb,...w.facts.map(f=>f[1])];
+   s.onclick=()=>{if(s.classList.contains('talking')){stopAll();return;}play([f[1]],k,s,[wAud(w,'f'+k)]);};return r;});
+  const lines=[w.place+'. '+w.name+'.',w.blurb,...w.facts.map(f=>f[1])];const srcs=[wAud(w,'t'),wAud(w,'b'),...w.facts.map((f,k)=>wAud(w,'f'+k))];
   let curBtn=null;
   function mark(k){rows.forEach((r,j)=>r.classList.toggle('reading',j===k));if(k>=0&&rows[k]&&rows[k].scrollIntoView)rows[k].scrollIntoView({block:'nearest',behavior:'smooth'});}
-  function play(ls,offset,btn){stopAll();curBtn=btn;setTalking(btn,true);WTALK.play(ls,k=>{if(k<0){setTalking(btn,false);mark(-1);curBtn=null;return;}mark(offset===null?k-2:offset);});}
-  all.onclick=()=>{if(all.classList.contains('talking')){stopAll();return;}play(lines,null,all);};
+  function play(ls,offset,btn,sr){stopAll();curBtn=btn;setTalking(btn,true);WTALK.play(ls,k=>{if(k<0){setTalking(btn,false);mark(-1);curBtn=null;return;}mark(offset===null?k-2:offset);},sr);}
+  all.onclick=()=>{if(all.classList.contains('talking')){stopAll();return;}play(lines,null,all,srcs);};
   const prev=el('button',{class:'warr',type:'button','aria-label':'Previous place'},'◀'),next=el('button',{class:'warr',type:'button','aria-label':'Next place'},'▶');
   prev.onclick=()=>{SFX.click&&SFX.click();open((i+WORLDS.length-1)%WORLDS.length);};next.onclick=()=>{SFX.click&&SFX.click();open((i+1)%WORLDS.length);};
   const box=el('div',{class:'wpop',style:'--c:'+w.color},
