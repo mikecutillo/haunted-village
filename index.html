@@ -1156,19 +1156,25 @@ const GAP=560,LX=165,RX=635,LROAD=520,RROAD=280;
 const PLACES=[
  {id:'cottage',hot:'flight',side:'L',sub:'Crooked Cottage',h:240,yard:'batcave'},
  {id:'square',hot:'cast',side:'R',sub:'Town square',title:'Meet the Neighbors',main:true,sign:'post'},
+ {id:'s_sense',slot:true,side:'L'},/* Sensory Station */
  {id:'bakery',hot:'candy',side:'R',sub:'Sweet Tooth Bakery',h:225},
  {id:'print',hot:'print',side:'L',sub:'3D Printer Workshop',title:'Print Shop',h:240,yard:'crows'},
  {id:'inn',hot:'match',side:'R',sub:'Haunted Inn',h:250,street:true},
  {id:'belfry',hot:'bats',side:'L',sub:'Old Bell Tower',h:300},
  {id:'tower',hot:'maker',side:'R',sub:'The Tower Lab',h:320},
  {id:'theater',hot:'shorts',side:'L',sub:'Moonmere Theater',title:'Spooky Shorts',h:200,yard:'campfire',street:true},
+ {id:'s_chomp',slot:true,side:'R'},/* Chomp Shop */
  {id:'school',hot:'quiz',side:'L',sub:'Village School',title:'Village Quiz',h:230},
+ {id:'s_lib',slot:true,side:'R'},/* Haunted Library */
+ {id:'s_boogie',slot:true,side:'L'},/* Boogie Hall */
  {id:'post',hot:'world',side:'R',sub:'Village Post',title:'Around the World',h:210,street:true},
  {id:'grave',hot:'dash',side:'L',sub:'Old Bones Graveyard',zone:'B',sign:'post',sx:60,yard:'bearcave'},
  {id:'hut',hot:'spell',side:'R',sub:'The Cauldron Hut',h:150,yard:'pond'},
  {id:'tomb',hot:'wrap',side:'L',sub:'The Lost Tomb',h:180,street:true},
  {id:'treehouse',hot:'findpip',side:'R',sub:'Hide-and-Seek Tree',title:'Find Pip',h:250,yard:'crows'},
  {id:'barn',hot:'carve',side:'L',sub:'Pumpkin Patch Barn',h:220,yard:'wolves'},
+ {id:'s_patch',slot:true,side:'R'},/* Pumpkin Patch plot */
+ {id:'s_hayride',slot:true,side:'L'},/* Hayride stop */
  {id:'shed',hot:'coloring',side:'R',sub:'Art Shed',title:'Coloring Pages',h:150,street:true},
  {id:'wagon',hot:'dressup',side:'L',sub:"Mabel's Wardrobe",title:'Dress Up Mabel',zone:'C',h:180,yard:'campfire',street:true},
  {id:'alley',hot:'bowl',side:'R',sub:'Strike Lanes',h:160},
@@ -1177,6 +1183,8 @@ let ZB=0,ZC=0,MAIN_Y=0;const P={},MAINS=[];
 {let y=1100;for(const pl of PLACES){pl.y=y;pl.x=pl.side==='L'?LX:RX;pl.far=pl.side==='L'?LROAD:RROAD;P[pl.id]=pl;if(pl.zone==='B')ZB=y-250;if(pl.zone==='C')ZC=y-250;if(pl.main){MAIN_Y=y-20;MAINS.push(MAIN_Y);}y+=GAP;if(pl.street){MAINS.push(pl.y+226);y+=200;}}}
 const LAUNCH_Y=PLACES[PLACES.length-1].y+GAP+80,H=LAUNCH_Y+440;
 const ROAD_PTS=[[400,560],[400,690]];for(const pl of PLACES)ROAD_PTS.push([pl.far,pl.y-300],[pl.far,pl.y-90]);ROAD_PTS.push([400,LAUNCH_Y-320],[400,LAUNCH_Y-130]);
+/* slot rows belong to buildings added later (library, chomp shop, sensory station, boogie hall). they shape the road, then leave the list. */
+const SLOTS=PLACES.filter(p=>p.slot);for(let i=PLACES.length-1;i>=0;i--)if(PLACES[i].slot)PLACES.splice(i,1);
 const ROAD=(()=>{const Pt=ROAD_PTS,pts=[];const cr=(p0,p1,p2,p3,u)=>{const u2=u*u,u3=u2*u;return .5*((2*p1)+(-p0+p2)*u+(2*p0-5*p1+4*p2-p3)*u2+(-p0+3*p1-3*p2+p3)*u3);};
  for(let i=0;i<Pt.length-1;i++){const p0=Pt[Math.max(0,i-1)],p1=Pt[i],p2=Pt[i+1],p3=Pt[Math.min(Pt.length-1,i+2)];const n=Math.max(4,Math.round(Math.hypot(p2[0]-p1[0],p2[1]-p1[1])/8));for(let k=0;k<n;k++){const u=k/n;pts.push([cr(p0[0],p1[0],p2[0],p3[0],u),cr(p0[1],p1[1],p2[1],p3[1],u)]);}}
  pts.push(Pt[Pt.length-1].slice());const len=[0];for(let i=1;i<pts.length;i++)len.push(len[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
@@ -1256,7 +1264,7 @@ const KIDLIFE={kids:[],ready:false,
    CRIT.actors.push({id:k.ty,x:k.x,y:k.y-50,r:60,say:KID_SAY[k.ty],sfx:'kid'});}}
 };
 function hillsV(ctx,y0,amp,freq,ph,H){const x0=world.vx0-60,x1=world.vx1+60;ctx.beginPath();ctx.moveTo(x0,H+60);for(let x=x0;x<=x1;x+=16){ctx.lineTo(x,y0+Math.sin(x*freq+ph)*amp+Math.sin(x*freq*2.3+ph*1.7)*amp*.35);}ctx.lineTo(x1,H+60);ctx.closePath();ctx.fill();}
-const DECOR=(()=>{const r=seeded(31),out=[];for(let y=800;y<LAUNCH_Y-200;y+=14){const x=WX0+60+r()*(WX1-WX0-120);const rx=ROAD.xAt(y);if(Math.abs(x-rx)<95||Math.abs(x+396)<50)continue;let near=false;for(const pl of PLACES){if(Math.abs(x-pl.x)<175&&y>pl.y-360&&y<pl.y+60)near=true;if(pl.fx!=null)continue;const fx=pl.side==='L'?1020+(PLACES.indexOf(pl)%2)*60:-220-(PLACES.indexOf(pl)%2)*60;if(Math.abs(x-fx)<140&&y>pl.y-280&&y<pl.y-90)near=true;const lx=pl.side==='L'?-230-(PLACES.indexOf(pl)%2)*50:1030+(PLACES.indexOf(pl)%2)*50;if(Math.abs(x-lx)<150&&y>pl.y-150&&y<pl.y+70)near=true;}for(const my of MAINS){if(Math.abs(y-my)<80)near=true;if((Math.abs(x+300)<150||Math.abs(x-1100)<150)&&y>my-200&&y<my+200)near=true;}if(near)continue;const k=r();out.push({x,y,k,s:.7+r()*.6});}return out;})();
+const DECOR=(()=>{const r=seeded(31),out=[];for(let y=800;y<LAUNCH_Y-200;y+=14){const x=WX0+60+r()*(WX1-WX0-120);const rx=ROAD.xAt(y);if(Math.abs(x-rx)<95||Math.abs(x+396)<50)continue;let near=false;for(const pl of [...PLACES,...SLOTS]){if(Math.abs(x-pl.x)<175&&y>pl.y-360&&y<pl.y+60)near=true;if(pl.fx!=null)continue;const fx=pl.side==='L'?1020+(PLACES.indexOf(pl)%2)*60:-220-(PLACES.indexOf(pl)%2)*60;if(Math.abs(x-fx)<140&&y>pl.y-280&&y<pl.y-90)near=true;const lx=pl.side==='L'?-230-(PLACES.indexOf(pl)%2)*50:1030+(PLACES.indexOf(pl)%2)*50;if(Math.abs(x-lx)<150&&y>pl.y-150&&y<pl.y+70)near=true;}for(const my of MAINS){if(Math.abs(y-my)<80)near=true;if((Math.abs(x+300)<150||Math.abs(x-1100)<150)&&y>my-200&&y<my+200)near=true;}if(near)continue;const k=r();out.push({x,y,k,s:.7+r()*.6});}return out;})();
 const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7))||.7,camX:null,camY:0,vw:0,vh:0,vx0:0,vx1:800,dpr:1,hover:null,last:0,t:0,found:store.get('hv-ghosts',{}),stars:seedStars(200,W,760,5),
  fogs:Array.from({length:12},(_,i)=>({x:i*140,y:ZB+100+(i%6)*330,w:200+(i%4)*70,v:6+(i%3)*4})),
  bats:Array.from({length:7},(_,i)=>({x:i*120,y:120+(i*97)%420,s:9+(i%4)*4,v:40+(i*13)%60,ph:i})),
@@ -3165,9 +3173,9 @@ Object.assign(ICON,{hayride:'🚜'});
 Object.assign(SAYS,{hayride:'Hop on the hay wagon and toss candy into every trick-or-treat bag!'});
 TILES.splice(5,0,['hayride','#D06A1A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);
 PREV.hayride=(x,t,W,H)=>HAYRIDE_THUMB(x,t,W,H);
-HOT.push({id:'hayride',x:130,y:P.alley.y+210,w:200,h:220,sub:'Hayride stop',title:'Haunted Hayride',kind:'post'});
+HOT.push({id:'hayride',x:130,y:P.s_hayride.y,w:200,h:220,sub:'Hayride stop',title:'Haunted Hayride',kind:'post'});
 /* the parked wagon at the bottom of the street, across the road from the sign */
-{const HR_STOP={x:640,y:P.alley.y+215};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(HR_STOP.y,top,bot,260))HAYRIDE_STOP_DRAW(ctx,HR_STOP.x,HR_STOP.y,t);};}
+{const HR_STOP={x:640,y:P.s_hayride.y+5};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(HR_STOP.y,top,bot,260))HAYRIDE_STOP_DRAW(ctx,HR_STOP.x,HR_STOP.y,t);};}
 /* ==== HAUNTED HAYRIDE END ==== */
 
 
@@ -3533,8 +3541,8 @@ Object.assign(ICON,{boogie:'🕺'});
 Object.assign(SAYS,{boogie:'Pick a monster and code its dance with arrows, or copy the moves!'});
 TILES.splice(6,0,['boogie','#8A2E9A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);
 PREV.boogie=(x,t,W,H)=>BOOGIE_THUMB(x,t,W,H);
-HOT.push({id:'boogie',x:368,y:P.alley.y-215,w:200,h:200,sub:'Boogie Hall',title:'Monster Boogie',kind:'hang lft'});
-{const BG_HALL={x:110,y:P.alley.y-250};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(BG_HALL.y,top,bot,300))BOOGIE_HALL_DRAW(ctx,BG_HALL.x,BG_HALL.y,t);};}
+HOT.push({id:'boogie',x:368,y:P.s_boogie.y-11,w:200,h:200,sub:'Boogie Hall',title:'Monster Boogie',kind:'hang lft'});
+{const BG_HALL={x:110,y:P.s_boogie.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(BG_HALL.y,top,bot,300))BOOGIE_HALL_DRAW(ctx,BG_HALL.x,BG_HALL.y,t);};}
 /* ==== MONSTER BOOGIE END ==== */
 
 /* ==== PUMPKIN BOWLING 3D START ==== */
@@ -3825,7 +3833,7 @@ if(typeof PREV!=='undefined')PREV.bowl3d=(x,t,W,H)=>{pvBg(x,W,H);
 /* ==== PUMPKIN BOWLING 3D END ==== */
 
 /* ==== PATCH REG START ==== */
-const PATCH_SPOT={x:665,y:P.barn.y+265,sx:665,sy:P.barn.y+215};
+const PATCH_SPOT={x:665,y:P.s_patch.y+40,sx:665,sy:P.s_patch.y-10};
 
 /* ---------- Pumpkin Patch: registration (menu tile, preview, village plot and sign) ---------- */
 GAMES.push({id:'patch',title:'Pumpkin Patch',sub:'Everyone\'s pumpkins',day:1,host:'jack'});
@@ -4154,8 +4162,8 @@ Object.assign(ICON,{typing:'⌨️'});
 Object.assign(SAYS,{typing:'Type the letters to catch the ghosts before they say boo!'});
 {const at=TILES.findIndex(t=>t[0]==='quiz');TILES.splice(at<0?TILES.length:at+1,0,['typing','#2F6EB0']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
 PREV.typing=(x,t,W,H)=>TYPE_THUMB(x,t,W,H);
-HOT.push({id:'typing',x:700,y:P.school.y+190,w:200,h:220,sub:'Haunted Library',title:'Ghost Typer',kind:'post'});
-{const LIB={x:690,y:P.school.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(LIB.y,top,bot,320))TYPE_LIB_DRAW(ctx,LIB.x,LIB.y,t);};}
+HOT.push({id:'typing',x:700,y:P.s_lib.y+190,w:200,h:220,sub:'Haunted Library',title:'Ghost Typer',kind:'post'});
+{const LIB={x:690,y:P.s_lib.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(LIB.y,top,bot,320))TYPE_LIB_DRAW(ctx,LIB.x,LIB.y,t);};}
 /* ==== GHOST TYPER END ==== */
 /* ==== SENSORY STATION START ==== */
 /* ---------- GAME: Sensory Station (six calm cause-and-effect play spaces) ----------
@@ -4732,8 +4740,8 @@ Object.assign(ICON,{sensory:'🎈'});
 Object.assign(SAYS,{sensory:'Pop bubbles, light up dots, tap for sounds. No rush, no score.'});
 {const at=TILES.findIndex(t=>t[0]==='boogie');TILES.splice(at<0?TILES.length:at+1,0,['sensory','#2A9D8F']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
 PREV.sensory=(x,t,W,H)=>SENSE_THUMB(x,t,W,H);
-HOT.push({id:'sensory',x:150,y:P.tower.y+120,w:200,h:220,sub:'Calm play',title:'Sensory Station',kind:'post'});
-{const SH={x:108,y:P.tower.y-96};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SH.y,top,bot,340))SENSE_HOUSE_DRAW(ctx,SH.x,SH.y,t);};}
+HOT.push({id:'sensory',x:150,y:P.s_sense.y+120,w:200,h:220,sub:'Calm play',title:'Sensory Station',kind:'post'});
+{const SH={x:108,y:P.s_sense.y-96};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SH.y,top,bot,340))SENSE_HOUSE_DRAW(ctx,SH.x,SH.y,t);};}
 /* ==== SENSORY STATION END ==== */
 /* ==== CANDY CHOMP START ==== */
 /* ---------- GAME: Candy Chomp (number game in the Chomp Shop) ---------- */
@@ -5050,8 +5058,8 @@ Object.assign(ICON,{chomp:'🍬'});
 Object.assign(SAYS,{chomp:'Chompy is hungry! Feed him the right number!'});
 {const at=TILES.findIndex(t=>t[0]==='typing');const at2=at<0?TILES.findIndex(t=>t[0]==='quiz'):at;TILES.splice(at2<0?TILES.length:at2+1,0,['chomp','#C2457A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
 PREV.chomp=(x,t,W,H)=>CHOMP_THUMB(x,t,W,H);
-HOT.push({id:'chomp',x:700,y:P.belfry.y+190,w:200,h:220,sub:'Chomp Shop',title:'Candy Chomp',kind:'post'});
-{const SHOP={x:690,y:P.belfry.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SHOP.y,top,bot,360))CHOMP_SHOP_DRAW(ctx,SHOP.x,SHOP.y,t);};}
+HOT.push({id:'chomp',x:700,y:P.s_chomp.y+190,w:200,h:220,sub:'Chomp Shop',title:'Candy Chomp',kind:'post'});
+{const SHOP={x:690,y:P.s_chomp.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SHOP.y,top,bot,360))CHOMP_SHOP_DRAW(ctx,SHOP.x,SHOP.y,t);};}
 /* ==== CANDY CHOMP END ==== */
 const SHORTS=[{id:'short1',title:'The Pumpkin Who Lost Its Glow',desc:'One pumpkin in the patch would not light. A small ghost decides to help. 38 seconds.',scenes:SHORT1,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');c.fillStyle='#14082C';c.fillRect(0,150,320,30);drawPumpkin(c,80,140,26,.6);drawPumpkin(c,250,140,26,.6);drawPumpkin(c,160,146,18,0);ncShort.ghost(c,200,80,50,t);}},
  {id:'short2',title:'Midnight at Moonmere Manor',desc:'When the clock strikes twelve, the manor wakes up. 38 seconds.',scenes:SHORT2,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');drawMoon(c,270,36,18);c.fillStyle='#14082C';c.fillRect(0,165,320,15);drawManor(c,160,166,t,.32);}}];
