@@ -593,6 +593,25 @@ const ncShort={
  skel(ctx,x,y,s,ph=0,duck){ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(ph)*.12);const ok=ncFit(ctx,'rattles',0,0,s*2.6,s*2.6,-Math.abs(Math.sin(ph))*s*.15);ctx.restore();if(!ok)drawSkeleton(ctx,x,y,s,ph,duck);},
  caul(ctx,x,y,s,t=0){if(!ncFit(ctx,'bubbles',x,y+s*.3,s*1.05,s*1.05,-Math.abs(Math.sin(t*3))*s*.03))drawCauldron(ctx,x,y,s,t);},
  bat(ctx,x,y,s,flap=0,col){ctx.save();ctx.translate(x,y);ctx.scale(1,.75+.25*Math.abs(Math.sin(flap)));const ok=ncFit(ctx,'flutter',0,s*.5,s*2.6,s*1.6);ctx.restore();if(!ok)drawBat(ctx,x,y,s,flap,col);}};
+/* village pumpkins in the new style: chunky lobes, one shadow tone on the right, no outlines (same call shape and footprint as before) */
+drawPumpkin=function(ctx,x,y,r,glow=0,face=true){ctx.save();ctx.translate(x,y);
+ if(glow>0){const g=ctx.createRadialGradient(0,0,r*.3,0,0,r*2);g.addColorStop(0,'rgba(255,170,40,'+(.42*glow)+')');g.addColorStop(1,'rgba(255,170,40,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,r*2,0,TAU);ctx.fill();}
+ /* stem and leaf */
+ ctx.fillStyle='#3D6B2A';ctx.beginPath();ctx.moveTo(-r*.1,-r*.72);ctx.quadraticCurveTo(-r*.14,-r*1.02,-r*.02,-r*1.14);ctx.lineTo(r*.12,-r*1.08);ctx.quadraticCurveTo(r*.04,-r*.96,r*.1,-r*.72);ctx.closePath();ctx.fill();
+ ctx.fillStyle='#6CC04A';ctx.beginPath();ctx.moveTo(r*.06,-r*.86);ctx.quadraticCurveTo(r*.36,-r*1.14,r*.62,-r*.98);ctx.quadraticCurveTo(r*.38,-r*.74,r*.06,-r*.86);ctx.fill();
+ /* body: three lobes, shadow tone on the right */
+ const lobes=()=>{ctx.beginPath();for(const k of[-.52,.52,0]){ctx.moveTo(k*r+r*.64,0);ctx.ellipse(k*r,0,r*.64,r*.86,0,0,TAU);}};
+ ctx.save();lobes();ctx.clip();ctx.fillStyle='#D45A16';ctx.fillRect(-r*1.3,-r,r*2.6,r*2);
+ ctx.translate(-r*.24,-r*.04);ctx.fillStyle='#FF8124';lobes();ctx.fill();ctx.translate(r*.24,r*.04);
+ ctx.fillStyle='rgba(176,64,10,.35)';for(const k of[-.3,.3]){ctx.beginPath();ctx.ellipse(k*r,0,r*.09,r*.8,0,0,TAU);ctx.fill();}
+ ctx.fillStyle='rgba(255,214,150,.55)';ctx.beginPath();ctx.ellipse(-r*.62,-r*.42,r*.16,r*.09,-.7,0,TAU);ctx.fill();ctx.restore();
+ /* carved face: rounded shapes, glowing gold when lit */
+ if(face){const lit=glow>0,col=lit?'rgba(255,214,90,'+(.75+.25*glow)+')':'#2A1548';ctx.fillStyle=col;ctx.strokeStyle=col;ctx.lineJoin='round';ctx.lineWidth=r*.08;
+  for(const s of[-1,1]){ctx.beginPath();ctx.moveTo(s*r*.34,-r*.42);ctx.lineTo(s*r*.16,-r*.1);ctx.lineTo(s*r*.52,-r*.1);ctx.closePath();ctx.fill();ctx.stroke();}
+  ctx.beginPath();ctx.moveTo(-r*.52,r*.16);ctx.quadraticCurveTo(0,r*.3,r*.52,r*.16);ctx.quadraticCurveTo(r*.36,r*.62,0,r*.62);ctx.quadraticCurveTo(-r*.36,r*.62,-r*.52,r*.16);ctx.fill();
+  ctx.fillStyle='#FF8124';ctx.fillRect(-r*.2,r*.21,r*.14,r*.14);ctx.fillRect(r*.1,r*.21,r*.14,r*.14);
+  if(lit){ctx.fillStyle='rgba(255,250,210,.55)';ctx.beginPath();ctx.ellipse(0,r*.44,r*.18,r*.07,0,0,TAU);ctx.fill();}}
+ ctx.restore();};
 /* ==== NEW CHARACTERS END ==== */
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
@@ -3535,6 +3554,72 @@ if(typeof PREV!=='undefined')PREV.bowl3d=(x,t,W,H)=>{pvBg(x,W,H);
 
 const SHORTS=[{id:'short1',title:'The Pumpkin Who Lost Its Glow',desc:'One pumpkin in the patch would not light. A small ghost decides to help. 38 seconds.',scenes:SHORT1,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');c.fillStyle='#14082C';c.fillRect(0,150,320,30);drawPumpkin(c,80,140,26,.6);drawPumpkin(c,250,140,26,.6);drawPumpkin(c,160,146,18,0);ncShort.ghost(c,200,80,50,t);}},
  {id:'short2',title:'Midnight at Moonmere Manor',desc:'When the clock strikes twelve, the manor wakes up. 38 seconds.',scenes:SHORT2,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');drawMoon(c,270,36,18);c.fillStyle='#14082C';c.fillRect(0,165,320,15);drawManor(c,160,166,t,.32);}}];
+/* ==== NEW SHORTS START ==== */
+/* Three more village shorts, starring the redesigned cast. Same player as SHORT1/SHORT2 (shortScene). */
+const SA=(ctx,key,x,y,h,o={})=>{ctx.save();ctx.translate(x,y);if(o.rot)ctx.rotate(o.rot);if(o.flip)ctx.scale(-1,1);if(o.sy)ctx.scale(1,o.sy);ncFit(ctx,key,0,0,o.w||h*1.7,h,o.bob||0);ctx.restore();};
+const walkBob=(t,k=8,a=6)=>-Math.abs(Math.sin(t*k))*a;
+function saLamp(ctx,x,y,on,h=120){ctx.fillStyle='#1A0F33';ctx.fillRect(x-4,y-h,8,h);ctx.fillRect(x-14,y-6,28,8);
+ if(on>0){const g=ctx.createRadialGradient(x,y-h-10,0,x,y-h-10,110);g.addColorStop(0,'rgba(255,200,90,'+(.45*on)+')');g.addColorStop(1,'rgba(255,200,90,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y-h-10,110,0,TAU);ctx.fill();}
+ ctx.fillStyle=on>0?'rgba(255,214,110,'+(.35+.65*on)+')':'#3A2A60';ctx.beginPath();ctx.roundRect?ctx.roundRect(x-13,y-h-30,26,30,8):ctx.rect(x-13,y-h-30,26,30);ctx.fill();ctx.fillStyle='#1A0F33';ctx.fillRect(x-16,y-h-36,32,8);}
+function saStreet(ctx,e,t,lamps=[1,1,1]){night(ctx,e,t,830);ctx.fillStyle='#24124A';hills(ctx,400,18,.006,2,960,540);
+ drawCottage(ctx,150,440,t,'#5B2E4E','#2A1548',170,120);drawBakery(ctx,480,440,t,180,124);drawInn(ctx,810,440,t,180,150);
+ ctx.fillStyle='#3B2A6E';ctx.fillRect(0,440,960,100);ctx.fillStyle='#4A3A7C';ctx.fillRect(0,470,960,70);ctx.fillStyle='rgba(244,234,210,.55)';for(let x=20;x<960;x+=110)ctx.fillRect(x,503,56,6);
+ [[300,lamps[0]],[640,lamps[1]],[900,lamps[2]]].forEach(([x,on])=>saLamp(ctx,x,452,on));}
+function saHill(ctx,e,t,moonA=1){skyGrad(ctx,e.W,e.H,'#0E0630','#2A1460','#5A2A8A');drawStars(ctx,e.stars,t);drawMoon(ctx,700,150,90,moonA);
+ ctx.fillStyle='#2A1556';hills(ctx,430,26,.004,1,960,540);ctx.fillStyle='#3A1D6B';ctx.beginPath();ctx.moveTo(0,540);ctx.lineTo(0,470);ctx.quadraticCurveTo(300,330,620,470);ctx.lineTo(960,490);ctx.lineTo(960,540);ctx.fill();
+ drawTree(ctx,860,500,170,'#1A0B2E');}
+function saCloud(ctx,x,y,s,a=1){ctx.save();ctx.globalAlpha=a;ctx.fillStyle='#8C7BB8';[[0,0,1],[-.9,.18,.75],[.9,.2,.8],[-.4,-.35,.7],[.45,-.3,.75]].forEach(([dx,dy,r])=>{ctx.beginPath();ctx.arc(x+dx*s,y+dy*s,r*s*.7,0,TAU);ctx.fill();});
+ ctx.fillStyle='#6E5D9E';ctx.beginPath();ctx.ellipse(x+s*.3,y+s*.32,s*1.2,s*.22,0,0,TAU);ctx.fill();ctx.restore();}
+function saText(ctx,txt,x,y,size=46,col='#FFE29A',a=1){ctx.save();ctx.globalAlpha=a;ctx.font='400 '+size+'px Creepster, Impact, sans-serif';ctx.textAlign='center';ctx.lineWidth=8;ctx.strokeStyle='#1A0B33';ctx.strokeText(txt,x,y);ctx.fillStyle=col;ctx.fillText(txt,x,y);ctx.restore();}
+function saHearts(ctx,x,y,t,n=5,col='#FF6F9E'){for(let i=0;i<n;i++){const q=((t*.6+i/n)%1),hx=x+Math.sin(i*2.1+t)*40,hy=y-q*120,r=8*(1-q*.4);ctx.save();ctx.globalAlpha=1-q;ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(hx,hy+r);ctx.bezierCurveTo(hx-r*1.6,hy-r*.2,hx-r*.6,hy-r*1.4,hx,hy-r*.5);ctx.bezierCurveTo(hx+r*.6,hy-r*1.4,hx+r*1.6,hy-r*.2,hx,hy+r);ctx.fill();ctx.restore();}}
+function saSparks(ctx,x,y,t,n=10,r=90){ctx.save();ctx.strokeStyle='#FFE45C';ctx.lineWidth=4;ctx.lineCap='round';for(let i=0;i<n;i++){const a=i*TAU/n+t*2,q=(t*3+i*.37)%1,r0=r*.4+q*r*.8;ctx.globalAlpha=1-q;const x0=x+Math.cos(a)*r0,y0=y+Math.sin(a)*r0*.7;ctx.beginPath();ctx.moveTo(x0,y0);ctx.lineTo(x0+Math.cos(a+.6)*10,y0+Math.sin(a+.6)*10);ctx.lineTo(x0+Math.cos(a)*20,y0+Math.sin(a)*20);ctx.stroke();}ctx.restore();}
+function saEnd(ctx,e,p,t,keys){ctx.fillStyle='#160B33';ctx.fillRect(0,0,e.W,e.H);drawStars(ctx,e.stars,t,.6);const n=keys.length;keys.forEach((k,i)=>SA(ctx,k,480+(i-(n-1)/2)*190,420,190,{w:180,bob:walkBob(t+i*.3,5,10)}));
+ saText(ctx,'The End',480,150,72,'#FF7A1A',Math.min(1,p*3));}
+const saBeans=(ctx,x0,y0,x1,y1,q)=>{for(let i=0;i<5;i++){const u=clamp(q*1.4-i*.1,0,1);if(u<=0||u>=1)continue;const x=lerp(x0,x1,u),y=lerp(y0,y1,u)-Math.sin(u*Math.PI)*120;ctx.fillStyle=['#8EE65B','#5FB36B','#B6EE8E'][i%3];ctx.beginPath();ctx.ellipse(x,y,9,6,u*6,0,TAU);ctx.fill();}};
+
+const SHORT3=[
+ {dur:6,cap:'Frankie loves Halloween night. When he is happy, he gets a little buzz.',draw(ctx,p,t,e){saStreet(ctx,e,t,[0,0,0]);SA(ctx,'frankie',lerp(-80,400,ease(Math.min(1,p*1.2))),500,230,{bob:p<.83?walkBob(t):0});}},
+ {dur:6,cap:'Then Gus came running up. "Where did you get your bolts?"',draw(ctx,p,t,e){saStreet(ctx,e,t,[0,0,0]);SA(ctx,'frankie',400,500,230);const gx=lerp(1040,600,ease(Math.min(1,p*1.3)));SA(ctx,'gus',gx,506,150,{bob:gx>602?walkBob(t,10,8):0,flip:true});if(p>.6)saText(ctx,'?',600,300,64,'#FFE29A',Math.min(1,(p-.6)*4));}},
+ {dur:6,cap:'Frankie thought very hard. He did not know.',draw(ctx,p,t,e){saStreet(ctx,e,t,[0,0,0]);SA(ctx,'frankie',400,500,230,{rot:Math.sin(t*2)*.08});SA(ctx,'gus',600,506,150,{flip:true});for(let i=0;i<3;i++){const q=clamp(p*2-i*.3,0,1);if(q>0)saText(ctx,'?',360+i*44,220-i*26-Math.sin(t*3+i)*6,40+i*8,'#C9B8F0',q);}}},
+ {dur:7,cap:'So Gus shared his green jelly beans. They are Frankie\'s favorite.',draw(ctx,p,t,e){saStreet(ctx,e,t,[0,0,0]);SA(ctx,'frankie',400,500,230,{bob:p>.7?walkBob(t,6,4):0});SA(ctx,'gus',600,506,150,{flip:true});saBeans(ctx,580,430,430,330,clamp((p-.15)/.6,0,1));if(p>.75)saHearts(ctx,400,300,t,4);}},
+ {dur:8,cap:'Frankie got so happy he buzzed... and every lamp on Elm Street lit up!',draw(ctx,p,t,e){const l=[clamp((p-.25)*5,0,1),clamp((p-.45)*5,0,1),clamp((p-.65)*5,0,1)];saStreet(ctx,e,t,l);SA(ctx,'frankie',400,500,230,{bob:walkBob(t,7,14)});saSparks(ctx,400,330,t,12,90);SA(ctx,'gus',600,506,150,{flip:true,bob:p>.5?walkBob(t+.5,7,10):0});}},
+ {dur:6,cap:'Best friends. Bolts and all.',draw(ctx,p,t,e){saStreet(ctx,e,t,[1,1,1]);SA(ctx,'frankie',430,500,230,{bob:walkBob(t,4,6)});SA(ctx,'gus',560,506,150,{flip:true,bob:walkBob(t+.4,4,6)});saHearts(ctx,495,330,t,6);}},
+ {dur:5,cap:'The End',draw(ctx,p,t,e){saEnd(ctx,e,p,t,['gus','frankie']);}},
+];
+const SHORT4=[
+ {dur:6,cap:'Every night, Wolfie howls at the moon. Not to be scary. It is just so pretty.',draw(ctx,p,t,e){saHill(ctx,e,t);SA(ctx,'wolfie',300,412,220,{bob:walkBob(t,2,3)});}},
+ {dur:5,cap:'"Awoooo!"',draw(ctx,p,t,e){saHill(ctx,e,t);SA(ctx,'wolfie',300,412,220,{rot:-.18*Math.min(1,p*4)});saText(ctx,'Awoooo!',400,200+Math.sin(t*4)*6,64,'#FFE29A',Math.min(1,p*3));}},
+ {dur:7,cap:'But tonight the clouds rolled in and hid the moon.',draw(ctx,p,t,e){const q=ease(Math.min(1,p*1.3));saHill(ctx,e,t,1-q*.85);saCloud(ctx,lerp(1150,660,q),140,90);saCloud(ctx,lerp(-200,770,q),190,80);SA(ctx,'wolfie',300,412,220,{rot:.12*q});}},
+ {dur:8,cap:'Flutter called the bats. Flap, flap, flap! They pushed the clouds away.',draw(ctx,p,t,e){const q=ease(clamp((p-.25)/.75,0,1));saHill(ctx,e,t,.15+q*.85);saCloud(ctx,660+q*600,140,90);saCloud(ctx,770-q*1100,190,80);
+   for(let i=0;i<3;i++){const fx=lerp(-120,560+i*90,ease(Math.min(1,p*2.4))),fy=120+i*50+Math.sin(t*5+i)*12;SA(ctx,'flutter',fx+q*(i%2?400:-500),fy,70,{sy:.8+.2*Math.abs(Math.sin(t*12+i))});}
+   SA(ctx,'wolfie',300,412,220,{rot:.12*(1-q)});}},
+ {dur:7,cap:'The moon came back, and everyone howled along. Even Midnight.',draw(ctx,p,t,e){saHill(ctx,e,t);SA(ctx,'wolfie',300,412,220,{rot:-.18});SA(ctx,'midnight',470,452,110,{rot:-.1});SA(ctx,'pip',160,330,90,{bob:Math.sin(t*3)*8});SA(ctx,'flutter',560,200,60,{bob:Math.sin(t*4)*10});saText(ctx,'Awoooo!',420,170+Math.sin(t*4)*6,60);}},
+ {dur:7,cap:'Then Mummy Mo gave Wolfie a belly rub. Best night ever.',draw(ctx,p,t,e){saHill(ctx,e,t);SA(ctx,'wolfie',300,412,220,{bob:walkBob(t,6,6)});SA(ctx,'mummy',lerp(700,470,ease(Math.min(1,p*1.6))),440,210,{bob:p<.62?walkBob(t,6,6):0});if(p>.6)saHearts(ctx,330,250,t,6);}},
+ {dur:5,cap:'The End',draw(ctx,p,t,e){saEnd(ctx,e,p,t,['flutter','wolfie','mummy']);}},
+];
+const SHORT5=[
+ {dur:6,cap:'Nick was following the Santa tracker. At least, he thought he was.',draw(ctx,p,t,e){skyGrad(ctx,e.W,e.H,'#0E0630','#2A1460','#5A2A8A');drawStars(ctx,e.stars,t);ctx.fillStyle='#2A1556';hills(ctx,430,20,.006,3,960,540);ctx.fillStyle='#3A1D6B';ctx.fillRect(0,460,960,80);
+   for(let i=0;i<4;i++)drawTree(ctx,120+i*250,470,150+(i%2)*40,'#1A0B2E');SA(ctx,'nick',lerp(-80,480,ease(Math.min(1,p*1.1))),500,170,{bob:walkBob(t,9,7)});
+   ctx.fillStyle='#1A0F33';ctx.fillRect(560,120,150,90);ctx.fillStyle='#4FA3E0';ctx.fillRect(568,128,134,74);ctx.fillStyle='#E2453F';ctx.beginPath();ctx.arc(620+Math.sin(t*2)*20,165,7,0,TAU);ctx.fill();ctx.fillStyle='#fff';ctx.font='800 13px sans-serif';ctx.textAlign='center';ctx.fillText('SANTA TRACKER',635,145);}},
+ {dur:6,cap:'This did not look like the North Pole.',draw(ctx,p,t,e){night(ctx,e,t,800);ctx.fillStyle='#24124A';hills(ctx,420,16,.005,1,960,540);drawManor(ctx,700,450,t,.5);ctx.fillStyle='#3A1D6B';ctx.fillRect(0,450,960,90);
+   ctx.fillStyle='#6A4423';ctx.fillRect(296,300,10,170);ctx.fillStyle='#8A5A2B';ctx.save();ctx.translate(300,320);ctx.rotate(-.05);ctx.fillRect(-120,-40,240,70);ctx.restore();saText(ctx,'HAUNTED VILLAGE',300,330,30,'#FF7A1A');
+   SA(ctx,'nick',480,506,170,{rot:Math.sin(t*3)*.05});if(p>.4)saText(ctx,'?',480,280,64,'#FFE29A',Math.min(1,(p-.4)*4));}},
+ {dur:7,cap:'"Welcome!" said Jack. "You must be new. Follow my glow."',draw(ctx,p,t,e){saStreet(ctx,e,t,[1,1,1]);const jx=lerp(1060,620,ease(Math.min(1,p*1.4)));SA(ctx,'jack',jx,510,120,{bob:walkBob(t,6,16),flip:true});SA(ctx,'nick',360,506,170);
+   const g=ctx.createRadialGradient(jx,460,10,jx,460,160);g.addColorStop(0,'rgba(255,180,70,.35)');g.addColorStop(1,'rgba(255,180,70,0)');ctx.fillStyle=g;ctx.fillRect(jx-170,300,340,240);}},
+ {dur:8,cap:'Count Dracula had fresh cookies. Lulu and Kenji shared their candy.',draw(ctx,p,t,e){saStreet(ctx,e,t,[1,1,1]);SA(ctx,'dracula',480,500,230);SA(ctx,'lulu',250,506,150,{bob:walkBob(t,5,5)});SA(ctx,'kenji',720,506,150,{flip:true,bob:walkBob(t+.5,5,5)});SA(ctx,'nick',360,506,160);
+   for(let i=0;i<6;i++){const q=clamp(p*1.5-i*.12,0,1);if(q<=0||q>=1)continue;const x=lerp(i%2?720:250,370,q),y=lerp(380,420,q)-Math.sin(q*Math.PI)*110;drawCandy(ctx,x,y,['corn','lolly','mint'][i%3],q*8);}}},
+ {dur:7,cap:'Nick shared his candy canes. Everyone had been very good.',draw(ctx,p,t,e){saStreet(ctx,e,t,[1,1,1]);SA(ctx,'nick',400,506,170,{bob:walkBob(t,5,8)});SA(ctx,'jack',560,510,110,{flip:true,bob:walkBob(t,7,10)});SA(ctx,'gus',700,506,140,{flip:true});SA(ctx,'midnight',230,500,90);saHearts(ctx,480,330,t,6);}},
+ {dur:6,cap:'He decided to stay. Who needs the North Pole?',draw(ctx,p,t,e){night(ctx,e,t,800);ctx.fillStyle='#24124A';hills(ctx,420,16,.005,1,960,540);drawManor(ctx,700,450,t,.5);ctx.fillStyle='#3A1D6B';ctx.fillRect(0,450,960,90);
+   ctx.fillStyle='#6A4423';ctx.fillRect(296,300,10,170);ctx.fillStyle='#8A5A2B';ctx.save();ctx.translate(300,320);ctx.rotate(-.05);ctx.fillRect(-120,-40,240,100);ctx.restore();saText(ctx,'HAUNTED VILLAGE',300,330,30,'#FF7A1A');saText(ctx,'+ Nick',300,372,30,'#8EE65B',Math.min(1,p*3));
+   SA(ctx,'nick',500,506,170,{bob:walkBob(t,4,10)});}},
+ {dur:5,cap:'The End',draw(ctx,p,t,e){saEnd(ctx,e,p,t,['jack','nick','dracula']);}},
+];
+function saThumb(sky,keys){return (c,t)=>{skyGrad(c,320,180,...sky);drawMoon(c,262,40,22);c.fillStyle='#24124A';c.fillRect(0,150,320,30);keys.forEach(([k,x,h])=>SA(c,k,x,156,h));};}
+SHORTS.push(
+ {id:'short3',title:"Frankie's Happy Buzz",desc:'Gus has a question about bolts. Frankie has a very bright answer. 44 seconds.',scenes:SHORT3,thumb:saThumb(['#0F0728','#2A1152','#3B1A62'],[['frankie',140,120],['gus',205,82]])},
+ {id:'short4',title:'Wolfie and the Shy Moon',desc:'Clouds hide the moon, and Wolfie needs some help. 45 seconds.',scenes:SHORT4,thumb:saThumb(['#0E0630','#2A1460','#5A2A8A'],[['wolfie',150,118],['flutter',212,40]])},
+ {id:'short5',title:'Nick Took a Wrong Turn',desc:'Nick followed the wrong tracker and found a new home. 45 seconds.',scenes:SHORT5,thumb:saThumb(['#0F0728','#2A1152','#3B1A62'],[['nick',140,100],['jack',205,62]])});
+/* ==== NEW SHORTS END ==== */
 SCENES.shorts={title:'Moonmere Theater',mount(stage){
  const root=el('div',{class:'thr'});root.append(el('div',{class:'thr-curt l'}),el('div',{class:'thr-curt r'}),el('div',{class:'thr-val'}));
  const body=el('div',{class:'thr-wall'});
@@ -3542,17 +3627,8 @@ SCENES.shorts={title:'Moonmere Theater',mount(stage){
  stage.append(root);SFX.chime();
  const unmute=()=>{if(window.__vidMuted){window.__vidMuted=false;SFX.setMuted(false);}};
  const poster=(media,title,sub,badge,go,href)=>{const f=el('div',{class:'frame'},media,badge?el('span',{class:'badge'},badge):null,el('span',{class:'play'},'▶'),el('div',{class:'cap'},el('b',{},title),el('small',{},sub)));const b=href?el('a',{class:'tposter',href,target:'_blank',rel:'noopener'},f):el('button',{class:'tposter',type:'button','aria-label':'Play '+title},f);if(go)b.onclick=go;return b;};
- function screening(id,title,ch,src){unmute();SFX.click();if(!SFX.muted){SFX.setMuted(true);window.__vidMuted=true;}body.innerHTML='';const IA=src==='ia';
-  const fr=document.createElement('iframe');fr.src=IA?'https://archive.org/embed/'+id:'https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0&playsinline=1&modestbranding=1';fr.title=title;fr.setAttribute('allow','autoplay; encrypted-media; picture-in-picture; fullscreen');fr.setAttribute('allowfullscreen','');
-  const back=el('button',{class:'btn ghost small',type:'button'},'← All movies');back.onclick=()=>{unmute();lobby();};
-  body.append(back,el('div',{class:'thr-screen'},el('div',{class:'vbox'},fr)),el('div',{class:'thr-now'},el('b',{},title),el('small',{},ch)),el('a',{href:IA?'https://archive.org/details/'+id:'https://www.youtube.com/watch?v='+id,target:'_blank',rel:'noopener',style:'color:var(--candle);font-weight:800;font-size:13px'},IA?'Not playing? Watch on the Internet Archive':'Not playing? Watch on YouTube'));}
  function lobby(){body.innerHTML='';const grid=el('div',{class:'tposters'});
   for(const s of SHORTS){const cv=miniCanvas(320,180);s.thumb(cv.ctx,0);grid.append(poster(cv,s.title,'Made in the village',"Our short",()=>{stage.innerHTML='';unmount=shortScene(stage,s.scenes);$('#modalTitle').textContent=s.title;}));}
-  for(const[id,title,ch,len,src]of VIDEOS){const IA=src==='ia';const img=el('img',{src:IA?'https://archive.org/services/img/'+id:'https://i.ytimg.com/vi/'+id+'/hqdefault.jpg',alt:'',loading:'lazy'});img.onerror=()=>{img.remove();};
-   const watch=IA?'https://archive.org/details/'+id:'https://www.youtube.com/watch?v='+id;
-   const fb=miniCanvas(320,180);{const x=fb.ctx;skyGrad(x,320,180,'#2A1152','#3B1A62','#5A2A78');drawMoon(x,250,40,22);x.fillStyle='#14082C';x.fillRect(0,150,320,30);drawPumpkin(x,90,142,28,.7);drawGhost(x,190,100,52,0);}
-   const art=el('div',{style:'position:absolute;inset:0'},fb,img);
-   grid.append(poster(art,title,ch+' · '+len,IA?'Classic':null,SELF_HOSTED?()=>screening(id,title,ch,src):null,SELF_HOSTED?null:watch));}
   body.append(grid);}
  lobby();
  return()=>{unmute();};}};
@@ -4980,28 +5056,6 @@ SCENES.coloring={title:'Coloring Pages',mount(stage){const root=el('div',{class:
  for(const[name,fn]of COLOR_PAGES){const c=document.createElement('canvas');c.width=600;c.height=760;const x=c.getContext('2d');x.scale(2,2);x.fillStyle='#fff';x.fillRect(0,0,300,380);fn(x);x.fillStyle='#222';x.font='900 20px "Baloo 2", sans-serif';x.textAlign='center';x.fillText(name,150,330);x.font='700 11px "Baloo 2", sans-serif';x.fillText('Haunted Village coloring page',150,352);x.strokeStyle='#bbb';x.lineWidth=2;x.strokeRect(8,8,284,364);
   const img=el('img',{src:c.toDataURL('image/png'),alt:name+' coloring page',style:'width:100%;height:auto;display:block;background:#fff'});grid.append(el('div',{class:'poster',style:'cursor:default'},img,el('div',{class:'meta'},el('h3',{},name))));}
  return()=>{};}};
-
-/* ---------- YouTube shelf ---------- */
-const VIDEOS=[
- ['4jxcWlq3CBg','Knock Knock, Trick Or Treat?','Super Simple Songs','5:00'],
- ['trDl36m9pgA','Five Little Pumpkins','Super Simple Songs','3:00'],
- ['boR8mKhXJuI','Celebrate Halloween on Sesame Street','Sesame Street','Four episodes'],
- ['D6Y8FNsvwf0','Curious George: A Halloween Boo Fest','PBS KIDS','Full movie'],
- ['ztoZJqiobSQ',"It's Halloween on PBS KIDS",'PBS KIDS','Short'],
- ['the-skeleton-dance_1929','The Skeleton Dance (1929)','Classic cartoon, public domain','5 min','ia'],
- ['the-haunted-house-1929','The Haunted House (1929)','Classic Mickey cartoon, public domain','7 min','ia'],
-];
-const SELF_HOSTED=!/claude\.ai$/.test(location.hostname)&&location.protocol.startsWith('http');
-function videoShelf(){const wrap=el('div',{style:'display:flex;flex-direction:column;gap:12px;margin-top:10px'});wrap.append(el('h3',{},'Watch: Halloween videos'),el('p',{style:'margin:0;color:var(--muted);font-size:14px'},SELF_HOSTED?'Tap a picture to play it right here. The village music pauses while a video plays.':'These open in a new tab on YouTube.'));const grid=el('div',{class:'posters'});wrap.append(grid);
- for(const[id,title,ch,len,src]of VIDEOS){const IA=src==='ia',watch=IA?'https://archive.org/details/'+id:'https://www.youtube.com/watch?v='+id,embed=IA?'https://archive.org/embed/'+id:'https://www.youtube-nocookie.com/embed/'+id+'?autoplay=1&rel=0&playsinline=1&modestbranding=1';const fb=miniCanvas(320,180);const x=fb.ctx;skyGrad(x,320,180,'#2A1152','#3B1A62','#5A2A78');drawMoon(x,270,40,20);x.fillStyle='#FFF4E6';x.font='900 13px "Baloo 2"';x.textAlign='center';x.fillText(ch,160,150);
-  const meta=el('div',{class:'meta'},el('h3',{},title),el('p',{},ch+' · '+len));
-  const thumb=el('div',{class:'vthumb'});const img=el('img',{src:IA?'https://archive.org/services/img/'+id:'https://i.ytimg.com/vi/'+id+'/hqdefault.jpg',alt:'',loading:'lazy'});img.onerror=()=>{img.replaceWith(fb);};thumb.append(img,el('span',{class:'vplay'},'▶'));
-  if(SELF_HOSTED){const b=el('button',{class:'poster',type:'button','aria-label':'Play '+title},thumb,meta);
-   b.onclick=()=>{if(!SFX.muted){SFX.setMuted(true);window.__vidMuted=true;}
-    const fr=document.createElement('iframe');fr.src=embed;fr.title=title;fr.setAttribute('allow','autoplay; encrypted-media; picture-in-picture; fullscreen');fr.setAttribute('allowfullscreen','');fr.setAttribute('referrerpolicy','strict-origin-when-cross-origin');
-    const box=el('div',{class:'vbox'},fr);const card=el('div',{class:'poster playing'},box,meta,el('a',{href:watch,target:'_blank',rel:'noopener',style:'padding:0 16px 14px;color:var(--candle);font-weight:800;font-size:13px'},IA?'Not playing? Watch on the Internet Archive':'Not playing? Watch on YouTube'));b.replaceWith(card);};grid.append(b);}
-  else{const a=el('a',{class:'poster',href:watch,target:'_blank',rel:'noopener',style:'text-decoration:none'},thumb,meta);grid.append(a);}}
- return wrap;}
 
 /* ---------- town postcards ---------- */
 function drawTownCard(ctx,i,t,w,h){const s=w/340;ctx.save();ctx.scale(s,s);const W=340,H=h/s;skyGrad(ctx,W,H,'#0B0520','#2A1152','#4B2378');drawMoon(ctx,290,40,22);ctx.fillStyle='#1B0D3A';hills(ctx,H*.62,10,.02,i,W,H);ctx.fillStyle='#120826';ctx.fillRect(0,H*.8,W,H);
