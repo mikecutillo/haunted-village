@@ -1734,7 +1734,7 @@ SCENES.candy={title:'Candy Drop',mount(stage){
  const g=makeGame(stage,W,H,{update,draw});const hud=el('div',{class:'hud'});g.wrap.append(hud,el('div',{class:'hint'},'Move with your mouse, finger, or arrow keys'));
  function reset(){score=0;lives=3;time=60;items=[];spawn=0;mul=1;puffs=[];bx=tx=W/2;}
  function start(){reset();state='play';}
- function end(){state='over';SFX.over();const n=score/10;overlay(g.wrap,{host:'jack',tag:lives>0?'Time!':'Out of lives',title:'Candy Drop',text:'You caught '+n+' treats.',btn:'Play again',cb:start,score:n,stars:starsFor(n,8,18,30)});}
+ function end(){state='over';SFX.over();const n=score/10;hvGameOver(g.wrap,'candy',n,{host:'jack',tag:lives>0?'Time!':'Out of lives',title:'Candy Drop',text:'You caught '+n+' treats.',btn:'Play again',cb:start,score:n,stars:starsFor(n,8,18,30)});}
  function update(dt){if(state!=='play')return;time-=dt;if(time<=0){time=0;end();return;}mul+=dt*.014;spawn-=dt;
   if(spawn<=0){spawn=Math.max(.22,.75/mul);const bad=Math.random()<.22;items.push({x:50+Math.random()*(W-100),y:-30,v:(150+Math.random()*120)*mul,type:bad?'apple':pick(['corn','lolly','wrap','mint']),rot:Math.random()*6,rv:(Math.random()-.5)*4});}
   if(keys.ArrowLeft)tx-=520*dt;if(keys.ArrowRight)tx+=520*dt;tx=clamp(tx,50,W-50);bx+=(tx-bx)*Math.min(1,dt*14);
@@ -1759,7 +1759,7 @@ SCENES.flight={title:'Witch Flight',mount(stage){
  const g=makeGame(stage,W,H,{update,draw});const hud=el('div',{class:'hud'});g.wrap.append(hud,el('div',{class:'hint'},'Hold to fly up, release to drop. Space works too.'));
  function reset(){wy=H/2;vy=0;obs=[];stars2=[];dist=0;score=0;speed=230;spawnX=W+200;}
  function start(){reset();state='play';}
- function end(){state='over';SFX.hit();const m=Math.floor(dist/10);overlay(g.wrap,{host:'mabel',tag:'Crash landing',title:'Witch Flight',text:'You flew '+m+' m and grabbed '+score/10+' stars.',btn:'Fly again',cb:start,score:m,stars:starsFor(m,60,160,320)});}
+ function end(){state='over';SFX.hit();const m=Math.floor(dist/10);hvGameOver(g.wrap,'flight',m,{host:'mabel',tag:'Crash landing',title:'Witch Flight',text:'You flew '+m+' m and grabbed '+score/10+' stars.',btn:'Fly again',cb:start,score:m,stars:starsFor(m,60,160,320)},{unit:' m'});}
  function update(dt){if(state!=='play')return;const up=hold||keys[' ']||keys.ArrowUp;vy+=(up?-1500:1300)*dt;vy=clamp(vy,-420,520);wy+=vy*dt;
   if(wy<40){wy=40;vy=0;}if(wy>H-70){end();return;}
   speed+=dt*6;dist+=speed*dt;spawnX-=speed*dt;
@@ -1791,7 +1791,7 @@ SCENES.dash={title:'Skeleton Dash',mount(stage){
  function reset(){y=G;vy=0;obs=[];candies=[];speed=320;dist=0;score=0;spawn=1;}
  function start(){reset();state='play';}
  function jump(){if(state!=='play')return;if(y>=G-1){vy=-660;SFX.jump();}}
- function end(){state='over';SFX.hit();const m=Math.floor(dist/10);overlay(g.wrap,{host:'rattles',tag:'Ouch',title:'Skeleton Dash',text:'You ran '+m+' m and grabbed '+score/10+' sweets.',btn:'Run again',cb:start,score:m,stars:starsFor(m,80,220,450)});}
+ function end(){state='over';SFX.hit();const m=Math.floor(dist/10);hvGameOver(g.wrap,'dash',m,{host:'rattles',tag:'Ouch',title:'Skeleton Dash',text:'You ran '+m+' m and grabbed '+score/10+' sweets.',btn:'Run again',cb:start,score:m,stars:starsFor(m,80,220,450)},{unit:' m'});}
  function update(dt){if(state!=='play')return;if(keys[' ']||keys.ArrowUp)jump();vy+=1700*dt;y+=vy*dt;if(y>G){y=G;vy=0;}
   speed+=dt*9;dist+=speed*dt;phase+=dt*speed*.05;spawn-=dt;
   if(spawn<=0){spawn=rand(.7,1.5)*(320/speed)+.35;const k=pick(['g','g','gg','p']);obs.push({x:W+40,k,w:k==='gg'?80:44,h:k==='p'?44:56});if(Math.random()<.6)candies.push({x:W+rand(160,260),y:rand(170,260),type:pick(['corn','lolly','wrap','mint'])});}
@@ -2390,7 +2390,7 @@ SCENES.bats={title:'Bat Catch',mount(stage){
  const g=makeGame(stage,W,H,{update,draw});const hud=el('div',{class:'hud'});g.wrap.append(hud,el('div',{class:'hint'},'Tap or click the bats before they reach the bell tower'));
  function reset(){bats=[];score=0;lives=3;time=45;spawn=0;puffs=[];mul=1;}
  function start(){reset();state='play';}
- function end(){state='over';SFX.over();overlay(g.wrap,{host:'pip',tag:lives>0?'Time!':'The belfry is full of bats',title:'Bat Catch',text:'You caught '+score+' bats.',btn:'Play again',cb:start,score,stars:starsFor(score,10,22,36)});}
+ function end(){state='over';SFX.over();hvGameOver(g.wrap,'bats',score,{host:'pip',tag:lives>0?'Time!':'The belfry is full of bats',title:'Bat Catch',text:'You caught '+score+' bats.',btn:'Play again',cb:start,score,stars:starsFor(score,10,22,36)});}
  function update(dt,t){if(state!=='play')return;time-=dt;if(time<=0){time=0;end();return;}mul+=dt*.02;spawn-=dt;
   if(spawn<=0){spawn=Math.max(.35,1.1/mul);bats.push({x:W+30,y:70+Math.random()*(H-200),v:(90+Math.random()*80)*mul,s:16+Math.random()*12,ph:Math.random()*6,wob:30+Math.random()*40});}
   for(const b of bats){b.x-=b.v*dt;b.yy=b.y+Math.sin(t*2.5+b.ph)*b.wob;}
@@ -2410,7 +2410,7 @@ SCENES.wrap={title:'Mummy Wrap',mount(stage){
  const g=makeGame(stage,W,H,{update,draw});const hud=el('div',{class:'hud'});g.wrap.append(hud,el('div',{class:'hint'},'Drag your finger or mouse in circles around the monster'));
  function reset(){wraps=0;acc=0;lastA=null;time=30;spark=[];}
  function start(){reset();state='play';}
- function end(){state='over';SFX.over();if(wraps>best){best=wraps;store.set('hv-wrap-best',best);}overlay(g.wrap,{host:'patches',tag:'Time!',title:'Mummy Wrap',text:wraps+' wraps. '+(wraps>=30?'Fully mummified!':wraps>=18?'Nearly a mummy.':'He still has his knees showing.'),btn:'Wrap again',cb:start,score:wraps,stars:starsFor(wraps,10,18,30)});}
+ function end(){state='over';SFX.over();if(wraps>best){best=wraps;store.set('hv-wrap-best',best);}hvGameOver(g.wrap,'wrap',wraps,{host:'patches',tag:'Time!',title:'Mummy Wrap',text:wraps+' wraps. '+(wraps>=30?'Fully mummified!':wraps>=18?'Nearly a mummy.':'He still has his knees showing.'),btn:'Wrap again',cb:start,score:wraps,stars:starsFor(wraps,10,18,30)});}
  function update(dt,t){if(state!=='play')return;time-=dt;if(time<=0){time=0;end();return;}for(const s of spark)s.t+=dt;spark=spark.filter(s=>s.t<.6);
   const h='<span>Wraps '+wraps+'</span><span style="color:#ffd23f">Best '+best+'</span><span>'+Math.ceil(time)+'s</span>';if(h!==hudTxt){hud.innerHTML=h;hudTxt=h;}}
  function draw(ctx,t){skyGrad(ctx,W,H,'#2A1A0A','#5A3A1A','#8A6A3A');ctx.fillStyle='#C8A878';ctx.fillRect(0,0,W,H);ctx.fillStyle='#A88858';for(let i=0;i<12;i++)ctx.fillRect(0,i*48,W,4);for(let i=0;i<6;i++){ctx.fillStyle='#8A6A3A';ctx.fillRect(60+i*150,60,14,14);ctx.beginPath();ctx.arc(70+i*150,110,8,0,TAU);ctx.fill();ctx.fillRect(66+i*150,140,6,20);}
@@ -2432,7 +2432,7 @@ SCENES.bowl={title:'Pumpkin Bowling',mount(stage){
  function reset(){rolls=0;score=0;newBall();setPins();}
  function newBall(){ball={x:450,y:500,vx:0,vy:0,rolling:false};settle=0;}
  function start(){reset();state='play';}
- function end(){state='over';SFX.over();overlay(g.wrap,{host:'jack',tag:'Five rolls',title:'Pumpkin Bowling',text:'You knocked down '+score+' of 50 skeleton pins.',btn:'Bowl again',cb:start,score,stars:starsFor(score,15,28,42)});}
+ function end(){state='over';SFX.over();hvGameOver(g.wrap,'bowl',score,{host:'jack',tag:'Five rolls',title:'Pumpkin Bowling',text:'You knocked down '+score+' of 50 skeleton pins.',btn:'Bowl again',cb:start,score,stars:starsFor(score,15,28,42)});}
  function update(dt,t){if(state!=='play')return;
   if(ball.rolling){ball.x+=ball.vx*dt;ball.y+=ball.vy*dt;ball.vy*=Math.pow(.6,dt);ball.vx*=Math.pow(.5,dt);if(ball.x<LX+20){ball.x=LX+20;ball.vx=Math.abs(ball.vx)*.5;}if(ball.x>LX+LW-20){ball.x=LX+LW-20;ball.vx=-Math.abs(ball.vx)*.5;}
    for(const p of pins){if(!p.up)continue;const d=Math.hypot(p.x-ball.x,p.y-ball.y);if(d<40){p.up=false;p.t=0;p.dir=p.x>=ball.x?1:-1;score++;SFX.hit();ball.vy*=.9;for(const q of pins){if(q.up&&q!==p&&Math.hypot(q.x-p.x,q.y-p.y)<70&&Math.random()<.55){q.up=false;q.t=-.12;q.dir=q.x>=p.x?1:-1;score++;}}}}
@@ -3004,7 +3004,7 @@ function HAYRIDE_BUILD(THREE,wrap){
  function end(reason){endReason=reason||'won';state='over';if(endReason==='lost'){SFX.over();SFX.cackle();showBanner('They got all the candy!','The mansion wins this time');for(const m of monsters){m.state='flee';m.t=0;}}endT=0;}
  function finish(){const acc=tosses?Math.round(hits/tosses*100):0;const nb=score>best;if(nb){best=score;try{localStorage.setItem('hv-hayride-best',String(best));}catch(e){}bestEl.textContent='Best '+fmt(best);}
   const won=endReason==='won';const txt=won?'You fed the whole Music Mansion. '+hits+' bags and monsters filled at '+acc+'% accuracy, best streak '+bestStreak+'.':'The monsters got all the candy at the mansion. '+hits+' bags filled on the way at '+acc+'% accuracy, best streak '+bestStreak+'.';
-  overlay(wrap,{host:'patches',tag:won?'Party time!':'Out of candy!',title:'Haunted Hayride',text:txt+(nb&&score>0?' New best!':''),btn:'Ride again',cb:start,score:fmt(score),stars:starsFor(score,2500,4500,6000)});}
+  hvGameOver(wrap,'hayride',score,{host:'patches',tag:won?'Party time!':'Out of candy!',title:'Haunted Hayride',text:txt+(nb&&score>0?' New best!':''),btn:'Ride again',cb:start,score:fmt(score),stars:starsFor(score,2500,4500,6000)});}
  function ensureChunks(){const i0=Math.floor((s-BEHIND)/CH),i1=Math.floor((s+AHEAD)/CH);for(let i=Math.max(0,i0);i<=i1;i++)if(!chunks.has(i))buildChunk(i);for(const ck of[...chunks.values()])if(ck.i<i0||ck.i>i1)dropChunk(ck);}
  function placeRig(){const p=PATH.at(s);rig.position.set(p.x,0,p.z);rig.rotation.y=p.yaw;
   const bob=state==='play'?Math.sin(s*1.9)*.035:0;rig.position.y=bob;rig.rotation.z=Math.sin(s*.7)*.012;rig.rotation.x=Math.sin(s*1.3)*.008;
@@ -3767,7 +3767,7 @@ mount(stage){
    S.sweepFull=fullReset||nextFrame;S.sweepNext=nextFrame;updateBoard();}
   function finishSweep(){if(S.sweepNext){S.frame++;S.roll=0;}
    if(S.frame>=10){S.phase='done';updateBoard();const total=S.total;const isBest=total>best;if(isBest){best=total;saveBest(best);}SFX.win();
-    hvOverlay(root,total>=200?'Legend!':total>=120?'Great game!':'Game over','Jack rolled a '+total+'. '+(isBest?'New best!':'Best: '+best+'.'),'Bowl again',()=>{reset();},String(total));return;}
+    (typeof hvGameOver==='function'&&overlay.length!==6?hvGameOver(root,'bowl3d',total,{host:'jack',tag:total>=200?'Legend!':total>=120?'Great game!':'Game over',title:'Pumpkin Bowling 3D',text:'Jack rolled a '+total+'. '+(isBest?'New best!':'Best: '+best+'.'),btn:'Bowl again',cb:()=>{reset();}}):hvOverlay(root,total>=200?'Legend!':total>=120?'Great game!':'Game over','Jack rolled a '+total+'. '+(isBest?'New best!':'Best: '+best+'.'),'Bowl again',()=>{reset();},String(total)));return;}
    resetPins(S.sweepFull);S.phase='aim';holdBall();showTip();updateBoard();}
 
   /* --- loop --- */
@@ -4998,7 +4998,7 @@ SCENES.chomp={title:'Candy Chomp',card:{tag:'Game',desc:'Chompy is hungry! Count
   const stars=Math.max(1,starsFor(acc,0,70,90));
   const prev=best[lv]||{};const isBest=!prev.score||score>prev.score;best[lv]={score:Math.max(score,prev.score||0),stars:Math.max(stars,prev.stars||0)};try{store.set('hv-chomp-best',best);}catch(e){}
   const bits=['🎯 '+acc+'%','⚡ '+fast];if(bestStreak>=3)bits.push('🔥 '+bestStreak);if(isBest&&prev.score)bits.push('🏆 New best!');
-  overlay(g.wrap,{host:'patches',tag:L.name,title:'Chompy is full!',score,stars,text:bits.join('   '),btn:'▶ Again',cb:()=>start(lv)});}
+  hvGameOver(root,'chomp-'+lv,score,{host:'patches',tag:L.name,title:'Candy Chomp',score,stars,text:bits.join('   '),btn:'▶ Again',cb:()=>start(lv)},{onMenu:()=>showPick(),menuIcon:'🍬'});}
 
  g.canvas.addEventListener('pointerdown',e=>{if(state!=='ask')return;const p=g.toWorld(e);let hit=null,bd=1e9;for(const o of candies){if(o.state!=='idle')continue;const d=Math.hypot(p.x-o.x,p.y-o.y);if(d<78&&d<bd){bd=d;hit=o;}}if(hit){e.preventDefault();pick(hit);}});
  function onKey(e){if(e.metaKey||e.ctrlKey||e.altKey||e.repeat)return;const k=e.key;
@@ -5153,15 +5153,15 @@ const HVBOARD={
   const done=fn=>{alive=false;cancelAnimationFrame(raf);if(keyFn)removeEventListener('keydown',keyFn,true);ov.remove();SFX.click();fn&&fn();};
   function header(){cancelAnimationFrame(raf);const host=miniCanvas(120,135);let t0=0;const anim=ts=>{if(!alive)return;if(!t0)t0=ts;host.ctx.clearRect(0,0,120,135);drawHost(host.ctx,o.host||'pip',(ts-t0)/1000);raf=requestAnimationFrame(anim);};raf=requestAnimationFrame(anim);
    const st=el('div',{class:'tt-stars'});if(o.stars!=null)st.innerHTML=starSvg(o.stars>=1)+starSvg(o.stars>=2)+starSvg(o.stars>=3);
-   return el('div',{class:'tt-head'},host,el('div',{},o.tag?el('div',{class:'tt-tag'},o.tag):null,el('div',{class:'tt-big'},String(o.score)),o.stars!=null?st:null));}
+   return el('div',{class:'tt-head'},host,el('div',{},o.tag?el('div',{class:'tt-tag'},o.tag):null,el('div',{class:'tt-big'},String(o.score)+(o.unit||'')),o.stars!=null?st:null));}
   function board(list,meT){pop.innerHTML='';if(keyFn){removeEventListener('keydown',keyFn,true);keyFn=null;}
    pop.append(header());if(o.stats)pop.append(el('div',{class:'tt-stats'},o.stats));
    pop.append(el('div',{class:'tt-title'},'🏆',el('span',{},'Top 10'),HVBOARD.cloud?el('span',{class:'tt-cloud','aria-label':'shared'},'☁️'):null));
    const b=el('div',{class:'tt-board'});const medal=['🥇','🥈','🥉'];let shown=false;
    for(let k=0;k<HVBOARD.N;k++){const r=list[k];if(!r){b.append(el('div',{class:'tt-row empty'},el('span',{class:'rk'},medal[k]||String(k+1)),el('span',{class:'st'},'·'),el('span',{class:'in'},'- -'),el('span',{class:'sc'},'')));continue;}
     const me=meT!=null&&r.t===meT&&!shown;if(me)shown=true;
-    b.append(el('div',{class:'tt-row'+(me?' me':'')},el('span',{class:'rk'},medal[k]||String(k+1)),el('span',{class:'st'},HV_STICKERS[r.e]||'🎃'),el('span',{class:'in'},r.i),el('span',{class:'sc'},String(r.s))));}
-   if(meT==null)b.append(el('div',{class:'tt-row you'},el('span',{class:'rk'},'👉'),el('span',{class:'st'},'⭐'),el('span',{class:'in'},''),el('span',{class:'sc'},String(o.score))));
+    b.append(el('div',{class:'tt-row'+(me?' me':'')},el('span',{class:'rk'},medal[k]||String(k+1)),el('span',{class:'st'},HV_STICKERS[r.e]||'🎃'),el('span',{class:'in'},r.i),el('span',{class:'sc'},String(r.s)+(o.unit||''))));}
+   if(meT==null)b.append(el('div',{class:'tt-row you'},el('span',{class:'rk'},'👉'),el('span',{class:'st'},'⭐'),el('span',{class:'in'},''),el('span',{class:'sc'},String(o.score)+(o.unit||''))));
    pop.append(b);
    const acts=el('div',{class:'tt-acts'});const again=el('button',{class:'tt-go alt',type:'button','aria-label':'Play again'},'▶');again.onclick=()=>done(o.onAgain);acts.append(again);
    if(o.onMenu){const m=el('button',{class:'tt-go ghost',type:'button','aria-label':'Pick a level'},o.menuIcon||'👻');m.onclick=()=>done(o.onMenu);acts.append(m);}
@@ -5187,6 +5187,11 @@ const HVBOARD={
   HVBOARD.load(o.game).then(list=>{if(!alive)return;cancelAnimationFrame(raf);if(HVBOARD.qualifies(list,o.score))entry(list);else board(list,null);});
   return ov;}
 };
+/* end of a game: the Top 10 board when it is on the page, the old score card otherwise.
+   num is the number the board ranks by (higher is better); o is the old overlay() options */
+function hvGameOver(wrap,game,num,o,extra){
+ if(typeof HVBOARD==='undefined'||!Number.isFinite(+num))return overlay(wrap,o);
+ return HVBOARD.show(wrap,Object.assign({game,score:Math.max(0,Math.round(+num)),stars:o.stars,stats:o.text,host:o.host,tag:o.title,onAgain:o.cb},extra||{}));}
 /* ==== TOP TEN END ==== */
 const SHORTS=[{id:'short1',title:'The Pumpkin Who Lost Its Glow',desc:'One pumpkin in the patch would not light. A small ghost decides to help. 38 seconds.',scenes:SHORT1,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');c.fillStyle='#14082C';c.fillRect(0,150,320,30);drawPumpkin(c,80,140,26,.6);drawPumpkin(c,250,140,26,.6);drawPumpkin(c,160,146,18,0);ncShort.ghost(c,200,80,50,t);}},
  {id:'short2',title:'Midnight at Moonmere Manor',desc:'When the clock strikes twelve, the manor wakes up. 38 seconds.',scenes:SHORT2,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');drawMoon(c,270,36,18);c.fillStyle='#14082C';c.fillRect(0,165,320,15);drawManor(c,160,166,t,.32);}}];
