@@ -3889,12 +3889,152 @@ const CAST=[
  ['mummy','Mummy Mo','Mummy',"Takes a very long time to get dressed. Always has one loose bandage. Gives the best hugs and the worst high fives.",'Linen-colored cookies','The pyramid-shaped shed',(c,t)=>drawMummy(c,52,112,.58,t),()=>SFX.groan()],
  ['wolf','Wolfie','Werewolf','Howls at the moon every night, mostly because it is just so pretty. Is actually a big softie who loves belly rubs.','Dog biscuits (they are crunchy)','The far hill',(c,t)=>drawWerewolf(c,54,112,.7,t,(Math.sin(t*1.6)+1)/2),()=>SFX.howl()],
 ];
-SCENES.cast={title:'Meet the Neighbors',mount(stage){const root=el('div',{class:'scene',style:'display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,320px);gap:22px;align-items:start'});if(innerWidth<760)root.style.gridTemplateColumns='1fr';
- const grid=el('div',{class:'castgrid'}),info=el('div',{class:'castinfo'});root.append(grid,info);stage.append(root);let raf=0,alive=true,sel=0;const cvs=[];
- CAST.forEach((c,i)=>{const cv=miniCanvas(104,117);cvs.push(cv);const b=el('button',{class:'castbtn',type:'button'},cv,el('b',{},c[1]),el('small',{},c[2]));b.onclick=()=>{sel=i;c[7]();show();};grid.append(b);});
- function show(){grid.querySelectorAll('.castbtn').forEach((b,i)=>b.classList.toggle('on',i===sel));const c=CAST[sel];info.innerHTML='';info.append(el('span',{class:'tag',style:'font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--candle)'},c[2]),el('h3',{},c[1]),el('p',{style:'margin:0;color:#E6DCFA'},c[3]),el('div',{class:'kv'},el('span',{},'Favorite candy'),el('span',{},c[4])),el('div',{class:'kv'},el('span',{},PLACES.some(pl=>pl.sub===c[5])?'Lives at':'Haunt'),el('span',{},c[5])));}
- show();const t0=performance.now();function anim(){if(!alive)return;const t=(performance.now()-t0)/1000;cvs.forEach((cv,i)=>{cv.ctx.clearRect(0,0,104,117);CAST[i][6](cv.ctx,t);});raf=requestAnimationFrame(anim);}anim();
- return()=>{alive=false;cancelAnimationFrame(raf);};}};
+/* ==== NEIGHBOR CARDS START ==== */
+/* ---------- Meet the Neighbors: flip-over trading cards ---------- */
+if(!document.getElementById('hvtccss')){const s=document.createElement('style');s.id='hvtccss';s.textContent=`
+.tc-root{height:100%;min-height:0;overflow:auto;padding:14px 16px 30px;box-sizing:border-box;user-select:none;-webkit-user-select:none}
+.tc-bar{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-bottom:14px;position:sticky;top:0;z-index:2;padding:6px;background:rgba(20,11,46,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-radius:999px}
+.tc-f{height:50px;min-width:50px;border-radius:999px;border:3px solid transparent;background:#2E1A5C;color:#fff;font:inherit;font-weight:900;font-size:24px;padding:0 14px;cursor:pointer;display:flex;align-items:center;gap:6px}
+.tc-f.on{background:#F6E9D2;color:#2A1548;border-color:#FFC34D}
+.tc-f small{font-size:14px}
+.tc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px}
+.tc-mini{position:relative;border:0;padding:0;background:none;cursor:pointer;aspect-ratio:5/7;perspective:900px}
+.tc-mini .tc-card{width:100%;height:100%;transition:transform .25s}
+.tc-mini:hover .tc-card{transform:translateY(-6px) rotate(-1.5deg)}
+.tc-card{position:relative;border-radius:16px;overflow:hidden;box-shadow:0 10px 24px rgba(0,0,0,.45);text-align:center;color:#2A1548;font-family:var(--body)}
+.tc-front{position:absolute;inset:0;display:flex;flex-direction:column;padding:7px;background:var(--rim);border-radius:inherit}
+.tc-art{position:relative;flex:1;border-radius:10px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,var(--glow),var(--deep) 75%)}
+.tc-art canvas{position:absolute;left:50%;top:50%;transform:translate(-50%,-48%);width:96%;height:auto}
+.tc-art .no{position:absolute;left:6px;top:4px;font-weight:900;font-size:12px;color:rgba(255,255,255,.85);text-shadow:0 1px 3px #000}
+.tc-art .rar{position:absolute;right:6px;top:3px;font-size:13px;letter-spacing:-1px;filter:drop-shadow(0 1px 2px #000)}
+.tc-name{margin-top:6px;background:#F6E9D2;border-radius:8px;padding:3px 4px 4px}
+.tc-name b{display:block;font-family:var(--display);font-weight:400;font-size:20px;line-height:1.05;color:#2A1548;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-name small{display:block;font-size:11px;font-weight:800;color:#6A3AB0;text-transform:uppercase;letter-spacing:.08em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tc-shine{position:absolute;inset:0;pointer-events:none;background:linear-gradient(115deg,transparent 30%,rgba(255,255,255,.35) 45%,transparent 60%);background-size:250% 100%;animation:tcShine 4s ease-in-out infinite;mix-blend-mode:overlay}
+@keyframes tcShine{0%,60%{background-position:150% 0}100%{background-position:-50% 0}}
+.tc-zoom{position:fixed;inset:0;z-index:70;display:grid;place-items:center;background:rgba(11,5,32,.82);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);perspective:1400px}
+.tc-big{position:relative;width:min(86vw,360px);aspect-ratio:5/7;transform-style:preserve-3d;transition:transform .7s cubic-bezier(.3,1.3,.5,1);cursor:pointer;animation:tcIn .45s cubic-bezier(.2,1.3,.4,1)}
+@keyframes tcIn{0%{transform:scale(.4) rotate(-8deg);opacity:0}100%{transform:scale(1);opacity:1}}
+.tc-big.flip{transform:rotateY(180deg)}
+.tc-big .tc-card{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.tc-big .tc-name b{font-size:34px}.tc-big .tc-name small{font-size:15px}.tc-big .tc-art .no{font-size:16px}.tc-big .tc-art .rar{font-size:20px}
+.tc-back{transform:rotateY(180deg);background:var(--rim);padding:9px;display:flex;flex-direction:column}
+.tc-back .in{flex:1;background:#F6E9D2;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;text-align:left;overflow:hidden}
+.tc-back .hd{display:flex;align-items:center;gap:10px}
+.tc-back .hd canvas{width:72px;height:81px!important;flex:none;border-radius:12px;background:radial-gradient(ellipse at 50% 40%,var(--glow),var(--deep) 80%)}
+.tc-back .hd b{display:block;font-family:var(--display);font-weight:400;font-size:26px;line-height:1}
+.tc-back .hd small{display:block;font-size:12px;font-weight:800;color:#6A3AB0;text-transform:uppercase;letter-spacing:.08em}
+.tc-stat{display:grid;grid-template-columns:30px 1fr 22px;align-items:center;gap:6px;font-size:20px;line-height:1}.tc-stat em{font-style:normal;font-weight:900;font-size:15px;color:#6A3AB0;text-align:right}
+.tc-stat i{font-style:normal;text-align:center}
+.tc-pips{display:flex;gap:3px}
+.tc-pips span{flex:1;height:16px;border-radius:7px;background:rgba(42,21,72,.12)}
+.tc-pips span.on{background:var(--pip)}
+.tc-fact{font-size:13px;font-weight:700;line-height:1.3;color:#2A1548;display:grid;grid-template-columns:24px 1fr;gap:4px;align-items:start}
+.tc-fact i{font-style:normal;font-size:17px;line-height:1.1}
+.tc-quote{font-size:13px;font-style:italic;color:#4A2F86;line-height:1.3;border-top:2px dashed rgba(42,21,72,.15);padding-top:6px;margin-top:auto}
+.tc-nav{position:fixed;left:0;right:0;bottom:calc(18px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:14px;z-index:71}
+.tc-nav button{width:64px;height:64px;border-radius:50%;border:0;background:#F6E9D2;font-size:28px;font-weight:900;color:#2A1548;cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.35)}
+.tc-hint{position:fixed;top:calc(18px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);z-index:71;font-size:40px;animation:tcTap 1.6s ease-in-out infinite;pointer-events:none}
+@keyframes tcTap{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-50%) scale(.85)}}
+`;document.head.append(s);}
+
+/* group themes: rim color, art glow, deep, pip color */
+const TC_THEME={monster:['#6A3AB0','#B78CFF','#2A1460','#8A5CF5'],kid:['#1F8A8A','#8EF0DC','#103E4A','#2FCFB0'],critter:['#D06A1A','#FFD08A','#5A2A10','#FF7A1A'],legend:['#B8862A','#FFE9A8','#3A2A10','#E0A82A']};
+/* stats: [spooky, sweet tooth, speed, silly, brave], power, scared of, rarity 1-3, group */
+const TC_DATA={
+ jack:[2,4,2,3,4,'Glows brighter when you say thank you','Big gusts of wind',2,'critter'],
+ mabel:[3,4,5,3,5,'Never late, not once, not ever','Brooms with flat tires',3,'monster'],
+ pip:[1,3,3,4,2,'The quietest boo in the village','Loud sneezes',2,'critter'],
+ rattles:[3,2,3,5,4,'Plays a drum solo on his own ribs','Dogs who want a bone',2,'monster'],
+ midnight:[2,2,5,2,3,'Brings good luck wherever she walks','Bath time',1,'critter'],
+ flutter:[2,3,5,3,4,'Sees in the dark, upside down','Bright flashlights',1,'critter'],
+ bubbles:[3,3,1,4,3,'Brews a different color every hour','Running out of green',1,'critter'],
+ gourdon:[1,4,4,5,3,'Rolls anywhere, even uphill','Pie season',1,'critter'],
+ leo:[2,4,3,4,4,'A very loud RAWR','The vacuum cleaner',1,'kid'],theo_dino:[2,4,3,4,4,'A very loud RAWR','The vacuum cleaner',1,'kid'],
+ ivy:[2,4,3,3,3,'Sees best from the big eye hole','Getting stepped on (the sheet is long)',1,'kid'],
+ max:[1,4,3,3,5,'A button for everything','Running out of bottle caps',1,'kid'],
+ june:[1,4,4,3,5,'The fluffiest mane on Elm Street','Rain (paper plates get soggy)',1,'kid'],
+ theo:[1,3,4,3,5,'Never misses a pretend target','Real arrows',1,'kid'],
+ wyatt:[1,4,3,4,4,'Taught the pumpkins to say howdy','Horses that are real',1,'kid'],
+ kenji:[1,3,5,2,5,'Bows faster than anyone','Untied belts',1,'kid'],
+ iris:[1,5,4,5,3,'Spins until the stripes blur','Gray skies',1,'kid'],
+ rocco:[2,4,2,4,3,'Can drag a ball for miles','Beach ball pops',1,'kid'],
+ sunny:[1,3,2,4,4,'Peace sign at every porch','Grumpy porch lights',1,'kid'],
+ gus:[2,4,3,4,4,'Best friends with Frankie','Running out of green face paint',2,'kid'],
+ hank:[1,4,3,3,5,'Never takes off the flannel','Real trees falling',1,'kid'],
+ zoe:[1,5,5,3,5,'Fastest kid to the next door','Houses with the porch light off',2,'kid'],
+ nick:[1,5,2,4,4,'Knows who has been good','Being in the wrong holiday',3,'legend'],
+ lulu:[1,5,3,4,3,'One wish per house','Losing her wand',1,'kid'],
+ dot:[1,4,3,5,4,'Flaps really hard','Gravity',1,'kid'],
+ finn:[3,4,4,4,4,'Has his own theme song','The bathtub drain',1,'kid'],
+ bea:[1,5,4,4,3,'Buzzes nonstop','Fly swatters',1,'kid'],
+ benny:[1,4,1,5,3,'Sunny side up, always','Frying pans',1,'kid'],
+ paco:[1,5,3,5,2,'Full of surprises','Sticks',2,'kid'],
+ kelsey:[1,4,4,4,4,'A cheer for every house','Shedding pom-poms',1,'kid'],
+ zed:[2,4,3,4,4,'Comes in peace (for candy)','Earth vegetables',2,'kid'],
+ marina:[1,4,1,3,4,'Talks to the fish in the pond','Stairs',1,'kid'],
+ snap:[3,4,3,4,4,'Chomp chomp','Toothbrushes',1,'kid'],
+ horseman:[5,3,5,2,5,'Rides the old road all night','Anyone asking where his head is',3,'legend'],
+ drac:[4,3,4,2,4,'The best cape in the village','Garlic bread and mirrors',3,'monster'],
+ frank:[3,4,2,3,5,'A happy buzz of electricity','Thunderstorms (they tickle)',3,'monster'],
+ mummy:[3,3,1,4,3,'The best hugs in the village','Unraveling at parties',2,'monster'],
+ wolf:[4,4,5,3,4,'The loudest howl on the hill','Bath time and the vet',3,'monster'],
+};
+const TC_MORE={
+ jack:['Counting porch lights','Gourdon'],mabel:['Broom tune-ups','Midnight'],pip:['Hide-and-seek (always wins)','Ivy'],rattles:['Drumming on anything','Gus'],
+ midnight:['Napping in nine spots','Mabel'],flutter:['Hanging out, upside down','Pip'],bubbles:['Humming the same song','Mabel'],gourdon:['Rolling races','Jack'],
+ leo:['Stomping in leaf piles','Dot'],ivy:['Practicing quiet boos','Pip'],max:['Pressing every button','Zed'],june:['Roaring at the moon','Wolfie'],
+ theo:['Pretend archery','Hank'],wyatt:['Saying howdy','Gourdon'],kenji:['Bowing to doorbells','Zoe'],iris:['Spinning','Lulu'],rocco:['Dragging his ball','Snap'],
+ sunny:['Tie-dye','Iris'],gus:['Copying Frankie','Frankie'],hank:['Pretend chopping','Theo'],zoe:['Running to the next house','Kenji'],nick:['Checking his list twice','Bea'],
+ lulu:['Granting candy wishes','Iris'],dot:['Flapping practice','Leo'],finn:['Humming his theme song','Marina'],bea:['Buzzing','Nick'],benny:['Leaning on things','Paco'],
+ paco:['Telling people not to hit him','Benny'],kelsey:['Cheering for every house','Zoe'],zed:['Pointing at candy','Max'],marina:['Talking to pond fish','Finn'],snap:['Chomping','Rocco'],
+ horseman:['Looking for his head','Jack'],drac:['Baking at midnight','Mummy Mo'],frank:['Gentle hugs','Gus'],mummy:['Getting dressed (slowly)','Count Dracula'],wolf:['Howling at the pretty moon','June'],
+};
+const TC_STATS=[['👻','spooky'],['🍬','sweet tooth'],['⚡','speed'],['🤪','silly'],['🦸','brave']];
+const TC_RAR=['','⭐','⭐⭐','⭐⭐⭐'];
+function tcCanvas(k=1){const c=el('canvas');const d=Math.min(2,window.devicePixelRatio||1)*k;c.width=Math.round(104*d);c.height=Math.round(117*d);const x=c.getContext('2d');x.setTransform(d,0,0,d,0,0);c.ctx=x;return c;}
+
+SCENES.cast={title:'Meet the Neighbors',mount(stage){
+ const root=el('div',{class:'tc-root'});stage.append(root);
+ const rows=CAST.map((r,i)=>{let id=r[0];if(id==='theo'&&/dino/i.test(r[2]))id='leo';const d=TC_DATA[id]||[2,3,3,3,3,'Full of surprises','Nothing at all',1,'kid'];return{r,i,id,d,g:d[8]};});
+ const groups=[['all','🃏'],['monster','🧛'],['kid','🧒'],['critter','🐈‍⬛'],['legend','⭐']];let filter='all';
+ const bar=el('div',{class:'tc-bar'});const fBtns={};
+ for(const[g,ic]of groups){const n=g==='all'?rows.length:rows.filter(x=>x.g===g).length;if(!n)continue;const b=el('button',{class:'tc-f',type:'button','aria-label':g},ic,el('small',{},String(n)));b.onclick=()=>{filter=g;SFX.click();build();};fBtns[g]=b;bar.append(b);}
+ const grid=el('div',{class:'tc-grid'});root.append(bar,grid);
+ const minis=[];let raf=0,alive=true;
+ const theme=(x,elm)=>{const T=TC_THEME[x.g]||TC_THEME.kid;elm.style.setProperty('--rim',T[0]);elm.style.setProperty('--glow',T[1]);elm.style.setProperty('--deep',T[2]);elm.style.setProperty('--pip',T[3]);};
+ function front(x,cv){const c=el('div',{class:'tc-card'});theme(x,c);const art=el('div',{class:'tc-art'},cv,el('span',{class:'no'},'#'+String(x.i+1).padStart(2,'0')),el('span',{class:'rar'},TC_RAR[x.d[7]]));if(x.d[7]>=3)art.append(el('div',{class:'tc-shine'}));
+  c.append(el('div',{class:'tc-front'},art,el('div',{class:'tc-name'},el('b',{},x.r[1]),el('small',{},x.r[2]))));return c;}
+ function build(){for(const k in fBtns)fBtns[k].classList.toggle('on',k===filter);grid.innerHTML='';minis.length=0;
+  rows.filter(x=>filter==='all'||x.g===filter).forEach(x=>{const cv=tcCanvas(1.5);const b=el('button',{class:'tc-mini',type:'button','aria-label':x.r[1]},front(x,cv));b.onclick=()=>open(rows.indexOf(x));grid.append(b);minis.push([cv,x]);});}
+ /* big flipping card */
+ let zoom=null,zi=-1,zcv=null,bcv=null,hintShown=false;
+ function backFace(x,cv){const c=el('div',{class:'tc-card tc-back'});theme(x,c);const inn=el('div',{class:'in'});
+  inn.append(el('div',{class:'hd'},cv,el('div',{},el('b',{},x.r[1]),el('small',{},x.r[2]+'  '+TC_RAR[x.d[7]]))));
+  TC_STATS.forEach(([ic,lab],k)=>{const p=el('div',{class:'tc-pips'});for(let j=0;j<5;j++)p.append(el('span',{class:j<x.d[k]?'on':''}));inn.append(el('div',{class:'tc-stat','aria-label':lab+' '+x.d[k]+' of 5'},el('i',{},ic),p,el('em',{},String(x.d[k]))));});
+  const lives=PLACES.some(pl=>pl.sub===x.r[5]);
+  inn.append(el('div',{class:'tc-fact'},el('i',{},'🍭'),el('span',{},x.r[4])),el('div',{class:'tc-fact'},el('i',{},lives?'🏠':'📍'),el('span',{},x.r[5])),el('div',{class:'tc-fact'},el('i',{},'✨'),el('span',{},x.d[5])),el('div',{class:'tc-fact'},el('i',{},'😱'),el('span',{},x.d[6])),el('div',{class:'tc-fact'},el('i',{},'🎨'),el('span',{},(TC_MORE[x.id]||['Trick-or-treating'])[0])),el('div',{class:'tc-fact'},el('i',{},'🤝'),el('span',{},(TC_MORE[x.id]||[0,'Everyone'])[1])),el('div',{class:'tc-quote'},x.r[3]));
+  c.append(inn);return c;}
+ function open(i){close(true);zi=i;const x=rows[i];zcv=tcCanvas(3);bcv=tcCanvas(1.5);
+  const big=el('div',{class:'tc-big'});const f=front(x,zcv);big.append(f,backFace(x,bcv));
+  const z=el('div',{class:'tc-zoom'},big);
+  const nav=el('div',{class:'tc-nav'});const prev=el('button',{type:'button','aria-label':'previous'},'‹'),flip=el('button',{type:'button','aria-label':'flip'},'🔄'),next=el('button',{type:'button','aria-label':'next'},'›'),shut=el('button',{type:'button','aria-label':'close'},'✕');nav.append(prev,flip,next,shut);
+  const list=rows.filter(y=>filter==='all'||y.g===filter);const pos=list.indexOf(x);
+  prev.onclick=e=>{e.stopPropagation();open(rows.indexOf(list[(pos-1+list.length)%list.length]));};next.onclick=e=>{e.stopPropagation();open(rows.indexOf(list[(pos+1)%list.length]));};
+  const doFlip=()=>{big.classList.toggle('flip');SFX.flip();SFX.noise(.12,.06,null,'highpass',2500);if(big.classList.contains('flip'))try{x.r[7]();}catch(e){}};
+  flip.onclick=e=>{e.stopPropagation();doFlip();};big.onclick=e=>{e.stopPropagation();doFlip();};shut.onclick=e=>{e.stopPropagation();close();};z.onclick=()=>close();
+  document.body.append(z,nav);zoom=[z,nav];if(!hintShown){hintShown=true;const h=el('div',{class:'tc-hint'},'👆');document.body.append(h);zoom.push(h);setTimeout(()=>h.remove(),3200);}
+  SFX.whoosh?SFX.whoosh():SFX.tone(500,.15,'triangle',.05,null,900);try{x.r[7]();}catch(e){}
+  bcv.ctx.clearRect(0,0,104,117);x.r[6](bcv.ctx,0);}
+ function close(silent){if(zoom){zoom.forEach(n=>n.remove());zoom=null;zcv=null;if(!silent)SFX.click();}}
+ const onKey=e=>{if(!zoom)return;if(e.key==='ArrowRight')zoom[1].children[2].click();else if(e.key==='ArrowLeft')zoom[1].children[0].click();else if(e.key===' '){e.preventDefault();zoom[1].children[1].click();}};addEventListener('keydown',onKey);
+ build();const t0=performance.now();
+ function anim(){if(!alive)return;const t=(performance.now()-t0)/1000;
+  for(const[cv,x]of minis){const r=cv.getBoundingClientRect();if(r.bottom<0||r.top>innerHeight)continue;cv.ctx.clearRect(0,0,104,117);x.r[6](cv.ctx,t+x.i*.4);}
+  if(zcv){zcv.ctx.clearRect(0,0,104,117);rows[zi].r[6](zcv.ctx,t);}
+  raf=requestAnimationFrame(anim);}anim();
+ return()=>{alive=false;cancelAnimationFrame(raf);close(true);removeEventListener('keydown',onKey);};}};
+/* ==== NEIGHBOR CARDS END ==== */
 
 /* ---------- Around the world ---------- */
 const WORLDS=[['Ireland','Samhain','#4E9A4A','Halloween traces back to Samhain, the Celtic festival marking the end of harvest. Bonfires burned and the boundary between worlds was said to grow thin.'],['Mexico','Día de Muertos','#E2453F','On November 1 and 2, families build ofrendas with marigolds, candles, sugar skulls and the favorite foods of relatives who have died.'],['Scotland','Guising','#5B6B8C','Children dress in disguise and perform a song, poem or joke before a treat is handed over. Carved turnips came long before pumpkins.'],['Philippines','Pangangaluluwa','#4FA3E0','In some towns children go door to door singing for the souls in purgatory in exchange for treats.'],['Japan','Kawasaki Halloween Parade','#C2304A','Held near Tokyo since 1997, the parade draws thousands of costumed marchers each year.'],['United States','Trick-or-treating','#FF7A1A','Door-to-door trick-or-treating spread across the country in the 1930s and 1940s.'],['Italy','Ognissanti','#3E8F8A','All Saints Day is a public holiday. Some regions bake fave dei morti, small almond cookies for the dead.'],['Austria','Seelenwoche','#7B4BE0','During All Souls Week some families leave bread, water and a lit lamp on the table overnight.']];
