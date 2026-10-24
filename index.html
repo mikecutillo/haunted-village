@@ -5336,6 +5336,150 @@ function hvGameOver(wrap,game,num,o,extra){
  if(typeof HVBOARD==='undefined'||!Number.isFinite(+num))return overlay(wrap,o);
  return HVBOARD.show(wrap,Object.assign({game,score:Math.max(0,Math.round(+num)),stars:o.stars,stats:o.text,host:o.host,tag:o.title,onAgain:o.cb},extra||{}));}
 /* ==== TOP TEN END ==== */
+/* ==== BIG COUNTDOWN START ==== */
+/* Tap the countdown in the top bar: a full-screen countdown with the whole cast around it.
+   Not a game. Characters idle, then take turns doing little acts; tap anyone to make them do one. */
+(()=>{
+const CD_CSS=`
+.cd{position:absolute;inset:0;overflow:hidden;background:#140A2E;touch-action:manipulation}
+.cd-cv{position:absolute;inset:0;width:100%;height:100%;display:block}
+.cd-mid{position:absolute;left:50%;top:44%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.6vh,16px);pointer-events:none;z-index:2}
+.cd-head{font-family:var(--display);color:#FF7A1A;font-size:clamp(30px,6.4vw,74px);line-height:1;text-shadow:0 4px 0 #4A1B05,0 0 30px rgba(255,122,26,.45);white-space:nowrap}
+.cd-tiles{display:flex;gap:clamp(6px,1.4vw,16px)}
+.cd-t{position:relative;background:#E2453F;color:#fff;border-radius:clamp(12px,2vw,22px);width:clamp(70px,15vw,170px);padding:clamp(8px,1.6vw,18px) 0 clamp(6px,1.2vw,12px);text-align:center;box-shadow:0 clamp(6px,1vw,12px) 0 #9E2A26,0 18px 40px rgba(0,0,0,.45);transform-origin:50% 100%}
+.cd-t b{display:block;font-family:var(--display);font-weight:400;font-size:clamp(44px,10vw,118px);line-height:.95;font-variant-numeric:tabular-nums}
+.cd-t span{display:block;font-size:clamp(10px,1.5vw,16px);letter-spacing:.16em;text-transform:uppercase;font-weight:900;opacity:.92}
+.cd-t i{position:absolute;top:-.55em;right:-.35em;font-style:normal;font-size:clamp(20px,3.4vw,38px);filter:drop-shadow(0 3px 0 rgba(0,0,0,.25))}
+.cd-t.tick{animation:cdTick .38s cubic-bezier(.3,1.6,.5,1)}
+@keyframes cdTick{0%{transform:scale(1,1)}35%{transform:scale(1.08,.9)}70%{transform:scale(.97,1.05)}100%{transform:scale(1,1)}}
+.cd.party .cd-t{background:#4E8A2A;box-shadow:0 clamp(6px,1vw,12px) 0 #2F5A18,0 18px 40px rgba(0,0,0,.45)}
+@media (orientation:portrait){.cd-mid{top:40%}.cd-t{width:clamp(70px,20vw,170px)}.cd-t b{font-size:clamp(44px,13vw,118px)}}
+`;
+if(!document.getElementById('cd-css')){const st=document.createElement('style');st.id='cd-css';st.textContent=CD_CSS;document.head.append(st);}
+
+/* who stands where. ground: along the hill. fly: across the sky. peek: pops up from behind the counter */
+const CD_GROUND=['frankie','jack','dracula','leo','mummy','midnight','wolfie','zoe','rattles','gourdon','bubbles','max','patches','nick','june','snap'];
+const CD_FLY=['mabelfly','ghost','flutter'];
+const CD_PEEK=['pip','midnight','ghost','jack'];
+const CD_SAY=['🎃','👻','🍬','🦇','Boo!','hehe','🍭','✨','Yay!','🕸️','🌙','Woo!'];
+const CD_SND={frankie:'groan',mummy:'groan',wolfie:'howl',midnight:'meow',dracula:'cackle',ghost:'boo',pip:'boo',flutter:'flap',mabelfly:'cackle',rattles:'drum',jack:'jump',gourdon:'jump',bubbles:'chime',nick:'star'};
+const ACTS=['hop','spin','wiggle','flip','grow','dance','flop','twirl'];
+const cdSnd=id=>{try{const k=CD_SND[id]||pick(['jump','good','chime','flip']);if(typeof SFX[k]==='function')SFX[k]();else SFX.click();}catch(e){}};
+const pad2=n=>String(Math.max(0,n)).padStart(2,'0');
+
+SCENES.countdown={title:'Halloween Countdown',keepSong:true,mount(stage){
+ const root=el('div',{class:'cd'});stage.append(root);
+ const cv=document.createElement('canvas');cv.className='cd-cv';root.append(cv);const x=cv.getContext('2d');
+ const head=el('div',{class:'cd-head'},'Halloween is coming!');
+ const LAB=[['days','🎃'],['hrs','⏰'],['min','⏳'],['sec','💥']];
+ const tiles=LAB.map(([l,ic])=>{const b=el('b',{},'00');const t=el('div',{class:'cd-t'},el('i',{},ic),b,el('span',{},l));return{t,b,v:''};});
+ const mid=el('div',{class:'cd-mid'},head,el('div',{class:'cd-tiles'},...tiles.map(q=>q.t)));root.append(mid);
+
+ let cw=0,ch=0,dpr=1,alive=true,raf=0;const t0=performance.now(),now=()=>(performance.now()-t0)/1000;let tp=0;
+ const r=seeded(1031);
+ const stars=Array.from({length:90},()=>({x:r(),y:r()*.6,s:.6+r()*1.6,p:r()*6}));
+ const candy=Array.from({length:26},()=>({x:r(),y:r(),v:.03+r()*.05,s:r()*6,k:pick(['corn','lolly','wrap','mint'])}));
+ let actors=[],bubbles=[],confetti=[];
+ /* ground line: a soft hill, higher at the edges */
+ const ground=px=>{const u=px/cw-.5;return ch-Math.max(26,ch*.06)-Math.pow(Math.abs(u)*2,2)*ch*.05;};
+ function layout(){const narrow=cw<700;const n=narrow?7:Math.min(CD_GROUND.length,Math.max(8,Math.round(cw/120)));
+  const H=Math.min(ch*(narrow?.2:.24),210);const keep={};actors.forEach(a=>keep[a.id+a.kind]=a);actors=[];
+  const pickList=CD_GROUND.slice(0,n);
+  pickList.forEach((id,i)=>{const px=cw*(i+.5)/n;const a=keep[id+'g']||{id,kind:'g',act:null,at:-9,ph:r()*6,face:r()<.5?-1:1};Object.assign(a,{bx:px,h:H*(id==='midnight'||id==='jack'||id==='gourdon'?.62:1)});actors.push(a);});
+  CD_FLY.forEach((id,i)=>{const a=keep[id+'f']||{id,kind:'f',act:null,at:-9,ph:r()*6,face:1};Object.assign(a,{h:Math.min(ch*.16,130)*(id==='mabelfly'?1.25:1),lane:i});actors.push(a);});
+  const pk=keep['peekp']||{id:'pip',kind:'p',act:null,at:-9,up:0,ph:0,face:1,next:3};pk.h=Math.min(ch*.17,150);actors.push(pk);}
+ function fit(){const rc=root.getBoundingClientRect();if(!rc.width)return;cw=rc.width;ch=rc.height;dpr=Math.min(2,devicePixelRatio||1);cv.width=Math.round(cw*dpr);cv.height=Math.round(ch*dpr);layout();}
+ const ro=new ResizeObserver(fit);ro.observe(root);
+
+ function doAct(a,act){a.act=act||pick(ACTS);a.at=now();if(a.kind!=='p'&&Math.random()<.7)bubbles.push({a,txt:pick(CD_SAY),at:now()});}
+ /* the counter */
+ let lastMin=-1,party=false;
+ function tick(){const n=Date.now();let left,lab;party=n>=FLIGHT_START&&n<FLIGHT_END;root.classList.toggle('party',party);
+  if(party){left=FLIGHT_END-n;head.textContent='Happy Halloween!';}else{left=Math.max(0,FLIGHT_START-n);head.textContent=left<86400e3?'Halloween is TOMORROW!':'Halloween is coming!';}
+  const v=[party?0:Math.floor(left/86400e3),party?Math.floor(left/3600e3):Math.floor(left/3600e3)%24,Math.floor(left/60e3)%60,Math.floor(left/1e3)%60].map(pad2);
+  v.forEach((s,i)=>{const q=tiles[i];if(q.v!==s){q.v=s;q.b.textContent=s;if(i>=2||q.t.dataset.ready){q.t.classList.remove('tick');void q.t.offsetWidth;q.t.classList.add('tick');}q.t.dataset.ready=1;}});
+  const m=+v[2];if(lastMin>=0&&m!==lastMin){actors.forEach((a,i)=>setTimeout(()=>alive&&doAct(a,'hop'),i*60));burst(cw/2,ch*.44,60);SFX.good();}lastMin=m;}
+ tick();const iv=setInterval(tick,250);
+ function burst(cx,cy,n){for(let i=0;i<n;i++){const ang=Math.random()*TAU,sp=120+Math.random()*320;confetti.push({x:cx,y:cy,vx:Math.cos(ang)*sp,vy:Math.sin(ang)*sp-200,age:0,c:pick(['#FF7A1A','#FFC34D','#8EE65B','#B26BFF','#4FD8FF','#FF4FA3']),r:Math.random()*6});}}
+
+ /* where each actor is right now */
+ function pos(a,t){
+  if(a.kind==='g'){return{x:a.bx,y:ground(a.bx)};}
+  if(a.kind==='f'){if(a.id==='mabelfly'){const span=cw+600,u=((t*70+a.ph*200)%span)-300;return{x:u,y:ch*.13+Math.sin(t*1.3)*14};}
+   const side=a.lane===1?.12:.88;return{x:cw*side+Math.sin(t*.7+a.ph)*cw*.04,y:ch*((ch>cw?.6:.26)+a.lane*.03)+Math.sin(t*1.6+a.ph)*12};}
+  const tb=mid.getBoundingClientRect(),rb=root.getBoundingClientRect();return{x:tb.left-rb.left+tb.width*(.2+.6*((Math.floor(a.ph)%4)/3)),y:tb.top-rb.top+tb.height*.42};}
+ function hit(px,py){const t=now();for(let i=actors.length-1;i>=0;i--){const a=actors[i];const p=pos(a,t);const w=a.h*.45;const yy=a.kind==='f'?p.y:p.y;if(px>p.x-w&&px<p.x+w&&py>yy-a.h-(a.kind==='p'?a.h*a.up:0)&&py<yy+12)return a;}return null;}
+ cv.addEventListener('pointerdown',e=>{SFX.get();const rb=cv.getBoundingClientRect(),px=e.clientX-rb.left,py=e.clientY-rb.top;const a=hit(px,py);
+  if(a){if(a.kind==='p'){a.up=1;a.hold=now()+1.6;}doAct(a);cdSnd(a.id);burst(px,py,10);}else{burst(px,py,14);SFX.click();}});
+ tiles.forEach(q=>{q.t.style.pointerEvents='auto';q.t.onclick=()=>{q.t.classList.remove('tick');void q.t.offsetWidth;q.t.classList.add('tick');SFX.tone(660+Math.random()*300,.12,'triangle',.06);const b=q.t.getBoundingClientRect(),rb=root.getBoundingClientRect();burst(b.left-rb.left+b.width/2,b.top-rb.top,16);};});
+
+ let nextAct=1.2;
+ function drawActor(a,t){const p=pos(a,t);const u=t-a.at;const A=u<1.4?a.act:null;
+  let dy=0,rot=0,sx=a.face,sy=1;
+  /* idle: breathing squash and a lazy sway */
+  const br=Math.sin(t*2.2+a.ph);sy*=1+br*.025;sx*=1-br*.015;rot+=Math.sin(t*1.1+a.ph)*.03;
+  if(A==='hop'){const k=Math.min(1,u/.7);dy=-Math.sin(k*Math.PI)*a.h*.35;if(k<.12||k>.9){sy*=.85;sx*=1.12;}}
+  else if(A==='spin'){const k=Math.min(1,u/.9);dy=-Math.sin(k*Math.PI)*a.h*.3;rot+=k*TAU*(a.face||1);}
+  else if(A==='wiggle'){rot+=Math.sin(u*40)*.18*(1-u/1.4);}
+  else if(A==='flip'){sx*=Math.cos(Math.min(1,u/.8)*Math.PI*2);}
+  else if(A==='grow'){const k=Math.min(1,u/1);const g=1+Math.sin(k*Math.PI)*.35;sx*=g;sy*=g;}
+  else if(A==='dance'){rot+=Math.sin(u*14)*.22;dy=-Math.abs(Math.sin(u*14))*a.h*.08;}
+  else if(A==='flop'){const k=Math.min(1,u/1.3);rot+=(k<.4?k/.4:k>.75?(1-k)/.25:1)*(a.face>0?1:-1)*1.35;}
+  else if(A==='twirl'){sx*=Math.cos(u*16);dy=-Math.sin(Math.min(1,u/1.2)*Math.PI)*a.h*.15;}
+  let px=p.x,py=p.y;
+  if(a.kind==='p'){/* peeks up from behind the counter, looks around, ducks back */
+   if(a.hold&&t<a.hold)a.up=Math.min(1,a.up+.08);else{a.next-=1/60;if(a.next<=0){a.next=5+Math.random()*5;a.ph+=1;a.id=pick(CD_PEEK);a.hold=t+2.4;}a.up=Math.max(0,a.up-.04);}
+   if(a.up<=.01)return;const e=a.up*a.up*(3-2*a.up);py+=a.h*(1-e)*.95;rot+=Math.sin(t*3)*.12*e;}
+  if(a.kind!=='f'){x.fillStyle='rgba(10,4,26,'+(.35*Math.max(.3,1+dy/(a.h*.4)))+')';x.beginPath();x.ellipse(px,p.y+2,a.h*.26*(1+dy/(a.h*1.2)),a.h*.05,0,0,TAU);if(a.kind==='g')x.fill();}
+  x.save();x.translate(px,py+dy);if(a.kind==='f')x.translate(0,a.h*.5);
+  /* turn around the middle of the body, squash from the feet */
+  x.translate(0,-a.h*.45);x.rotate(rot);x.translate(0,a.h*.45);x.scale(sx,sy);
+  if(!ncFit(x,a.id,0,0,a.h*.9,a.h)){/* art still loading: a pumpkin stands in */drawPumpkin(x,0,-a.h*.3,a.h*.28,.5);}
+  x.restore();}
+
+ function draw(){if(!alive)return;const t=now(),dt=Math.min(.05,t-tp);tp=t;if(!cw){fit();raf=requestAnimationFrame(draw);return;}
+  x.setTransform(dpr,0,0,dpr,0,0);
+  /* sky */
+  const g=x.createLinearGradient(0,0,0,ch);if(party){g.addColorStop(0,'#2A0F55');g.addColorStop(.6,'#6A2A8A');g.addColorStop(1,'#C2457A');}else{g.addColorStop(0,'#0B0630');g.addColorStop(.55,'#3A1A78');g.addColorStop(1,'#6A3AA0');}
+  x.fillStyle=g;x.fillRect(0,0,cw,ch);
+  for(const s of stars){x.globalAlpha=.35+.45*Math.abs(Math.sin(t*1.4+s.p));x.fillStyle='#FFF6D8';x.beginPath();x.arc(s.x*cw,s.y*ch,s.s,0,TAU);x.fill();}x.globalAlpha=1;
+  drawMoon(x,cw*.82,ch*.16,Math.min(cw,ch)*.075,1);
+  /* falling candy, behind everything */
+  for(const c of candy){c.y+=c.v*dt;if(c.y>1.05){c.y=-.05;c.x=Math.random();}x.save();x.globalAlpha=.55;x.translate(c.x*cw+Math.sin(t+c.s)*14,c.y*ch);x.scale(.6,.6);drawCandy(x,0,0,c.k,t*.8+c.s);x.restore();}
+  /* fliers */
+  for(const a of actors)if(a.kind==='f')drawActor(a,t);
+  /* back hill and front hill */
+  x.fillStyle='#2A1A55';x.beginPath();x.moveTo(0,ch);for(let i=0;i<=40;i++){const px=cw*i/40;x.lineTo(px,ch*.8+Math.sin(i*.6)*ch*.03);}x.lineTo(cw,ch);x.fill();
+  /* bunting across the top of the counter area */
+  {const yb=ch*.06,n=Math.max(10,Math.round(cw/60));x.strokeStyle='rgba(255,244,230,.5)';x.lineWidth=2;x.beginPath();for(let i=0;i<=n;i++){const px=cw*i/n,py=yb+Math.sin(i/n*Math.PI)*ch*.05;i?x.lineTo(px,py):x.moveTo(px,py);}x.stroke();
+   for(let i=0;i<n;i++){const px=cw*(i+.5)/n,py=yb+Math.sin((i+.5)/n*Math.PI)*ch*.05;x.fillStyle=['#FF7A1A','#8EE65B','#B26BFF','#FFC34D','#4FD8FF'][i%5];x.save();x.translate(px,py);x.rotate(Math.sin(t*2+i)*.12);x.beginPath();x.moveTo(-12,0);x.lineTo(12,0);x.lineTo(0,22);x.closePath();x.fill();x.restore();}}
+  /* the peeker sits behind the counter, so it is drawn on the canvas under the tiles */
+  for(const a of actors)if(a.kind==='p')drawActor(a,t);
+  x.fillStyle='#1E1240';x.beginPath();x.moveTo(0,ch);for(let i=0;i<=60;i++){const px=cw*i/60;x.lineTo(px,ground(px)+6);}x.lineTo(cw,ch);x.fill();
+  /* little pumpkins and grass on the hill */
+  for(let i=0;i<9;i++){const px=cw*(i+.25)/9;drawPumpkin(x,px,ground(px)+ch*.03,Math.max(8,ch*.014),.45+.35*Math.max(0,Math.sin(t*3+i)));}
+  /* ground cast */
+  const gs=actors.filter(a=>a.kind==='g');for(const a of gs)drawActor(a,t);
+  /* someone does something every second or two; on the last 10 seconds of a minute, more of them */
+  nextAct-=dt;if(nextAct<=0){const sec=Math.floor((Date.now()/1000)%60);nextAct=sec>=50?.35:.9+Math.random()*1.4;const a=pick(actors.filter(q=>q.kind!=='p'));if(a&&now()-a.at>1.5)doAct(a);}
+  /* speech bubbles */
+  for(let i=bubbles.length-1;i>=0;i--){const b=bubbles[i],age=t-b.at;if(age>1.6){bubbles.splice(i,1);continue;}const p=pos(b.a,t);const k=Math.min(1,age*6)*(age>1.3?(1.6-age)/.3:1);
+   const bx=p.x+(b.a.face||1)*b.a.h*.28,by=p.y-b.a.h*(b.a.kind==='f'?.1:1.08)-age*10;x.save();x.globalAlpha=Math.max(0,k);x.translate(bx,by);x.scale(.6+.4*k,.6+.4*k);
+   const emoji=!/[a-z]/i.test(b.txt);x.font=(emoji?'30px':'900 20px')+' "Baloo 2",system-ui,"Apple Color Emoji","Segoe UI Emoji"';const w=Math.max(44,x.measureText(b.txt).width+22);
+   x.fillStyle='#FFF4E6';x.beginPath();x.ellipse(0,0,w/2,22,0,0,TAU);x.fill();x.beginPath();x.moveTo(-(b.a.face||1)*8,16);x.lineTo(-(b.a.face||1)*18,32);x.lineTo(-(b.a.face||1)*0,18);x.fill();
+   x.fillStyle='#2A1548';x.textAlign='center';x.textBaseline='middle';x.fillText(b.txt,0,2);x.restore();}
+  /* confetti */
+  for(let i=confetti.length-1;i>=0;i--){const c=confetti[i];c.age+=dt;if(c.age>2.4||c.y>ch+20){confetti.splice(i,1);continue;}c.vy+=520*dt;c.vx*=.99;c.x+=c.vx*dt;c.y+=c.vy*dt;x.save();x.translate(c.x,c.y);x.rotate(c.r+c.age*8);x.fillStyle=c.c;x.globalAlpha=Math.min(1,(2.4-c.age)*2);x.fillRect(-4,-6,8,12);x.restore();}
+  if(party&&Math.random()<.05)burst(Math.random()*cw,ch*.3,24);
+  raf=requestAnimationFrame(draw);}
+ raf=requestAnimationFrame(draw);
+ setTimeout(()=>{if(alive){burst(cw/2,ch*.44,70);actors.forEach((a,i)=>setTimeout(()=>alive&&doAct(a,'hop'),i*80));}},350);
+ return()=>{alive=false;clearInterval(iv);cancelAnimationFrame(raf);ro.disconnect();};}};
+
+/* the countdown in the top bar opens it */
+{const c=$('#count');if(c){c.style.cursor='pointer';c.setAttribute('role','button');c.setAttribute('aria-label','Open the big countdown');c.title='Open the big countdown';c.addEventListener('click',()=>{SFX.click();openScene('countdown');});}}
+})();
+/* ==== BIG COUNTDOWN END ==== */
 const SHORTS=[{id:'short1',title:'The Pumpkin Who Lost Its Glow',desc:'One pumpkin in the patch would not light. A small ghost decides to help. 38 seconds.',scenes:SHORT1,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');c.fillStyle='#14082C';c.fillRect(0,150,320,30);drawPumpkin(c,80,140,26,.6);drawPumpkin(c,250,140,26,.6);drawPumpkin(c,160,146,18,0);ncShort.ghost(c,200,80,50,t);}},
  {id:'short2',title:'Midnight at Moonmere Manor',desc:'When the clock strikes twelve, the manor wakes up. 38 seconds.',scenes:SHORT2,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');drawMoon(c,270,36,18);c.fillStyle='#14082C';c.fillRect(0,165,320,15);drawManor(c,160,166,t,.32);}}];
 /* ==== NEW SHORTS START ==== */
