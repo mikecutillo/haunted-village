@@ -5634,14 +5634,14 @@ const WORLDS=[
   ['🏆','Giant pumpkin contests happen every fall. The biggest pumpkins weigh as much as a small car!'],
   ['🏙️','Anoka, Minnesota calls itself the Halloween Capital of the World. It started a town Halloween party in 1920.'],
   ['🍫','During World War Two, sugar was rationed, so there was less candy. Trick-or-treating grew even bigger after the war.']]},
-{place:'Mexico',name:'Día de Muertos',color:'#E2453F',date:'NOV 1–2',ill:'mexico',
+{place:'Mexico',name:'Día de los Muertos',color:'#E2453F',date:'NOV 1–2',ill:'mexico',
  blurb:'On November 1 and 2, families remember loved ones with bright colors, music and food.',
  facts:[['🌼','Bright orange marigolds are everywhere. Their strong color and smell make streets and homes glow.'],
   ['✂️','Papel picado are paper banners cut into lacy patterns. They flutter over the streets in every color.'],
   ['🍞','Pan de muerto is a soft, sweet bread with dough shapes on top and a sprinkle of sugar.'],
   ['💀','Sugar skulls are made of sugar and decorated with colorful icing. Some have a name written on the forehead.'],
   ['👒','La Catrina, the fancy skeleton lady in a big hat, was first drawn by artist José Guadalupe Posada around 1910.'],
-  ['🎬','Mexico City held its first giant Día de Muertos parade in 2016, after one appeared in a James Bond movie.']]},
+  ['🎬','Mexico City held its first giant Día de los Muertos parade in 2016, after one appeared in a James Bond movie.']]},
 {place:'Guatemala',name:'Giant Kites',color:'#4FA3E0',date:'NOV 1',ill:'guatemala',
  blurb:'On November 1, two towns fill the sky with kites as big as a house.',
  facts:[['🪁','In the towns of Sumpango and Santiago Sacatepéquez, teams build enormous kites called barriletes.'],
@@ -5665,12 +5665,19 @@ const WORLDS=[
   ['🌲','The name Transylvania means the land beyond the forest.'],
   ['🦇','Lots of bats really do live in the caves of Romania\'s Carpathian Mountains.']]}
 ];
-const W_SAY=[['Día de Muertos','Dee-ah deh Mwair-tohs'],['Samhain','Sow-in'],['pan de muerto','pahn deh mwair-toh'],['Pan de muerto','Pahn deh mwair-toh'],['Papel picado','Pah-pell pee-kah-doh'],['La Catrina','Lah Kah-tree-nah'],['Posada','Poh-sah-dah'],['barriletes','bah-ree-leh-tess'],['Sumpango','Soom-pahn-go'],['Sacatepéquez','Sah-kah-teh-peh-kess'],['fiambre','fee-ahm-bray'],['kabocha','kah-boh-cha'],['Kabocha','Kah-boh-cha'],['Ikebukuro','Ee-keh-boo-koo-roh'],['dookin\'','dooking'],['Guising','Guy-zing'],['guising','guy-zing'],['Guisers','Guy-zers'],['neeps','neeps'],['Anoka','Ah-no-kah'],['NOV','November'],['OCT','October']];
+const W_SAY=[['Día de los Muertos','Dee-ah deh lohs Mwair-tohs'],['Samhain','Sow-in'],['pan de muerto','pahn deh mwair-toh'],['Pan de muerto','Pahn deh mwair-toh'],['Papel picado','Pah-pell pee-kah-doh'],['La Catrina','Lah Kah-tree-nah'],['Posada','Poh-sah-dah'],['barriletes','bah-ree-leh-tess'],['Sumpango','Soom-pahn-go'],['Sacatepéquez','Sah-kah-teh-peh-kess'],['fiambre','fee-ahm-bray'],['kabocha','kah-boh-cha'],['Kabocha','Kah-boh-cha'],['Ikebukuro','Ee-keh-boo-koo-roh'],['dookin\'','dooking'],['Guising','Guy-zing'],['guising','guy-zing'],['Guisers','Guy-zers'],['neeps','neeps'],['Anoka','Ah-no-kah'],['NOV','November'],['OCT','October']];
 function wSpeak(s){for(const[a,b]of W_SAY)s=s.split(a).join(b);return s;}
+function wVoice(){if(!('speechSynthesis' in window))return null;const vs=speechSynthesis.getVoices().filter(v=>/^en/i.test(v.lang));if(!vs.length)return null;
+ const score=v=>{const n=v.name;let s=0;if(/premium/i.test(n))s+=60;if(/enhanced/i.test(n))s+=45;if(/natural|neural|online/i.test(n))s+=50;if(/siri/i.test(n))s+=40;
+  if(/^(Ava|Zoe|Samantha|Allison|Susan|Nicky|Evan|Joelle|Noelle|Serena)\b/i.test(n))s+=12;if(/Google US English|Google UK English Female/i.test(n))s+=20;if(/en[-_]US/i.test(v.lang))s+=5;
+  if(/compact|eloquence|Albert|Bad News|Bahh|Bells|Boing|Bubbles|Cellos|Jester|Organ|Superstar|Trinoids|Whisper|Wobble|Zarvox|Fred|Junior|Ralph|Kathy|Grandma|Grandpa|Rocko|Shelley|Flo|Reed|Sandy/i.test(n))s-=80;return s;};
+ return vs.sort((a,b)=>score(b)-score(a))[0];}
+if('speechSynthesis' in window){try{speechSynthesis.getVoices();speechSynthesis.addEventListener('voiceschanged',()=>speechSynthesis.getVoices());}catch(e){}}
 const WTALK={cb:null,
- stop(){try{speechSynthesis.cancel();}catch(e){}const c=this.cb;this.cb=null;if(c)c(-1);},
- play(lines,cb){this.stop();if(!('speechSynthesis' in window))return;this.cb=cb;const vs=speechSynthesis.getVoices();const v=vs.find(x=>/Samantha|Karen|Ava|Allison|Google US English/i.test(x.name))||vs.find(x=>/^en/i.test(x.lang));const me={};this.tok=me;
-  lines.forEach((ln,i)=>{const u=new SpeechSynthesisUtterance(wSpeak(ln));u.rate=.9;u.pitch=1.1;u.lang='en-US';if(v)u.voice=v;u.onstart=()=>{if(this.tok===me&&this.cb)this.cb(i);};u.onend=()=>{if(this.tok===me&&i===lines.length-1){const c=this.cb;this.cb=null;if(c)c(-1);}};try{speechSynthesis.speak(u);}catch(e){}});}};
+ stop(){this.tok=null;try{speechSynthesis.cancel();}catch(e){}const c=this.cb;this.cb=null;if(c)c(-1);},
+ play(lines,cb){this.stop();if(!('speechSynthesis' in window))return;this.cb=cb;const v=wVoice();const me={};this.tok=me;
+  lines.forEach((ln,i)=>{const u=new SpeechSynthesisUtterance(wSpeak(ln));u.rate=v&&/premium|enhanced|natural|neural|siri/i.test(v.name)?.95:.88;u.pitch=1;u.volume=1;u.lang=v?v.lang:'en-US';if(v)u.voice=v;
+   u.onstart=()=>{if(this.tok===me&&this.cb)this.cb(i);};u.onend=()=>{if(this.tok===me&&i===lines.length-1){const c=this.cb;this.cb=null;if(c)c(-1);}};try{speechSynthesis.speak(u);}catch(e){}});}};
 const SPK_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor"/><path class="w1" d="M16 8.5a5 5 0 0 1 0 7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/><path class="w2" d="M18.6 5.8a9 9 0 0 1 0 12.4" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
 const STOP_SVG='<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="3" fill="currentColor"/></svg>';
 /* flat illustrations */
@@ -7131,7 +7138,7 @@ const QUIZ=[
  ['What does Pip say very quietly?','Boo','Hello','Trick','Candy',0,'pip'],
  ['Before pumpkins, people carved what into lanterns?','Turnips','Apples','Coconuts','Potatoes',0,'jack'],
  ['Halloween grew out of which old festival?','Samhain','Yule','Beltane','Lughnasa',0,'band'],
- ['Día de Muertos is celebrated in which country?','Mexico','Ireland','Japan','Italy',0,'band'],
+ ['Día de los Muertos is celebrated in which country?','Mexico','Ireland','Japan','Italy',0,'band'],
  ['In Scotland, kids who perform a song for a treat are called what?','Guisers','Carolers','Mummers','Jesters',0,'band'],
  ['Is a pumpkin a fruit or a vegetable?','Fruit','Vegetable','Both','Neither',0,'jack'],
  ['Midnight the cat crosses your path for what?','Good luck','Bad luck','A snack','A nap',0,'midnight'],
