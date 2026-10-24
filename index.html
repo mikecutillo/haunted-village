@@ -4053,7 +4053,7 @@ SCENES.typing={title:'Ghost Typer',card:{tag:'Game',desc:'Type the letters and w
 
  function start(k){closePick();lv=k;L=TP_LEVELS[k];try{store.set('hv-type-lvl',k);}catch(e){}lvChip.textContent=L.ghosts;
   queue=tpItems(k);targets=[];lock=null;caught=0;boos=0;correct=0;wrong=0;score=0;streak=0;bestStreak=0;spawnT=0;idle=0;t0Key=null;endT=0;parts.length=0;floats.length=0;lastLane=-1;
-  state='count';cd=3.2;hud();setHint(null);document.querySelectorAll('.overlay').forEach(o=>{if(g.wrap.contains(o))o.remove();});}
+  state='count';cd=3.2;hud();setHint(null);root.querySelectorAll('.overlay,.tt-ov').forEach(o=>o.remove());}
 
  function fallTime(){return L.fall*Math.max(.75,1-caught*.02);}
  function spawn(){const it=queue.shift();if(!it)return;
@@ -4086,7 +4086,8 @@ SCENES.typing={title:'Ghost Typer',card:{tag:'Game',desc:'Type the letters and w
   const v=lv==='beg'?acc:acc-boos*4;const stars=Math.max(1,starsFor(v,0,75,90));
   const prev=best[lv]||{};const isBest=!prev.score||score>prev.score;best[lv]={score:Math.max(score,prev.score||0),stars:Math.max(stars,prev.stars||0)};try{store.set('hv-type-best',best);}catch(e){}
   const bits=['🎯 '+acc+'%'];if(lv!=='beg')bits.push('⌨️ '+wpm+' wpm');if(bestStreak>=3)bits.push('🔥 '+bestStreak);if(isBest&&prev.score)bits.push('🏆 New best!');
-  overlay(g.wrap,{host:'pip',tag:L.name,title:'All the ghosts are home!',score,stars,text:bits.join('   '),btn:'▶ Again',cb:()=>start(lv)});}
+  if(typeof HVBOARD!=='undefined')HVBOARD.show(root,{game:'typing-'+lv,score,stars,stats:bits.join('   '),host:'pip',tag:L.name+' '+L.ghosts,onAgain:()=>start(lv),onMenu:()=>showPick()});
+  else overlay(g.wrap,{host:'pip',tag:L.name,title:'All the ghosts are home!',score,stars,text:bits.join('   '),btn:'▶ Again',cb:()=>start(lv)});}
 
  function onKey(e){if(e.metaKey||e.ctrlKey||e.altKey||e.repeat)return;const k=e.key;
   if(state==='pick'&&['1','2','3'].includes(k)){e.preventDefault();start(['beg','mid','adv'][+k-1]);return;}
@@ -5081,6 +5082,112 @@ PREV.chomp=(x,t,W,H)=>CHOMP_THUMB(x,t,W,H);
 HOT.push({id:'chomp',x:700,y:P.s_chomp.y+190,w:200,h:220,sub:'Chomp Shop',title:'Candy Chomp',kind:'post'});
 {const SHOP={x:690,y:P.s_chomp.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SHOP.y,top,bot,360))CHOMP_SHOP_DRAW(ctx,SHOP.x,SHOP.y,t);};}
 /* ==== CANDY CHOMP END ==== */
+/* ==== TOP TEN START ==== */
+/* ---------- Top Ten: high-score boards shown when a game ends (two initials + a Halloween sticker) ----------
+   HVBOARD.show(wrap,{game,score,stars,stats,host,tag,onAgain,onMenu})
+   Kids can only enter two capital letters (first and last initial) and pick one sticker from a fixed set, so nothing typed can say anything.
+   Boards live on this iPad. When the class script answers ?action=scores, the boards are shared across every device instead. */
+if(!document.getElementById('hvtopcss')){const s=document.createElement('style');s.id='hvtopcss';s.textContent=`
+.tt-ov{position:absolute;inset:0;display:flex;background:rgba(11,5,32,.72);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);z-index:8;overflow:auto;padding:10px 0}
+.tt-pop{margin:auto;background:linear-gradient(#2E1868,#211048);border:2px solid #4B2A96;border-radius:26px;padding:12px 16px 16px;width:min(480px,calc(100% - 24px));box-shadow:0 20px 60px rgba(0,0,0,.55);display:flex;flex-direction:column;align-items:center;gap:8px;color:#F6E9D2;font-family:"Baloo 2",system-ui,sans-serif}
+.tt-head{display:flex;align-items:center;gap:12px;width:100%;justify-content:center}
+.tt-head canvas{width:60px;height:68px;flex:none}
+.tt-big{font-size:46px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums}
+.tt-tag{font-size:13px;font-weight:900;letter-spacing:.14em;text-transform:uppercase;color:#FFC34D}
+.tt-stars{display:flex;gap:2px}.tt-stars svg{width:30px;height:30px}
+.tt-stats{font-weight:800;font-size:16px;opacity:.9;text-align:center}
+.tt-slots{display:flex;gap:12px;align-items:center}
+.tt-slot{width:64px;height:76px;border-radius:16px;background:#F6E9D2;color:#2A1548;display:grid;place-items:center;font-size:52px;font-weight:900;box-shadow:0 5px 0 rgba(0,0,0,.35);border:none;padding:0;font-family:inherit}
+.tt-slot.cur{box-shadow:0 0 0 4px #FFC34D,0 5px 0 rgba(0,0,0,.35);animation:ttBlink 1s ease-in-out infinite}
+.tt-slot.stk{background:#3B2A7A;font-size:44px}
+@keyframes ttBlink{50%{box-shadow:0 0 0 4px rgba(255,195,77,.25),0 5px 0 rgba(0,0,0,.35)}}
+.tt-abc{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;width:100%}
+.tt-l{height:46px;border:none;border-radius:12px;background:#4B2A96;color:#F6E9D2;font:900 24px "Baloo 2",sans-serif;box-shadow:0 4px 0 rgba(0,0,0,.35);padding:0;cursor:pointer;touch-action:manipulation}
+.tt-l:active{transform:translateY(2px)}
+.tt-l.del{background:#7A2E5A}
+.tt-stk{display:grid;grid-template-columns:repeat(9,1fr);gap:6px;width:100%}
+.tt-s{height:46px;border:none;border-radius:14px;background:rgba(255,255,255,.08);font-size:26px;padding:0;cursor:pointer;touch-action:manipulation;line-height:1}
+.tt-s.on{background:#FFC34D;box-shadow:0 0 0 3px #fff inset}
+.tt-go{border:none;border-radius:999px;background:#8EE65B;color:#1E3A10;font:900 30px "Baloo 2",sans-serif;padding:6px 34px;box-shadow:0 6px 0 #4E8A2E;cursor:pointer;min-width:120px}
+.tt-go:disabled{opacity:.35;cursor:default}
+.tt-go.alt{background:#FF7F1F;color:#2A1548;box-shadow:0 6px 0 #B0520E}
+.tt-go.ghost{background:#4B2A96;color:#F6E9D2;box-shadow:0 6px 0 #2A1548}
+.tt-acts{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:4px}
+.tt-board{width:100%;display:flex;flex-direction:column;gap:4px}
+.tt-row{display:grid;grid-template-columns:38px 40px 1fr auto;align-items:center;gap:8px;background:rgba(255,255,255,.06);border-radius:12px;padding:3px 12px;font-weight:900;font-size:22px;min-height:36px}
+.tt-row .rk{font-size:20px;text-align:center;opacity:.85}
+.tt-row .st{font-size:26px;text-align:center}
+.tt-row .in{letter-spacing:.12em}
+.tt-row .sc{font-variant-numeric:tabular-nums;color:#FFC34D}
+.tt-row.me{background:#FFC34D;color:#2A1548;animation:ttPop .6s ease-out}
+.tt-row.me .sc{color:#2A1548}
+.tt-row.you{background:rgba(255,127,31,.22);margin-top:4px}
+.tt-row.empty{opacity:.35}
+.tt-title{font-size:26px;font-weight:900;display:flex;align-items:center;gap:8px}
+.tt-cloud{font-size:18px;opacity:.75}
+@media (max-height:820px){.tt-row{min-height:30px;font-size:19px;padding:1px 12px}.tt-row .st{font-size:21px}.tt-big{font-size:38px}.tt-head canvas{width:48px;height:54px}.tt-board{gap:3px}.tt-l{height:40px}.tt-s{height:40px}.tt-slot{height:62px;width:54px;font-size:42px}.tt-title{font-size:22px}}
+@keyframes ttPop{0%{transform:scale(.6)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+`;document.head.append(s);}
+
+const HV_STICKERS=['🎃','👻','🦇','🕷️','💀','🧙','🧛','🧟','🐈‍⬛','🍬','🍭','🌙','🕸️','🦉','🐺','⭐','🍫','🔮'];
+const HVBOARD={
+ N:10,cloud:null,
+ key(g){return 'hv-top-'+g;},
+ clean(list){return(Array.isArray(list)?list:[]).filter(r=>r&&/^[A-Z]{2}$/.test(r.i)&&Number.isFinite(+r.s)).map(r=>({i:r.i,e:Math.max(0,Math.min(HV_STICKERS.length-1,(+r.e)|0)),s:Math.max(0,Math.round(+r.s)),t:+r.t||0})).sort((a,b)=>b.s-a.s||a.t-b.t).slice(0,this.N);},
+ local(g){try{return this.clean(store.get(this.key(g),[]));}catch(e){return[];}},
+ saveLocal(g,list){try{store.set(this.key(g),this.clean(list));}catch(e){}},
+ /* shared boards only when the class script knows about them; an older script answers {ok:false} and we stay on this iPad */
+ async load(g){const mine=this.local(g);
+  if(typeof PRINT_ENDPOINT==='undefined'||!PRINT_ENDPOINT||this.cloud===false)return mine;
+  try{const ctl=typeof AbortController!=='undefined'?new AbortController():null;const tm=setTimeout(()=>ctl&&ctl.abort(),5000);
+   const r=await fetch(PRINT_ENDPOINT+'?action=scores&game='+encodeURIComponent(g)+'&t='+Date.now(),ctl?{signal:ctl.signal}:{});clearTimeout(tm);const j=await r.json();
+   if(j&&j.ok&&Array.isArray(j.list)){this.cloud=true;return this.clean(j.list);}this.cloud=false;}catch(e){}
+  return mine;},
+ qualifies(list,score){return score>0&&(list.length<this.N||score>list[list.length-1].s);},
+ async add(g,row){const local=this.local(g);local.push(row);this.saveLocal(g,local);
+  if(this.cloud){try{const r=await fetch(PRINT_ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({code:typeof PRINT_CODE!=='undefined'?PRINT_CODE:'',action:'score',game:g,i:row.i,e:row.e,s:row.s})});const j=await r.json();if(j&&j.ok&&Array.isArray(j.list))return this.clean(j.list);}catch(e){}}
+  return this.local(g);},
+ show(wrap,o){
+  const ov=el('div',{class:'tt-ov'}),pop=el('div',{class:'tt-pop'});ov.append(pop);wrap.append(ov);
+  let alive=true,keyFn=null,raf=0;
+  const done=fn=>{alive=false;cancelAnimationFrame(raf);if(keyFn)removeEventListener('keydown',keyFn,true);ov.remove();SFX.click();fn&&fn();};
+  function header(){cancelAnimationFrame(raf);const host=miniCanvas(120,135);let t0=0;const anim=ts=>{if(!alive)return;if(!t0)t0=ts;host.ctx.clearRect(0,0,120,135);drawHost(host.ctx,o.host||'pip',(ts-t0)/1000);raf=requestAnimationFrame(anim);};raf=requestAnimationFrame(anim);
+   const st=el('div',{class:'tt-stars'});if(o.stars!=null)st.innerHTML=starSvg(o.stars>=1)+starSvg(o.stars>=2)+starSvg(o.stars>=3);
+   return el('div',{class:'tt-head'},host,el('div',{},o.tag?el('div',{class:'tt-tag'},o.tag):null,el('div',{class:'tt-big'},String(o.score)),o.stars!=null?st:null));}
+  function board(list,meT){pop.innerHTML='';if(keyFn){removeEventListener('keydown',keyFn,true);keyFn=null;}
+   pop.append(header());if(o.stats)pop.append(el('div',{class:'tt-stats'},o.stats));
+   pop.append(el('div',{class:'tt-title'},'🏆',el('span',{},'Top 10'),HVBOARD.cloud?el('span',{class:'tt-cloud','aria-label':'shared'},'☁️'):null));
+   const b=el('div',{class:'tt-board'});const medal=['🥇','🥈','🥉'];let shown=false;
+   for(let k=0;k<HVBOARD.N;k++){const r=list[k];if(!r){b.append(el('div',{class:'tt-row empty'},el('span',{class:'rk'},medal[k]||String(k+1)),el('span',{class:'st'},'·'),el('span',{class:'in'},'- -'),el('span',{class:'sc'},'')));continue;}
+    const me=meT!=null&&r.t===meT&&!shown;if(me)shown=true;
+    b.append(el('div',{class:'tt-row'+(me?' me':'')},el('span',{class:'rk'},medal[k]||String(k+1)),el('span',{class:'st'},HV_STICKERS[r.e]||'🎃'),el('span',{class:'in'},r.i),el('span',{class:'sc'},String(r.s))));}
+   if(meT==null)b.append(el('div',{class:'tt-row you'},el('span',{class:'rk'},'👉'),el('span',{class:'st'},'⭐'),el('span',{class:'in'},''),el('span',{class:'sc'},String(o.score))));
+   pop.append(b);
+   const acts=el('div',{class:'tt-acts'});const again=el('button',{class:'tt-go alt',type:'button','aria-label':'Play again'},'▶');again.onclick=()=>done(o.onAgain);acts.append(again);
+   if(o.onMenu){const m=el('button',{class:'tt-go ghost',type:'button','aria-label':'Pick a level'},o.menuIcon||'👻');m.onclick=()=>done(o.onMenu);acts.append(m);}
+   pop.append(acts);setTimeout(()=>again.focus(),50);
+   if(meT!=null){SFX.win();}}
+  function entry(list){pop.innerHTML='';let ini='',stk=null;try{const me=store.get('hv-top-me',null);if(me&&Number.isInteger(me.e))stk=me.e;}catch(e){}if(stk==null)stk=0;
+   pop.append(header());pop.append(el('div',{class:'tt-title'},'🏆',el('span',{},'Top 10!')));
+   const s1=el('div',{class:'tt-slot'}),s2=el('div',{class:'tt-slot'}),s3=el('div',{class:'tt-slot stk'});pop.append(el('div',{class:'tt-slots'},s1,s2,s3));
+   const abc=el('div',{class:'tt-abc'});for(const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'){const b=el('button',{class:'tt-l',type:'button','aria-label':ch},ch);b.addEventListener('pointerdown',e=>{e.preventDefault();type(ch);});abc.append(b);}
+   const del=el('button',{class:'tt-l del',type:'button','aria-label':'Erase'},'⌫');del.addEventListener('pointerdown',e=>{e.preventDefault();erase();});abc.append(del);pop.append(abc);
+   const sk=el('div',{class:'tt-stk'});const sb=HV_STICKERS.map((em,k)=>{const b=el('button',{class:'tt-s',type:'button','aria-label':'sticker '+(k+1)},em);b.onclick=()=>{stk=k;SFX.flip();paint();};sk.append(b);return b;});pop.append(sk);
+   const go=el('button',{class:'tt-go',type:'button','aria-label':'Done'},'✔');pop.append(el('div',{class:'tt-acts'},go));
+   function paint(){s1.textContent=ini[0]||'';s2.textContent=ini[1]||'';s3.textContent=HV_STICKERS[stk];s1.classList.toggle('cur',ini.length===0);s2.classList.toggle('cur',ini.length===1);sb.forEach((b,k)=>b.classList.toggle('on',k===stk));go.disabled=ini.length<2;}
+   function type(ch){if(ini.length>=2)return;ini+=ch;SFX.tone(520+ini.length*120,.07,'triangle',.07);paint();}
+   function erase(){if(!ini.length)return;ini=ini.slice(0,-1);SFX.tone(300,.06,'triangle',.05);paint();}
+   async function submit(){if(ini.length<2||go.disabled)return;go.disabled=true;try{store.set('hv-top-me',{e:stk});}catch(e){}
+    const row={i:ini,e:stk,s:Math.round(o.score),t:Date.now()};const out=await HVBOARD.add(o.game,row);if(!alive)return;
+    const hit=out.find(r=>r.i===row.i&&r.s===row.s&&r.e===row.e&&Math.abs(r.t-row.t)<120000);board(out,hit?hit.t:row.t);}
+   go.onclick=submit;
+   keyFn=e=>{if(e.metaKey||e.ctrlKey||e.altKey)return;if(/^[a-z]$/i.test(e.key)){e.preventDefault();e.stopPropagation();type(e.key.toUpperCase());}else if(e.key==='Backspace'){e.preventDefault();erase();}else if(e.key==='Enter'){e.preventDefault();submit();}};
+   addEventListener('keydown',keyFn,true);paint();SFX.chime();}
+  pop.append(header(),el('div',{class:'tt-stats'},'…'));
+  HVBOARD.load(o.game).then(list=>{if(!alive)return;cancelAnimationFrame(raf);if(HVBOARD.qualifies(list,o.score))entry(list);else board(list,null);});
+  return ov;}
+};
+/* ==== TOP TEN END ==== */
 const SHORTS=[{id:'short1',title:'The Pumpkin Who Lost Its Glow',desc:'One pumpkin in the patch would not light. A small ghost decides to help. 38 seconds.',scenes:SHORT1,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');c.fillStyle='#14082C';c.fillRect(0,150,320,30);drawPumpkin(c,80,140,26,.6);drawPumpkin(c,250,140,26,.6);drawPumpkin(c,160,146,18,0);ncShort.ghost(c,200,80,50,t);}},
  {id:'short2',title:'Midnight at Moonmere Manor',desc:'When the clock strikes twelve, the manor wakes up. 38 seconds.',scenes:SHORT2,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');drawMoon(c,270,36,18);c.fillStyle='#14082C';c.fillRect(0,165,320,15);drawManor(c,160,166,t,.32);}}];
 /* ==== NEW SHORTS START ==== */
