@@ -4761,8 +4761,10 @@ Object.assign(ICON,{sensory:'🎈'});
 Object.assign(SAYS,{sensory:'Pop bubbles, light up dots, tap for sounds. No rush, no score.'});
 {const at=TILES.findIndex(t=>t[0]==='boogie');TILES.splice(at<0?TILES.length:at+1,0,['sensory','#2A9D8F']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
 PREV.sensory=(x,t,W,H)=>SENSE_THUMB(x,t,W,H);
-HOT.push({id:'sensory',x:150,y:P.tower.y+120,w:200,h:220,sub:'Calm play',title:'Sensory Station',kind:'post'});
-{const SH={x:108,y:P.tower.y-96};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SH.y,top,bot,340))SENSE_HOUSE_DRAW(ctx,SH.x,SH.y,t);};}
+/* its own row in the village (slot s_sense, left side, between the Town Square and the Bakery), laid out like the other left-side buildings */
+const SENSE_AT=(typeof P!=='undefined'&&P.s_sense)?{x:P.s_sense.x||165,y:P.s_sense.y}:{x:108,y:P.tower.y-96};
+HOT.push({id:'sensory',x:SENSE_AT.x+218,y:SENSE_AT.y-60,w:200,h:200,sub:'Calm play',title:'Sensory Station',kind:'hang lft'});
+{const SH=SENSE_AT;const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SH.y,top,bot,340))SENSE_HOUSE_DRAW(ctx,SH.x,SH.y,t);};}
 /* ==== SENSORY STATION END ==== */
 /* ==== CANDY CHOMP START ==== */
 /* ---------- GAME: Candy Chomp (number game in the Chomp Shop) ---------- */
