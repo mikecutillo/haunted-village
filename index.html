@@ -498,6 +498,38 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-si
 
 footer{position:relative;z-index:2;padding-block:28px 40px;color:var(--muted);font-size:13px;text-align:center;background:#0B1638;border-top:1px solid var(--line)}
 @media (prefers-reduced-motion:reduce){.hot .sign,.btn{transition:none}.jam-slot.hit canvas{animation:none}.ghostbtn svg{animation:none}}
+/* ==== NEW SIGNS START ==== */
+/* House signs in the new character style: chunky rounded wood, one shadow tone on the right, flat drop shadow, cream title plaque, brass bolts */
+.hot .card{border-radius:calc(20px*var(--s));background:var(--c,#4B2A96);
+ box-shadow:0 0 0 calc(7px*var(--s)) #C98445,0 0 0 calc(11px*var(--s)) #8F5428,calc(5px*var(--s)) calc(9px*var(--s)) 0 calc(11px*var(--s)) rgba(14,6,38,.55)}
+.hot .card::after{background:linear-gradient(180deg,rgba(255,255,255,.10),transparent 30%);box-shadow:inset calc(-10px*var(--s)) 0 0 rgba(20,6,40,.22),inset 0 0 0 calc(2px*var(--s)) rgba(255,240,215,.35)}
+.hot .card::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;
+ background:radial-gradient(circle at calc(9px*var(--s)) calc(9px*var(--s)),#FFD86A 0 calc(3.5px*var(--s)),#B98A2E calc(3.6px*var(--s)) calc(5px*var(--s)),transparent calc(5.2px*var(--s))),
+  radial-gradient(circle at calc(100% - 9px*var(--s)) calc(9px*var(--s)),#FFD86A 0 calc(3.5px*var(--s)),#B98A2E calc(3.6px*var(--s)) calc(5px*var(--s)),transparent calc(5.2px*var(--s))),
+  radial-gradient(circle at calc(9px*var(--s)) calc(100% - 9px*var(--s)),#FFD86A 0 calc(3.5px*var(--s)),#B98A2E calc(3.6px*var(--s)) calc(5px*var(--s)),transparent calc(5.2px*var(--s))),
+  radial-gradient(circle at calc(100% - 9px*var(--s)) calc(100% - 9px*var(--s)),#FFD86A 0 calc(3.5px*var(--s)),#B98A2E calc(3.6px*var(--s)) calc(5px*var(--s)),transparent calc(5.2px*var(--s)))}
+.hot .card b{left:7%;right:7%;bottom:calc(6px*var(--s));padding:calc(4px*var(--s)) calc(6px*var(--s)) calc(3px*var(--s));border-radius:calc(12px*var(--s));
+ background:#FFF3DE;color:#2A1548;font-family:'Baloo 2','Arial Rounded MT Bold',sans-serif;font-weight:800;font-size:calc(17px*var(--s));line-height:1.05;letter-spacing:0;text-shadow:none;
+ box-shadow:inset calc(-6px*var(--s)) 0 0 #EBDCC0,0 calc(3px*var(--s)) 0 rgba(20,6,40,.45)}
+.hot .card b.long{font-size:calc(14px*var(--s))}
+.hot .card small{left:50%;right:auto;transform:translateX(-50%);white-space:nowrap;top:calc(6px*var(--s));padding:calc(2px*var(--s)) calc(8px*var(--s));border-radius:999px;
+ background:#2A1548;color:#FFE29A;font-family:'Baloo 2',sans-serif;font-size:calc(8.5px*var(--s));font-weight:800;letter-spacing:.08em;text-shadow:none}
+.hot.locked .card b{background:#D9CDB4;color:#4A3A6A}
+.hot.new .card small{background:#FF7F1F;color:#2A1548}
+.hot.new .card::after{box-shadow:inset 0 0 0 calc(3px*var(--s)) #FFD23F,inset calc(-10px*var(--s)) 0 0 rgba(20,6,40,.22)}
+/* hanging bracket: chunky rounded iron with a lighter top edge */
+.hot.hang .brk i{background:#3A2A60;box-shadow:inset 0 calc(3px*var(--s)) 0 #574687,calc(3px*var(--s)) calc(4px*var(--s)) 0 rgba(14,6,38,.45)}
+.hot.hang .brk .pl{width:calc(16px*var(--s));border-radius:calc(8px*var(--s))}
+.hot.hang .brk .pl::before,.hot.hang .brk .pl::after{background:#FFD86A;box-shadow:inset calc(-2px*var(--s)) 0 0 #B98A2E}
+.hot.hang .brk .ar{height:calc(13px*var(--s))}
+.hot.hang .brk .ar::after{border-color:#3A2A60}
+/* rope instead of chain */
+.hot.hang .sw::before,.hot.hang .sw::after{width:calc(6px*var(--s));background:repeating-linear-gradient(160deg,#E2B06A 0 calc(4px*var(--s)),#B07A3A calc(4px*var(--s)) calc(8px*var(--s)))}
+/* post: chunky wood with a shade stripe on the right and a little base */
+.hot.post .sw::after{width:calc(22px*var(--s));height:calc(88px*var(--s));margin-top:calc(6px*var(--s));border-radius:calc(6px*var(--s)) calc(6px*var(--s)) calc(3px*var(--s)) calc(3px*var(--s));
+ background:linear-gradient(90deg,#C98445 0 62%,#8F5428 62% 100%);box-shadow:0 calc(8px*var(--s)) 0 calc(-2px*var(--s)) #5A3A1A}
+.hot.tracker .card b{font-size:calc(24px*var(--s))}
+/* ==== NEW SIGNS END ==== */
 </style>
 
 <canvas id="world" aria-hidden="true"></canvas>
