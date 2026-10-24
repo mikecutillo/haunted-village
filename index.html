@@ -585,6 +585,14 @@ const memKey={skel:'rattles',bat:'flutter',caul:'bubbles',ghost:'pip',witch:'mab
 const NC_TG={pip:'pip',mabel:'mabel',rattles:'rattles',midnight:'midnight',flutter:'flutter',jack:'jack',gourdon:'gourdon',patches:'patches',bubbles:'bubbles'};
 function ncT(id,name,hint,r,draw){if(id==='theo'&&/dinosaur/i.test(hint)){name='Leo';hint=hint.replace(/^Theo/,'Leo');}
  const key=NC_TG[id];if(key){const old=draw,rr=(r||26)*1.15;draw=(c,t)=>{if(!ncFit(c,key,0,rr,rr*2,rr*2))old(c,t);};}return[name,hint,draw];}
+/* the theater shorts: new-art stand-ins with the old call shapes (fall back to the old drawing) */
+const ncShort={
+ ghost(ctx,x,y,s,t=0){if(!ncFit(ctx,'pip',x,y+s*.55,s*1.15,s*1.15,Math.sin(t*3)*s*.08))drawGhost(ctx,x,y,s,t);},
+ witch(ctx,x,y,s,tilt=0,t=0){ctx.save();ctx.translate(x,y);ctx.rotate(tilt+.25);const ok=ncFit(ctx,'mabel',0,s*1.3,s*2.8,s*2.8,Math.sin(t*4)*3);ctx.restore();
+  if(ok){ctx.fillStyle='rgba(255,226,154,.7)';for(let i=1;i<6;i++){ctx.beginPath();ctx.arc(x-i*s*.45,y+s*.9+Math.sin(t*6+i)*4,Math.max(1,4-i*.6),0,TAU);ctx.fill();}}else drawWitch(ctx,x,y,s,tilt,t);},
+ skel(ctx,x,y,s,ph=0,duck){ctx.save();ctx.translate(x,y);ctx.rotate(Math.sin(ph)*.12);const ok=ncFit(ctx,'rattles',0,0,s*2.6,s*2.6,-Math.abs(Math.sin(ph))*s*.15);ctx.restore();if(!ok)drawSkeleton(ctx,x,y,s,ph,duck);},
+ caul(ctx,x,y,s,t=0){if(!ncFit(ctx,'bubbles',x,y+s*.3,s*1.05,s*1.05,-Math.abs(Math.sin(t*3))*s*.03))drawCauldron(ctx,x,y,s,t);},
+ bat(ctx,x,y,s,flap=0,col){ctx.save();ctx.translate(x,y);ctx.scale(1,.75+.25*Math.abs(Math.sin(flap)));const ok=ncFit(ctx,'flutter',0,s*.5,s*2.6,s*1.6);ctx.restore();if(!ok)drawBat(ctx,x,y,s,flap,col);}};
 /* ==== NEW CHARACTERS END ==== */
 /* ---------- utils ---------- */
 const $=s=>document.querySelector(s);
@@ -1702,20 +1710,51 @@ SCENES.maker={title:'Monster Maker',mount(stage){
  const NAMES1=['Grum','Snor','Blub','Fizz','Mog','Wib','Zag','Crank','Puff','Gnar','Blor','Skrit'],NAMES2=['ble','gle','zle','dle','mo','wick',''],NAMES3=['snort','wump','pop','fang','toes','whisk','bottom','worth','nose'];
  const newName=()=>pick(NAMES1)+pick(NAMES2)+pick(NAMES3);let name=newName();
  function shade(hex,amt){const n=parseInt(hex.slice(1),16);const r=clamp(Math.round(((n>>16)&255)*amt),0,255),g=clamp(Math.round(((n>>8)&255)*amt),0,255),b=clamp(Math.round((n&255)*amt),0,255);return 'rgb('+r+','+g+','+b+')';}
- function svgStr(){const col=COLORS[st.color],dark=shade(col,.55);let s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 320" width="260" height="416">';
-  s+='<ellipse cx="70" cy="292" rx="26" ry="14" fill="'+dark+'"/><ellipse cx="130" cy="292" rx="26" ry="14" fill="'+dark+'"/>';
-  const bodies=['<path d="M100 60C160 40 200 90 190 160C185 230 150 274 100 274C50 274 15 230 10 160C0 90 40 40 100 60Z"/>','<rect x="30" y="62" width="140" height="212" rx="26"/>','<ellipse cx="100" cy="167" rx="62" ry="112"/>','<circle cx="100" cy="172" r="98"/>'];
-  s+='<g fill="'+col+'">'+bodies[st.body]+'</g>';
-  if(st.skin===1)s+='<g fill="'+dark+'" opacity=".55"><circle cx="60" cy="230" r="9"/><circle cx="140" cy="215" r="7"/><circle cx="110" cy="250" r="6"/><circle cx="48" cy="170" r="5"/></g>';
-  if(st.skin===2)s+='<g stroke="'+dark+'" stroke-width="3" stroke-linecap="round" fill="none"><path d="M55 238h44M64 231v14M80 231v14M96 231v14M120 170l30-8M128 162l3 13M139 159l3 13"/></g>';
-  if(st.skin===3)s+='<g fill="'+dark+'" opacity=".6"><circle cx="70" cy="152" r="2.5"/><circle cx="79" cy="158" r="2.5"/><circle cx="118" cy="158" r="2.5"/><circle cx="128" cy="152" r="2.5"/></g>';
-  const tops=['','<path d="M48 80C30 60 32 30 50 20C52 45 60 60 72 70Z M152 80C170 60 168 30 150 20C148 45 140 60 128 70Z" fill="#C23B4A"/>','<path d="M100 64V22" stroke="'+dark+'" stroke-width="5" fill="none"/><circle cx="100" cy="18" r="10" fill="#FFD23F"/>','<path d="M40 72H160L140 64L112 2L88 64Z" fill="#2A1548"/><rect x="86" y="48" width="30" height="8" fill="#FF7A1A"/>','<rect x="6" y="142" width="26" height="12" rx="3" fill="#8F98A8"/><rect x="168" y="142" width="26" height="12" rx="3" fill="#8F98A8"/>','<path d="M55 66L65 26L85 52L100 16L115 52L135 26L145 66Z" fill="#FFD23F"/>'];
+ function svgStr(){/* new character style: chunky shapes, one shadow tone on the right, mitten hands, no outlines */
+  const col=COLORS[st.color],dark=shade(col,.55),sh=shade(col,.8),INK='#2A1548',hi='rgba(255,255,255,.35)';
+  const B=[{d:'M100 60C160 40 200 90 190 160C185 230 150 274 100 274C50 274 15 230 10 160C0 90 40 40 100 60Z',ax:24,top:-6},
+   {d:'M56 62H144Q170 62 170 88V248Q170 274 144 274H56Q30 274 30 248V88Q30 62 56 62Z',ax:38,top:0},
+   {d:'M100 55C150 55 164 120 162 170C160 236 140 279 100 279C60 279 40 236 38 170C36 120 50 55 100 55Z',ax:44,top:-6},
+   {d:'M100 74C156 74 198 116 198 172C198 228 156 270 100 270C44 270 2 228 2 172C2 116 44 74 100 74Z',ax:14,top:12}][st.body];
+  let s='<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -60 260 416" width="260" height="416"><defs><clipPath id="mmBody"><path d="'+B.d+'"/></clipPath></defs>';
+  s+='<ellipse cx="100" cy="300" rx="92" ry="12" fill="#000" opacity=".22"/>';
+  /* arms behind the body: chunky capsules with mitten hands */
+  const arm=(x,dir,c)=>'<g transform="translate('+x+',186) rotate('+(dir*28)+')"><rect x="-14" y="-14" width="28" height="70" rx="14" fill="'+c+'"/><circle cx="0" cy="62" r="19" fill="'+c+'"/><circle cx="'+(-dir*-5)+'" cy="56" r="6" fill="'+hi+'"/></g>';
+  s+=arm(B.ax,1,col)+arm(200-B.ax,-1,sh);
+  /* stubby feet */
+  s+='<path d="M48 300Q46 270 72 270Q98 270 98 300Z" fill="'+col+'"/><path d="M102 300Q102 270 128 270Q154 270 152 300Z" fill="'+sh+'"/>';
+  /* body with one shadow tone on the right and a soft highlight */
+  s+='<g clip-path="url(#mmBody)"><path d="'+B.d+'" fill="'+sh+'"/><path d="'+B.d+'" fill="'+col+'" transform="translate(-24,-2)"/>';
+  s+='<ellipse cx="60" cy="'+(110+B.top)+'" rx="16" ry="9" fill="'+hi+'" transform="rotate(-30 60 '+(110+B.top)+')"/>';
+  if(st.skin===1)s+='<g fill="'+dark+'" opacity=".45"><circle cx="58" cy="232" r="11"/><circle cx="146" cy="214" r="8"/><circle cx="112" cy="252" r="7"/><circle cx="44" cy="174" r="6"/><circle cx="154" cy="160" r="5"/></g>';
+  if(st.skin===2)s+='<g stroke="'+dark+'" stroke-width="4" stroke-linecap="round" fill="none"><path d="M54 238h46M64 230v16M78 230v16M92 230v16M118 172l32-9M126 162l4 15M140 158l4 15"/></g>';
+  if(st.skin===3)s+='<g fill="'+dark+'" opacity=".55"><circle cx="64" cy="160" r="3"/><circle cx="74" cy="166" r="3"/><circle cx="66" cy="170" r="3"/><circle cx="126" cy="166" r="3"/><circle cx="136" cy="160" r="3"/><circle cx="134" cy="170" r="3"/></g>';
+  s+='</g>';
+  /* tops */
+  const ty=B.top;
+  const tops=['',
+   '<g transform="translate(0,'+ty+')"><path d="M50 84Q30 60 34 22Q56 40 74 72Z" fill="#E2453F"/><path d="M150 84Q170 60 166 22Q144 40 126 72Z" fill="#B8323C"/><path d="M40 34Q50 44 58 56" stroke="#FF8A7A" stroke-width="5" stroke-linecap="round" fill="none"/></g>',
+   '<g transform="translate(0,'+ty+')"><rect x="95" y="20" width="10" height="50" rx="5" fill="'+sh+'"/><circle cx="100" cy="14" r="24" fill="#FFD23F" opacity=".25"/><circle cx="100" cy="16" r="14" fill="#FFD23F"/><circle cx="96" cy="12" r="4" fill="#fff" opacity=".7"/></g>',
+   '<g transform="translate(0,'+ty+')"><path d="M24 78Q100 58 176 78Q184 86 172 90Q100 74 28 90Q16 86 24 78Z" fill="'+INK+'"/><path d="M54 78Q74 46 82 22Q88 6 108 4Q136 2 150 18Q130 12 120 24Q116 50 146 78Q100 86 54 78Z" fill="#3A2A60"/><path d="M120 24Q116 50 146 78Q130 81 118 82Q104 56 108 30Z" fill="'+INK+'" opacity=".55"/><path d="M62 62Q100 70 138 62L142 74Q100 82 58 74Z" fill="#FF7A1A"/><rect x="90" y="62" width="18" height="16" rx="4" fill="#FFD23F"/><rect x="94" y="66" width="10" height="8" rx="2" fill="#3A2A60"/></g>',
+   '<g><rect x="-6" y="150" width="34" height="16" rx="5" fill="#8F98A8"/><rect x="-14" y="144" width="14" height="28" rx="4" fill="#C9CED8"/><rect x="172" y="150" width="34" height="16" rx="5" fill="#6E7690"/><rect x="200" y="144" width="14" height="28" rx="4" fill="#A9AEC6"/></g>',
+   '<g transform="translate(0,'+ty+')"><path d="M52 76L58 26L80 54L100 14L120 54L142 26L148 76Q100 86 52 76Z" fill="#FFD23F"/><path d="M120 54L142 26L148 76Q134 80 122 81Z" fill="#E0A82A"/><circle cx="100" cy="58" r="8" fill="#E2453F"/><circle cx="72" cy="66" r="5" fill="#7FD6FF"/><circle cx="128" cy="66" r="5" fill="#8EE65B"/><circle cx="58" cy="26" r="5" fill="#FFD23F"/><circle cx="100" cy="14" r="6" fill="#FFD23F"/><circle cx="142" cy="26" r="5" fill="#FFD23F"/></g>'];
   s+=tops[st.top];
-  const pos=[[[100,122]],[[72,122],[128,122]],[[62,130],[100,110],[138,130]]][st.eyes];
-  for(const[x,y]of pos){s+='<circle cx="'+x+'" cy="'+y+'" r="17" fill="#fff"/><circle cx="'+(x+3)+'" cy="'+(y+2)+'" r="8" fill="#2A1548"/><circle cx="'+(x+6)+'" cy="'+(y-2)+'" r="2.5" fill="#fff"/>';
-   if(st.look===1)s+='<path d="M'+(x-18)+' '+(y-14)+'L'+(x+18)+' '+(y-4)+'L'+(x+18)+' '+(y-22)+'L'+(x-18)+' '+(y-22)+'Z" fill="'+col+'"/>';
-   if(st.look===2)s+='<rect x="'+(x-18)+'" y="'+(y-18)+'" width="36" height="17" fill="'+col+'"/>';}
-  const mouths=['<path d="M70 192Q100 228 130 192Z" fill="#2A1548"/><path d="M80 196Q100 208 120 196Z" fill="#fff"/>','<path d="M70 192Q100 228 130 192Z" fill="#2A1548"/><path d="M80 194l8 20 8-20Z M104 194l8 20 8-20Z" fill="#fff"/>','<path d="M66 198l10-10 10 10 10-10 10 10 10-10 10 10 10-10" fill="none" stroke="#2A1548" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>','<ellipse cx="100" cy="202" rx="14" ry="18" fill="#2A1548"/>','<path d="M72 212Q100 187 128 212" fill="none" stroke="#2A1548" stroke-width="6" stroke-linecap="round"/>'];
+  /* eyes */
+  const pos=[[[100,124]],[[72,124],[128,124]],[[62,132],[100,110],[138,132]]][st.eyes];
+  for(const[x,y]of pos){
+   s+='<circle cx="'+x+'" cy="'+y+'" r="19" fill="#fff"/><path d="M'+(x+11)+' '+(y-15)+'A19 19 0 0 1 '+x+' '+(y+19)+'A17 17 0 0 0 '+(x+11)+' '+(y-15)+'Z" fill="#E3E0F0"/>';
+   if(st.look===2)s+='<path d="M'+(x-11)+' '+(y+3)+'Q'+x+' '+(y+12)+' '+(x+11)+' '+(y+3)+'" fill="none" stroke="'+INK+'" stroke-width="5" stroke-linecap="round"/>';
+   else s+='<ellipse cx="'+(x+2)+'" cy="'+(y+3)+'" rx="9" ry="11" fill="'+INK+'"/><circle cx="'+(x+6)+'" cy="'+(y-2)+'" r="3.5" fill="#fff"/>';
+   if(st.look===1)s+='<path d="M'+(x-22)+' '+(y-22)+'L'+(x+22)+' '+(y-22)+'L'+(x+22)+' '+(y-6)+'L'+(x-22)+' '+(y-16)+'Z" fill="'+sh+'"/>';
+   if(st.look===2)s+='<path d="M'+(x-21)+' '+(y-1)+'A21 21 0 0 1 '+(x+21)+' '+(y-1)+'Z" fill="'+sh+'"/>';}
+  /* cheeks */
+  s+='<ellipse cx="'+(st.eyes===0?66:52)+'" cy="164" rx="12" ry="8" fill="#F6A08F" opacity=".9"/><ellipse cx="'+(st.eyes===0?134:148)+'" cy="164" rx="12" ry="8" fill="#F6A08F" opacity=".9"/>';
+  /* mouths */
+  const mouths=['<path d="M70 190Q100 230 130 190Z" fill="'+INK+'"/><path d="M80 194Q100 206 120 194Z" fill="#fff"/><path d="M86 212Q100 202 114 212Q100 220 86 212Z" fill="#FF6F8E"/>',
+   '<path d="M70 190Q100 230 130 190Z" fill="'+INK+'"/><path d="M80 192l8 18 8-18Z M104 192l8 18 8-18Z" fill="#fff"/>',
+   '<path d="M66 198l10-10 10 10 10-10 10 10 10-10 10 10 10-10" fill="none" stroke="'+INK+'" stroke-width="6" stroke-linejoin="round" stroke-linecap="round"/>',
+   '<ellipse cx="100" cy="204" rx="15" ry="19" fill="'+INK+'"/><ellipse cx="100" cy="214" rx="9" ry="6" fill="#FF6F8E"/>',
+   '<path d="M74 212Q100 188 126 212" fill="none" stroke="'+INK+'" stroke-width="7" stroke-linecap="round"/>'];
   return s+mouths[st.mouth]+'</svg>';}
  const prev=el('div',{class:'preview'});const ctl=el('div',{class:'controls'});root.append(prev,ctl);
  const nameEl=el('div',{class:'mname'});const nameBtn=el('button',{class:'btn ghost small',type:'button'},'New name');nameBtn.onclick=()=>{name=newName();render();SFX.click();};
@@ -1993,7 +2032,7 @@ SCENES.spell={title:'Spell Lab',mount(stage){
 
 /* ---------- Ghost Match ---------- */
 SCENES.match={title:'Ghost Match',mount(stage){
- const ICONS=[['pumpkin',(c)=>drawPumpkin(c,45,48,26,.5)],['ghost',(c)=>drawGhost(c,45,44,56,0)],['bat',(c)=>drawBat(c,45,45,30,.8,'#3B2466')],['witch',(c)=>drawWitch(c,46,48,28,-.1,0)],['skel',(c)=>drawSkeleton(c,45,80,34,.5)],['caul',(c)=>drawCauldron(c,45,60,56,0)],['corn',(c)=>{c.save();c.translate(45,45);c.scale(1.8,1.8);drawCandy(c,0,0,'corn',0);c.restore();}],['cat',(c)=>drawCat(c,45,40,0,.6)]];
+ const ICONS=[['jack','jack',(c)=>drawPumpkin(c,45,48,26,.5)],['pip','pip',(c)=>drawGhost(c,45,44,56,0)],['flutter','flutter',(c)=>drawBat(c,45,45,30,.8,'#3B2466')],['mabel','mabel',(c)=>drawWitch(c,46,48,28,-.1,0)],['rattles','rattles',(c)=>drawSkeleton(c,45,80,34,.5)],['bubbles','bubbles',(c)=>drawCauldron(c,45,60,56,0)],['frank','frankie',(c)=>drawFrank(c,45,86,.42,0)],['midnight','midnight',(c)=>drawCat(c,45,40,0,.6)]].map(([k,key,old])=>[k,(c)=>{if(!ncFit(c,key,45,86,80,80))old(c);}]);
  const root=el('div',{class:'scene'});stage.append(root);
  const hud=el('div',{class:'row',style:'justify-content:space-between;max-width:520px;margin:0 auto;width:100%;font-weight:800'});const moves=el('span'),timer=el('span',{style:'font-variant-numeric:tabular-nums'}),best=el('span',{style:'color:var(--muted)'});hud.append(moves,timer,best);
  const grid=el('div',{class:'grid4'});root.append(hud,grid);
@@ -2116,17 +2155,17 @@ function patch(ctx,t,litGlow,littleGlow,offset=0){ctx.fillStyle='#1B0D3A';hills(
 function endCard(ctx,e,p){ctx.fillStyle='#0B0520';ctx.fillRect(0,0,e.W,e.H);drawPumpkin(ctx,480,250,70,.8);ctx.fillStyle='#FF7A1A';ctx.font='400 64px Creepster, Impact, sans-serif';ctx.textAlign='center';ctx.globalAlpha=Math.min(1,p*3);ctx.fillText('The End',480,400);ctx.globalAlpha=1;}
 const SHORT1=[
  {dur:6,cap:'In the pumpkin patch at the edge of the village, every pumpkin glowed. Except one.',draw(ctx,p,t,e){night(ctx,e,t);patch(ctx,t,1,0);}},
- {dur:6,cap:'A small ghost named Pip drifted past and noticed.',draw(ctx,p,t,e){night(ctx,e,t);patch(ctx,t,1,0);drawGhost(ctx,lerp(-90,400,ease(Math.min(1,p*1.3))),330+Math.sin(t*2)*10,90,t);}},
- {dur:7,cap:'"Come on," said Pip. "Let us find you a spark." They set off for the old manor on the hill.',draw(ctx,p,t,e){const dx=ease(p)*900;night(ctx,e,t,800-dx*.1);ctx.fillStyle='#1B0D3A';hills(ctx,420,16,.005,-dx*.004,960,540);drawManor(ctx,1500-dx,470,t,.55);ctx.fillStyle='#120826';ctx.fillRect(0,470,960,70);drawGhost(ctx,420,330+Math.sin(t*2)*10,90,t);ctx.save();ctx.translate(480,492);ctx.rotate(dx*.02);drawPumpkin(ctx,0,0,30,0);ctx.restore();}},
- {dur:7,cap:'High above, a witch crossed the moon. Something small and bright slipped from her bag.',draw(ctx,p,t,e){night(ctx,e,t,700);ctx.fillStyle='#1B0D3A';hills(ctx,420,16,.005,-3.6,960,540);drawManor(ctx,600,470,t,.55);ctx.fillStyle='#120826';ctx.fillRect(0,470,960,70);drawWitch(ctx,lerp(-100,1100,p),130+Math.sin(p*9)*20,40,.15,t);if(p>.45){const q=ease((p-.45)/.55);drawStar(ctx,lerp(520,480,q),lerp(150,470,q),14);}drawGhost(ctx,420,330+Math.sin(t*2)*10,90,t);drawPumpkin(ctx,480,492,30,0);}},
- {dur:7,cap:'And the littlest pumpkin glowed brighter than any pumpkin ever had.',draw(ctx,p,t,e){night(ctx,e,t,700);patch(ctx,t,1,Math.min(1,p*2));ctx.save();ctx.translate(0,-Math.abs(Math.sin(t*6))*20);drawGhost(ctx,400,340,90,t);ctx.restore();for(let i=0;i<8;i++){ctx.fillStyle='rgba(255,224,138,'+(.4+.4*Math.sin(t*3+i))+')';ctx.beginPath();ctx.arc(480+Math.cos(t+i*.8)*(80+i*20),430+Math.sin(t*1.3+i)*40,3,0,TAU);ctx.fill();}}},
+ {dur:6,cap:'A small ghost named Pip drifted past and noticed.',draw(ctx,p,t,e){night(ctx,e,t);patch(ctx,t,1,0);ncShort.ghost(ctx,lerp(-90,400,ease(Math.min(1,p*1.3))),330+Math.sin(t*2)*10,90,t);}},
+ {dur:7,cap:'"Come on," said Pip. "Let us find you a spark." They set off for the old manor on the hill.',draw(ctx,p,t,e){const dx=ease(p)*900;night(ctx,e,t,800-dx*.1);ctx.fillStyle='#1B0D3A';hills(ctx,420,16,.005,-dx*.004,960,540);drawManor(ctx,1500-dx,470,t,.55);ctx.fillStyle='#120826';ctx.fillRect(0,470,960,70);ncShort.ghost(ctx,420,330+Math.sin(t*2)*10,90,t);ctx.save();ctx.translate(480,492);ctx.rotate(dx*.02);drawPumpkin(ctx,0,0,30,0);ctx.restore();}},
+ {dur:7,cap:'High above, a witch crossed the moon. Something small and bright slipped from her bag.',draw(ctx,p,t,e){night(ctx,e,t,700);ctx.fillStyle='#1B0D3A';hills(ctx,420,16,.005,-3.6,960,540);drawManor(ctx,600,470,t,.55);ctx.fillStyle='#120826';ctx.fillRect(0,470,960,70);ncShort.witch(ctx,lerp(-100,1100,p),130+Math.sin(p*9)*20,40,.15,t);if(p>.45){const q=ease((p-.45)/.55);drawStar(ctx,lerp(520,480,q),lerp(150,470,q),14);}ncShort.ghost(ctx,420,330+Math.sin(t*2)*10,90,t);drawPumpkin(ctx,480,492,30,0);}},
+ {dur:7,cap:'And the littlest pumpkin glowed brighter than any pumpkin ever had.',draw(ctx,p,t,e){night(ctx,e,t,700);patch(ctx,t,1,Math.min(1,p*2));ctx.save();ctx.translate(0,-Math.abs(Math.sin(t*6))*20);ncShort.ghost(ctx,400,340,90,t);ctx.restore();for(let i=0;i<8;i++){ctx.fillStyle='rgba(255,224,138,'+(.4+.4*Math.sin(t*3+i))+')';ctx.beginPath();ctx.arc(480+Math.cos(t+i*.8)*(80+i*20),430+Math.sin(t*1.3+i)*40,3,0,TAU);ctx.fill();}}},
  {dur:5,cap:'The End',draw(ctx,p,t,e){endCard(ctx,e,p);}},
 ];
 const SHORT2=[
  {dur:6,cap:'At midnight, Moonmere Manor wakes up. One window at a time.',draw(ctx,p,t,e){night(ctx,e,t,760);ctx.fillStyle='#1B0D3A';hills(ctx,430,16,.005,1,960,540);drawManor(ctx,480,470,t,.6,Math.floor(p*9));ctx.fillStyle='#120826';ctx.fillRect(0,470,960,70);}},
- {dur:7,cap:'The skeleton in the attic practices his moves. He has been working on this all year.',draw(ctx,p,t,e){ctx.fillStyle='#1A0D33';ctx.fillRect(0,0,960,540);ctx.fillStyle='#120826';ctx.fillRect(0,440,960,100);ctx.fillStyle='rgba(255,240,184,.12)';ctx.fillRect(640,80,180,230);ctx.fillStyle='#1A0D33';ctx.fillRect(726,80,8,230);ctx.fillRect(640,190,180,8);const g=ctx.createRadialGradient(400,0,20,400,0,420);g.addColorStop(0,'rgba(255,227,150,.28)');g.addColorStop(1,'rgba(255,227,150,0)');ctx.fillStyle=g;ctx.fillRect(0,0,960,540);drawSkeleton(ctx,400+Math.sin(t*4)*40,440-Math.abs(Math.sin(t*8))*30,110,t*9);drawBat(ctx,150,120+Math.sin(t*3)*10,22,t*12,'#2B1550');}},
- {dur:6,cap:'Down in the kitchen, the cauldron hums its one tune. Pip hums along.',draw(ctx,p,t,e){ctx.fillStyle='#160B33';ctx.fillRect(0,0,960,540);ctx.fillStyle='#120826';ctx.fillRect(0,450,960,90);const g=ctx.createRadialGradient(480,380,40,480,380,400);g.addColorStop(0,'rgba(142,242,106,.3)');g.addColorStop(1,'rgba(142,242,106,0)');ctx.fillStyle=g;ctx.fillRect(0,0,960,540);drawCauldron(ctx,480,440,260,t);drawGhost(ctx,250+Math.sin(t)*10,300+Math.sin(t*2)*12,100,t);}},
- {dur:7,cap:'And the bats head out for the night.',draw(ctx,p,t,e){night(ctx,e,t,760);ctx.fillStyle='#1B0D3A';hills(ctx,430,16,.005,1,960,540);drawManor(ctx,480,470,t,.6);ctx.fillStyle='#120826';ctx.fillRect(0,470,960,70);const tx=480-189*.6,ty=470-405*.6;for(let i=0;i<26;i++){const q=p*1.6-i*.05;if(q<=0)continue;const a=i*.9+q*3,r=q*620;drawBat(ctx,tx+Math.cos(a)*r*(1+i*.02),ty+Math.sin(a)*r*.45-q*60,12+i%3*3,t*14+i,'#120826');}}},
+ {dur:7,cap:'The skeleton in the attic practices his moves. He has been working on this all year.',draw(ctx,p,t,e){ctx.fillStyle='#1A0D33';ctx.fillRect(0,0,960,540);ctx.fillStyle='#120826';ctx.fillRect(0,440,960,100);ctx.fillStyle='rgba(255,240,184,.12)';ctx.fillRect(640,80,180,230);ctx.fillStyle='#1A0D33';ctx.fillRect(726,80,8,230);ctx.fillRect(640,190,180,8);const g=ctx.createRadialGradient(400,0,20,400,0,420);g.addColorStop(0,'rgba(255,227,150,.28)');g.addColorStop(1,'rgba(255,227,150,0)');ctx.fillStyle=g;ctx.fillRect(0,0,960,540);ncShort.skel(ctx,400+Math.sin(t*4)*40,440-Math.abs(Math.sin(t*8))*30,110,t*9);ncShort.bat(ctx,150,120+Math.sin(t*3)*10,22,t*12,'#2B1550');}},
+ {dur:6,cap:'Down in the kitchen, the cauldron hums its one tune. Pip hums along.',draw(ctx,p,t,e){ctx.fillStyle='#160B33';ctx.fillRect(0,0,960,540);ctx.fillStyle='#120826';ctx.fillRect(0,450,960,90);const g=ctx.createRadialGradient(480,380,40,480,380,400);g.addColorStop(0,'rgba(142,242,106,.3)');g.addColorStop(1,'rgba(142,242,106,0)');ctx.fillStyle=g;ctx.fillRect(0,0,960,540);ncShort.caul(ctx,480,440,260,t);ncShort.ghost(ctx,250+Math.sin(t)*10,300+Math.sin(t*2)*12,100,t);}},
+ {dur:7,cap:'And the bats head out for the night.',draw(ctx,p,t,e){night(ctx,e,t,760);ctx.fillStyle='#1B0D3A';hills(ctx,430,16,.005,1,960,540);drawManor(ctx,480,470,t,.6);ctx.fillStyle='#120826';ctx.fillRect(0,470,960,70);const tx=480-189*.6,ty=470-405*.6;for(let i=0;i<26;i++){const q=p*1.6-i*.05;if(q<=0)continue;const a=i*.9+q*3,r=q*620;ncShort.bat(ctx,tx+Math.cos(a)*r*(1+i*.02),ty+Math.sin(a)*r*.45-q*60,12+i%3*3,t*14+i,'#120826');}}},
  {dur:7,cap:'By sunrise the manor is quiet again. Until tomorrow night.',draw(ctx,p,t,e){night(ctx,e,t,760);const g=ctx.createLinearGradient(0,0,0,540);g.addColorStop(0,'rgba(255,150,80,0)');g.addColorStop(1,'rgba(255,180,90,.9)');ctx.globalAlpha=ease(p);ctx.fillStyle=g;ctx.fillRect(0,0,960,540);ctx.globalAlpha=1;ctx.fillStyle='#2A1552';hills(ctx,430,16,.005,1,960,540);drawManor(ctx,480,470,t,.6,Math.max(0,8-Math.floor(p*12)));ctx.fillStyle='#1A0F3A';ctx.fillRect(0,470,960,70);drawPumpkin(ctx,200,480,32,0);drawPumpkin(ctx,760,484,28,0);}},
  {dur:5,cap:'The End',draw(ctx,p,t,e){endCard(ctx,e,p);}},
 ];
@@ -3480,7 +3519,7 @@ if(typeof PREV!=='undefined')PREV.bowl3d=(x,t,W,H)=>{pvBg(x,W,H);
  x.fillStyle='rgba(255,210,63,.9)';x.font='900 18px Nunito,sans-serif';x.textAlign='left';x.fillText('3D · test',16,H-16);};
 /* ==== PUMPKIN BOWLING 3D END ==== */
 
-const SHORTS=[{id:'short1',title:'The Pumpkin Who Lost Its Glow',desc:'One pumpkin in the patch would not light. A small ghost decides to help. 38 seconds.',scenes:SHORT1,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');c.fillStyle='#14082C';c.fillRect(0,150,320,30);drawPumpkin(c,80,140,26,.6);drawPumpkin(c,250,140,26,.6);drawPumpkin(c,160,146,18,0);drawGhost(c,200,80,50,t);}},
+const SHORTS=[{id:'short1',title:'The Pumpkin Who Lost Its Glow',desc:'One pumpkin in the patch would not light. A small ghost decides to help. 38 seconds.',scenes:SHORT1,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');c.fillStyle='#14082C';c.fillRect(0,150,320,30);drawPumpkin(c,80,140,26,.6);drawPumpkin(c,250,140,26,.6);drawPumpkin(c,160,146,18,0);ncShort.ghost(c,200,80,50,t);}},
  {id:'short2',title:'Midnight at Moonmere Manor',desc:'When the clock strikes twelve, the manor wakes up. 38 seconds.',scenes:SHORT2,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');drawMoon(c,270,36,18);c.fillStyle='#14082C';c.fillRect(0,165,320,15);drawManor(c,160,166,t,.32);}}];
 SCENES.shorts={title:'Moonmere Theater',mount(stage){
  const root=el('div',{class:'thr'});root.append(el('div',{class:'thr-curt l'}),el('div',{class:'thr-curt r'}),el('div',{class:'thr-val'}));
