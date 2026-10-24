@@ -7834,11 +7834,11 @@ SCENES.print={title:'Print Shop',mount(stage){
  const sizeB=PSIZES.map(([n],i)=>{const b=mk('',n,()=>{o.size=i;},()=>o.size===i);b.querySelector('.e').style.fontSize=[18,28,40][i]+'px';return b;});
  right.append(sec('How big?',row(...sizeB)));
  const tagOK=v=>/^[A-Z]{2}(K|[1-9])$/.test(v);
- const nick=el('input',{class:'prt-in prt-tagin',type:'text',maxlength:'3',placeholder:'MC3',value:o.nick,autocapitalize:'characters',autocomplete:'off',autocorrect:'off',spellcheck:'false','aria-label':'Your initials and grade'});
+ const nick=el('input',{class:'prt-in prt-tagin',type:'text',maxlength:'3',placeholder:'MM3',value:o.nick,autocapitalize:'characters',autocomplete:'off',autocorrect:'off',spellcheck:'false','aria-label':'Your initials and grade'});
  nick.oninput=()=>{o.nick=nick.value.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,3);nick.value=o.nick;store.set('hv-tag',o.nick);nick.classList.toggle('ok',tagOK(o.nick));};nick.classList.toggle('ok',tagOK(o.nick));
  right.append(el('div',{class:'prt-sec'},el('b',{},'Your initials and grade'),nick,
   el('div',{class:'prt-taghelp'},el('span',{},'1️⃣ First initial'),el('span',{},'2️⃣ Last initial'),el('span',{},'3️⃣ Your grade')),
-  el('small',{class:'prt-tagnote'},'Example: Mike Cutillo in grade 3 types ',el('strong',{},'MC3'),'. Kindergarten uses K, like ',el('strong',{},'MCK'),'.')));
+  el('small',{class:'prt-tagnote'},'Example: Mummy Mo in grade 3 types ',el('strong',{},'MM3'),'. Kindergarten uses K, so Count Dracula types ',el('strong',{},'CDK'),'.')));
  const stat=el('div',{class:'prt-stat',role:'status'});
  const save=el('button',{class:'btn slime prt-send',type:'button'},'💾  Save my model');
  const help=el('div',{class:'prt-help'},el('b',{},'📲 How to save on an iPad'),
@@ -7878,7 +7878,7 @@ SCENES.print={title:'Print Shop',mount(stage){
  cv.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;cv.setPointerCapture(e.pointerId);});cv.addEventListener('pointermove',e=>{if(drag){ang+=(e.clientX-lastX)*.012;lastX=e.clientX;}});cv.addEventListener('pointerup',()=>{drag=false;});cv.addEventListener('pointercancel',()=>{drag=false;});
  const fname=()=>(o.nick+'-halloween-'+(o.kind==='stand'?'buddy-'+o.char:o.shape)+'-'+PSIZES[o.size][0].toLowerCase()).replace(/[^\w\-]+/g,'-')+'.stl';
  const finalStl=()=>stlBytes(o.kind==='stand'?buildStand(standOpts(),.016):buildSolid(flatOpts(),88));
- save.onclick=async()=>{SFX.click();if(!tagOK(o.nick)){stat.textContent='Type your initials and grade first, like MC3.';nick.focus();SFX.bad();return;}const bytes=finalStl(),file=new File([bytes],fname(),{type:'model/stl'});const done=()=>{stat.textContent='Saved! Now send it the way your class shares work. 📤';help.classList.add('flash');setTimeout(()=>help.classList.remove('flash'),2400);SFX.good();};
+ save.onclick=async()=>{SFX.click();if(!tagOK(o.nick)){stat.textContent='Type your initials and grade first, like MM3.';nick.focus();SFX.bad();return;}const bytes=finalStl(),file=new File([bytes],fname(),{type:'model/stl'});const done=()=>{stat.textContent='Saved! Now send it the way your class shares work. 📤';help.classList.add('flash');setTimeout(()=>help.classList.remove('flash'),2400);SFX.good();};
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'My Halloween print'});done();return;}}catch(e){if(e&&e.name==='AbortError')return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'model/stl'}));a.download=fname();document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);done();};
  rebuild();paint();loop();
