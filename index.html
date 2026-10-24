@@ -530,15 +530,42 @@ footer{position:relative;z-index:2;padding-block:28px 40px;color:var(--muted);fo
  background:linear-gradient(90deg,#C98445 0 62%,#8F5428 62% 100%);box-shadow:0 calc(8px*var(--s)) 0 calc(-2px*var(--s)) #5A3A1A}
 .hot.tracker .card b{font-size:calc(24px*var(--s))}
 /* ==== NEW SIGNS END ==== */
+/* ==== WEATHER START ==== */
+#world{transition:filter .8s}
+#world.wx-sunny{filter:brightness(1.7) saturate(1.25)}
+#world.wx-cloudy{filter:brightness(.95) saturate(.65)}
+#world.wx-rain{filter:brightness(.85) saturate(.8)}
+#world.wx-storm{filter:brightness(.62) saturate(.7) contrast(1.08)}
+#world.wx-snow{filter:brightness(1.12) saturate(.75)}
+#world.wx-dark{filter:brightness(.38) saturate(.7)}
+#wxSky{position:fixed;inset:0;pointer-events:none;z-index:1;opacity:0;transition:opacity .8s,background .8s}
+#wxSky.wx-sunny{opacity:1;mix-blend-mode:color;background:linear-gradient(180deg,rgba(90,170,255,.85) 0,rgba(110,185,255,.55) 35%,rgba(140,200,255,0) 62%)}
+#wxSky.wx-dark{opacity:1;background:radial-gradient(ellipse at 50% 55%,rgba(0,0,0,0) 22%,rgba(4,2,14,.75) 78%)}
+#wxSky.wx-storm{opacity:1;background:linear-gradient(180deg,rgba(20,18,40,.55),rgba(20,18,40,0) 55%)}
+#wxSky.wx-cloudy{opacity:1;background:linear-gradient(180deg,rgba(190,185,215,.28),rgba(190,185,215,0) 50%)}
+#wxSun{position:absolute;right:6%;top:calc(env(safe-area-inset-top,0px) + 74px);width:96px;height:96px;border-radius:50%;background:radial-gradient(circle,#FFF6C4 0 38%,#FFD23F 39% 62%,rgba(255,210,63,0) 64%);box-shadow:0 0 60px 20px rgba(255,214,90,.45);display:none;animation:wxSpin 30s linear infinite}
+@keyframes wxSpin{to{transform:rotate(360deg)}}
+.wx-wrap{position:relative;flex:none}
+#wxBtn{background:#3B6FD8;font-size:24px;line-height:1}
+.wx-tray{position:absolute;top:56px;left:-6px;display:flex;gap:8px;padding:10px;background:rgba(14,7,38,.92);border:2px solid rgba(255,255,255,.15);border-radius:22px;box-shadow:0 14px 34px rgba(0,0,0,.5);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);z-index:40}
+.wx-tray[hidden]{display:none}
+.wx-tray button{width:56px;height:56px;border-radius:16px;border:0;background:rgba(255,255,255,.08);font-size:30px;cursor:pointer;display:grid;place-items:center;transition:transform .15s,background .15s}
+.wx-tray button:hover{transform:scale(1.1)}
+.wx-tray button.on{background:#FFC34D;box-shadow:0 0 0 3px #fff inset}
+@media (max-width:620px){.wx-tray{flex-wrap:wrap;width:212px}}
+body.booting .wx-wrap{display:none}
+/* ==== WEATHER END ==== */
 </style>
 
 <canvas id="world" aria-hidden="true"></canvas>
+<div id="wxSky" aria-hidden="true"><div id="wxSun"></div></div>
 <div id="hots"></div>
 <div id="spacer"></div>
 
 <div class="top gutter">
   <button class="rbtn" id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path class="mi" d="M4 7H20M4 12H20M4 17H20" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/><path class="mx" d="M6 6L18 18M18 6L6 18" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/></svg></button>
   <button class="rbtn" id="soundBtn" aria-label="Sound on or off"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M4 9V15H8L13 19V5L8 9Z" fill="#fff"/><path id="sndWave" d="M16 9Q19 12 16 15" stroke="#fff" stroke-width="2.2" fill="none" stroke-linecap="round"/><path id="sndSlash" d="M5 5L19 19" stroke="#FFC34D" stroke-width="2.6" stroke-linecap="round" opacity="0"/></svg></button>
+  <div class="wx-wrap"><button class="rbtn" id="wxBtn" type="button" aria-label="Weather" title="Weather">☀️</button><div class="wx-tray" id="wxTray" role="menu" aria-label="Weather" hidden></div></div>
   <span class="pill gh" id="ghostPill" title="Ghosts found"><svg viewBox="30 50 100 116" width="12" height="14" aria-hidden="true"><path d="M40 160Q36 120 40 96C44 52 116 52 120 96Q124 120 120 160Q110 150 100 160Q90 150 80 160Q70 150 60 160Q50 150 40 160Z" fill="currentColor"/></svg><span id="ghostCount">0 / 13</span></span>
   <span class="pill" id="songPill" hidden>♪ <span id="songName">Your song</span></span>
   <div class="count" id="count"><div><b>00</b><span>days</span></div><div><b>00</b><span>hrs</span></div><div><b>00</b><span>min</span></div><div><b>00</b><span>sec</span></div></div>
@@ -1386,6 +1413,17 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
  }
 };
 
+/* ==== WEATHER PICKER START ==== */
+const WX=[['sunny','☀️','Sunny'],['clear','🌙','Clear night'],['cloudy','☁️','Cloudy'],['fog','🌫️','Foggy'],['rain','🌧️','Rainy'],['storm','⛈️','Stormy'],['snow','❄️','Snowy'],['dark','🌑','Dark']];
+function setWeather(id,save){if(!WX.some(w=>w[0]===id))id='clear';LIFE.weather=id;if(save)store.set('hv-weather',id);
+ const cls='wx-'+id;['world','wxSky'].forEach(k=>{const n=document.getElementById(k);if(n)n.className=cls;});
+ $('#wxBtn').textContent=WX.find(w=>w[0]===id)[1];$('#wxTray').querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.wx===id));
+ if(id==='storm')LIFE.nextFlash=1.2;}
+WX.forEach(([id,em,lb])=>{const b=el('button',{type:'button',title:lb,'aria-label':lb,'data-wx':id},em);b.onclick=e=>{e.stopPropagation();SFX.click();setWeather(id,true);$('#wxTray').hidden=true;
+ if(id==='storm'){LIFE.flashAt=performance.now()/1000;const fl=$('#flash');fl.classList.remove('go');void fl.offsetWidth;fl.classList.add('go');}};$('#wxTray').append(b);});
+$('#wxBtn').onclick=e=>{e.stopPropagation();SFX.click();$('#wxTray').hidden=!$('#wxTray').hidden;};
+addEventListener('pointerdown',e=>{if(!e.target.closest('.wx-wrap'))$('#wxTray').hidden=true;});
+/* ==== WEATHER PICKER END ==== */
 /* ---------- menu button ---------- */
 $('#menuBtn').onclick=()=>{SFX.click();if($('#menu').hidden)openMenu();else closeMenu();};
 $('#soundBtn').onclick=()=>{SFX.setMuted(!SFX.muted);if(!SFX.muted)SFX.click();};
@@ -6382,7 +6420,7 @@ function drawTrain(ctx,x,y,t,dir){ctx.save();ctx.translate(x,y);if(dir<0)ctx.sca
  for(let i=0;i<4;i++){const k=(t*.9+i*.25)%1;ctx.fillStyle='rgba(220,210,240,'+(.6*(1-k))+')';ctx.beginPath();ctx.arc(20-k*90,-34-k*30,8+k*14,0,TAU);ctx.fill();}
  ctx.restore();ctx.restore();}
 const LIFE={
- weather:QS.get('weather')||(()=>{const r=seeded(DAYKEY)();return r<.42?'clear':r<.66?'fog':r<.86?'rain':'storm';})(),
+ weather:QS.get('weather')||store.get('hv-weather',null)||(()=>{const r=seeded(DAYKEY)();return r<.42?'clear':r<.66?'fog':r<.86?'rain':'storm';})(),
  surprise:QS.has('surprise')?+QS.get('surprise'):DAYKEY%8,
  rain:Array.from({length:360},(_,i)=>({x:((i*97)%1000)/1000,y:((i*53)%1000)/1000,v:1.1+(i%4)*.25})),
  fogs:Array.from({length:14},(_,i)=>({x:i*110,y:0,w:240+(i%3)*80,v:10+(i%4)*6})),
@@ -6461,12 +6499,14 @@ const LIFE={
   {const c=this.cat;if(V(c.y,120)){const bob=c.moving?Math.abs(Math.sin(t*12))*8:0;ctx.save();ctx.translate(c.x,c.y-bob);if(c.tx<c.x-2)ctx.scale(-1,1);drawCat(ctx,0,0,t,.55);ctx.restore();if(t-c.meow<.6){ctx.fillStyle='#FFF4E6';ctx.font='900 14px "Baloo 2"';ctx.textAlign='center';ctx.fillText('♥',c.x,c.y-40);}}}
   /* ----- weather ----- */
   if(this.weather==='fog'||this.weather==='storm'){ctx.save();for(const f of this.fogs){const x=w.vx0+((f.x+t*f.v)%(w.vx1-w.vx0+f.w*2))-f.w,y=top+((f.x*3.7)%(bot-top+200))-100;const g=ctx.createRadialGradient(x,y,0,x,y,f.w);g.addColorStop(0,'rgba(200,190,230,'+(this.weather==='fog'?.22:.12)+')');g.addColorStop(1,'rgba(200,190,230,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y,f.w,f.w*.3,0,0,TAU);ctx.fill();}ctx.restore();}
+  if(this.weather==='snow'){ctx.fillStyle='rgba(255,255,255,.85)';const vw=w.vx1-w.vx0,vh=bot-top;ctx.beginPath();for(let i=0;i<this.rain.length;i+=2){const d=this.rain[i],y=top+((d.y*vh+t*d.v*60)%vh),x=w.vx0+(((d.x*vw+Math.sin(t*.8+i)*24+t*12)%vw)+vw)%vw,r=1.8+(i%5)*.7;ctx.moveTo(x+r,y);ctx.arc(x,y,r,0,TAU);}ctx.fill();}
+  if(this.weather==='cloudy'){ctx.save();for(const f of this.fogs){const x=w.vx0+((f.x+t*f.v*.6)%(w.vx1-w.vx0+f.w*2))-f.w,y=top+40+(f.x*1.3)%160;const g=ctx.createRadialGradient(x,y,0,x,y,f.w);g.addColorStop(0,'rgba(215,210,235,.18)');g.addColorStop(1,'rgba(215,210,235,0)');ctx.fillStyle=g;ctx.beginPath();ctx.ellipse(x,y,f.w,f.w*.35,0,0,TAU);ctx.fill();}ctx.restore();}
   if(this.weather==='rain'||this.weather==='storm'){ctx.strokeStyle='rgba(180,200,255,.45)';ctx.lineWidth=1.5;ctx.beginPath();const vw=w.vx1-w.vx0,vh=bot-top;for(const d of this.rain){const x=w.vx0+((d.x*vw+t*60)%vw),y=top+((d.y*vh+t*d.v*520)%vh);ctx.moveTo(x,y);ctx.lineTo(x-4,y+16);}ctx.stroke();if(this.weather==='storm'&&t-this.flashAt<.25){ctx.fillStyle='rgba(234,240,255,'+(.35*(1-(t-this.flashAt)/.25))+')';ctx.fillRect(w.vx0-10,top-10,vw+20,vh+20);}}
   /* ----- fireworks over the launch field ----- */
   for(const f of this.fw){if(f.age<f.fuse){ctx.fillStyle='#FFF1A8';ctx.beginPath();ctx.arc(f.x,f.y,3,0,TAU);ctx.fill();}else{ctx.fillStyle=f.col;for(const k of f.kids){ctx.globalAlpha=Math.max(0,1-k.age/2);ctx.beginPath();ctx.arc(k.x,k.y,2.6,0,TAU);ctx.fill();}ctx.globalAlpha=1;}}
  }};
 /* ---------- boot ---------- */
-document.body.classList.add('booting');world.init();LIFE.init();['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(SFX.ctx&&SFX.ctx.state!=='running')SFX.ctx.resume();},{passive:true}));
+document.body.classList.add('booting');world.init();LIFE.init();setWeather(LIFE.weather,false);['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(SFX.ctx&&SFX.ctx.state!=='running')SFX.ctx.resume();},{passive:true}));
 const hashSong=songFromHash();if(hashSong)store.set('hv-song',hashSong);
 const song=hashSong||store.get('hv-song',null);
 function enter(fromMenu){const boot=$('#boot');if(boot.hidden)return;SFX.get();SFX.click();boot.classList.add('out');document.body.classList.remove('booting');setTimeout(()=>{boot.hidden=true;},650);SFX.ambient(true);
