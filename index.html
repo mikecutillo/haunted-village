@@ -4171,8 +4171,8 @@ HOT.push({id:'typing',x:700,y:P.s_lib.y+190,w:200,h:220,sub:'Haunted Library',ti
    Shared bar: 🏠 back to the station, 🔁/🎲 same every time or surprise, 🐢 calm (slower, fewer things), 🔇🔉🔊 volume.
    Settings live in hv-sense. Calm starts on when the device asks for reduced motion. */
 if(!document.getElementById('hvsscss')){const s=document.createElement('style');s.id='hvsscss';s.textContent=`
-.ss-root{position:relative;width:100%;height:100%;min-height:360px;overflow:hidden;background:#241A52;user-select:none;-webkit-user-select:none;font-family:"Baloo 2",system-ui,sans-serif}
-.ss-cv{position:absolute;inset:0;display:block;touch-action:none}
+.ss-root{position:relative;width:100%;height:100%;min-height:300px;overflow:hidden;background:#241A52;user-select:none;-webkit-user-select:none;font-family:"Baloo 2",system-ui,sans-serif}
+.ss-cv{position:absolute;left:0;top:0;width:100%;height:100%;display:block;touch-action:none}
 .ss-ui{position:absolute;inset:0;pointer-events:none}
 .ss-ui>*{pointer-events:auto}
 .ss-bar{position:absolute;top:10px;left:10px;right:10px;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;z-index:4}
@@ -4270,6 +4270,9 @@ function ssBalloon(c,x,y,r,col,face,t,ph){const sw=Math.sin(t*1.6+ph);
 /* character art: new cast art when it is ready, a simple ghost otherwise */
 function ssChar(c,key,x,y,w,h){if(typeof ncFit==='function'&&ncFit(c,key,x,y,w,h))return;c.fillStyle='#F6E9D2';ssShape(c,'ghost',x,y-h*.45,h*.4);}
 
+/* treats that can hide inside bubbles and balloons */
+const SS_TREATS=['🍬','🍭','🍫','🍩','🧁','🍪','⭐','🎃','👻','🦇','🌙','💜','🍎','🌈'];
+
 /* every game: {label, col, mode (uses 🔁/🎲), icon(c,t) in a 160x120 box, make(A) -> {update, draw, down, move, up, key, resize, destroy}} */
 const SS_GAMES={};
 
@@ -4283,13 +4286,14 @@ SS_GAMES.bubbles={label:'Bubbles',col:'#2F8FB8',mode:true,
   for(let i=0;i<4;i++){const u=(t*.18+i*.25)%1;const r=[24,14,18,10][i];ssBubble(c,28+i*36+Math.sin(t+i)*6,130-u*150,r,(i*80+t*30)%360);}},
  make(A){
   const bubs=[],fx=[];let spawnT=.2,lane=0,cyc=0,pipPuff=0,pipQueue=[];
-  const SIZES=[1,.55,.78,.4,.9,.65];const ITEMS=['⭐','🍬','🦇','🎃','🌙','💜','🍭','👻'];
+  const SIZES=[1,.55,.78,.4,.9,.65];const ITEMS=SS_TREATS;const treat=()=>Math.random()<(A.surprise?.45:.3)?ITEMS[Math.floor(Math.random()*ITEMS.length)]:null;
   const maxN=()=>A.calm?8:13,spd=()=>A.calm?.6:1;
   const pip=()=>({x:Math.max(70*A.U,A.W*.1),y:A.H-14*A.U,s:118*A.U});
   function add(x,y,r,vy,item){const b={x,y,r,vy,ph:Math.random()*TAU,hue:Math.random()*360,item,grow:false,pid:null,age:0,vx:0};bubs.push(b);return b;}
   function spawn(){const U=A.U,W=A.W;let x,r,item=null;
-   if(A.surprise){x=W*(.08+Math.random()*.84);r=(26+Math.random()*70)*U;if(Math.random()<.4)item=ITEMS[Math.floor(Math.random()*ITEMS.length)];}
+   if(A.surprise){x=W*(.08+Math.random()*.84);r=(26+Math.random()*70)*U;}
    else{x=W*(.14+(lane++%5)*.18);r=(30+SIZES[cyc++%SIZES.length]*62)*U;}
+   item=treat();
    add(x,A.H+r,r,-(34+Math.random()*16)*U,item);}
   /* bigger bubble, lower note; the same size always makes the same note */
   function noteFor(r){return Math.round(11-Math.min(1,Math.max(0,(r/A.U-24)/90))*9);}
@@ -4304,7 +4308,7 @@ SS_GAMES.bubbles={label:'Bubbles',col:'#2F8FB8',mode:true,
   return{
    update(dt,t){const U=A.U,sp=spd();spawnT-=dt*sp;if(spawnT<=0&&bubs.filter(b=>!b.grow).length<maxN()){spawn();spawnT=A.calm?1.5:.95;}
     pipPuff=Math.max(0,pipPuff-dt*1.5);
-    for(let i=pipQueue.length-1;i>=0;i--){pipQueue[i]-=dt;if(pipQueue[i]<=0){pipQueue.splice(i,1);const p=pip();const b=add(p.x+p.s*.42,p.y-p.s*.62,(22+Math.random()*28)*U,-(40+Math.random()*20)*U,A.surprise&&Math.random()<.4?ITEMS[Math.floor(Math.random()*ITEMS.length)]:null);b.vx=(90+Math.random()*60)*U;}}
+    for(let i=pipQueue.length-1;i>=0;i--){pipQueue[i]-=dt;if(pipQueue[i]<=0){pipQueue.splice(i,1);const p=pip();const b=add(p.x+p.s*.42,p.y-p.s*.62,(22+Math.random()*28)*U,-(40+Math.random()*20)*U,treat());b.vx=(90+Math.random()*60)*U;}}
     for(let i=bubs.length-1;i>=0;i--){const b=bubs[i];b.age+=dt;
      if(b.grow){b.r=Math.min(118*U,b.r+52*U*dt);if(b.r>=118*U){b.grow=false;b.pid=null;b.vy=-30*U;SSA.tone(330,.35,'sine',.05,0,440);}continue;}
      b.vx*=Math.exp(-dt*1.4);b.y+=b.vy*dt*sp;b.x+=(Math.sin(t*.9+b.ph)*14*U+b.vx)*dt*sp;if(b.y<-b.r*1.3)bubs.splice(i,1);}
@@ -4327,7 +4331,7 @@ SS_GAMES.bubbles={label:'Bubbles',col:'#2F8FB8',mode:true,
     c.globalAlpha=1;},
    down(p){const P=pip();if(Math.hypot(p.x-P.x,p.y-(P.y-P.s*.45))<P.s*.45){pipBlow();p.mode='pip';return;}
     const b=hit(p.x,p.y);if(b){pop(b);p.mode='swipe';return;}
-    p.mode='blow';p.b=add(p.x,p.y,12*A.U,0,A.surprise&&Math.random()<.4?ITEMS[Math.floor(Math.random()*ITEMS.length)]:null);p.b.grow=true;p.b.pid=p.id;SSA.tone(220,.3,'sine',.04,0,330);},
+    p.mode='blow';p.b=add(p.x,p.y,(30+Math.random()*12)*A.U,0,treat());p.b.grow=true;p.b.pid=p.id;SSA.tone(220,.3,'sine',.04,0,330);},
    move(p){if(p.mode==='swipe'){const b=hit(p.x,p.y,0);if(b)pop(b);}else if(p.mode==='blow'&&p.b&&p.b.grow){p.b.x=p.x;p.b.y=p.y;}},
    up(p){if(p.mode==='blow'&&p.b&&p.b.grow){p.b.grow=false;p.b.pid=null;p.b.vy=-(28+Math.random()*10)*A.U;SSA.tone(330,.35,'sine',.05,0,440);}},
    key(k){if(k===' '){const b=bubs.filter(x=>!x.grow).sort((a,b)=>a.y-b.y)[0];if(b)pop(b);}},
@@ -4340,31 +4344,34 @@ SS_GAMES.balloons={label:'Balloons',col:'#D0566E',mode:true,
  make(A){
   const BAL=[{col:'#FF8A4C',face:'jack',n:0},{col:'#FFC94D',face:'smile',n:1},{col:'#8EE07B',face:'frank',n:2},{col:'#5EB8F2',face:'',n:3},{col:'#9C8CFF',face:'smile',n:4},{col:'#FF7BB8',face:'',n:5},{col:'#F4EEFF',face:'ghost',n:7}];
   const FULL=24,CANDY=['#FF8A4C','#FFC94D','#8EE07B','#5EB8F2','#FF7BB8','#D78CFF'];
-  const bals=[],fx=[],fly=[],taps=[];let spawnT=.3,ci=0,lane=0,fill=0,party=0,jackHop=0,pile=[];
+  const bals=[],fx=[],fly=[],gifts=[];let mine=0;let spawnT=.3,ci=0,lane=0,fill=0,party=0,jackHop=0,pile=[];
   {const r=seeded(9);for(let i=0;i<FULL;i++)pile.push({u:r(),v:r(),c:CANDY[i%CANDY.length],k:r()<.5?'circle':'star',rot:r()*6});}
   const jar=()=>{const U=A.U,w=120*U,h=130*U;return{x:A.W/2-w/2,y:A.H-h-10*U,w,h};};
   const spd=()=>A.calm?.6:1;
   function spawn(){const U=A.U;let b;if(A.surprise){b=BAL[Math.floor(Math.random()*BAL.length)];}else b=BAL[ci++%BAL.length];
    const lanes=[.14,.36,.64,.86],x=A.surprise?A.W*(.08+Math.random()*.84):A.W*lanes[lane++%4];
-   bals.push({...b,x,y:A.H+70*U,r:(44+Math.random()*10)*U,vy:-(42+Math.random()*14)*U,ph:Math.random()*TAU});}
+   bals.push({...b,x,y:A.H+70*U,r:(44+Math.random()*10)*U,vy:-(42+Math.random()*14)*U,ph:Math.random()*TAU,gift:gift(),grow:1});}
+  function gift(){return Math.random()<(A.surprise?.45:.3)?SS_TREATS[Math.floor(Math.random()*SS_TREATS.length)]:null;}
+  function blowUp(x,y){const U=A.U,b=A.surprise?BAL[Math.floor(Math.random()*BAL.length)]:BAL[mine++%BAL.length];bals.push({...b,x,y,r:(44+Math.random()*10)*U,vy:-(36+Math.random()*12)*U,ph:Math.random()*TAU,gift:gift(),grow:0});SSA.tone(300,.35,'sine',.05,0,620);return bals[bals.length-1];}
   function pop(b){const i=bals.indexOf(b);if(i<0)return;bals.splice(i,1);const U=A.U;
    if(A.surprise){const n=4+Math.floor(Math.random()*9);SSA.pop(ssNote(n));(Math.random()<.5?SSA.bell(ssNote(n),.07,.03):SSA.marimba(ssNote(n),.09,.03));}
    else{SSA.pop(ssNote(b.n+5));SSA.bell(ssNote(b.n+5),.07,.03);}
    const n=A.calm?10:18,shapes=['star','heart','circle','diamond'];
    for(let j=0;j<n;j++){const a=Math.random()*TAU,s=(50+Math.random()*130)*U;fx.push({x:b.x,y:b.y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-40*U,t:0,life:1+Math.random()*.6,col:A.surprise?SS_COL[j%8]:(j%3?b.col:'#FFF4D6'),sh:A.surprise?shapes[j%4]:'circle',rot:Math.random()*6,vr:(Math.random()-.5)*8});}
+   if(b.gift){gifts.push({x:b.x,y:b.y,ch:b.gift,s:b.r*1.1,t:0});SSA.bell(ssNote(12),.06,.1);}
    const k=A.surprise?1+Math.floor(Math.random()*3):2;for(let j=0;j<k;j++)fly.push({x0:b.x,y0:b.y,t:-j*.12,col:CANDY[Math.floor(Math.random()*CANDY.length)]});}
   function hit(x,y){let best=null,bd=1e9;for(const b of bals){const d=Math.hypot(b.x-x,(b.y-y)*.9);if(d<b.r*1.2&&d<bd){bd=d;best=b;}}return best;}
   return{
    update(dt,t){const U=A.U,sp=spd();spawnT-=dt*sp;if(spawnT<=0&&bals.length<(A.calm?6:9)){spawn();spawnT=A.calm?1.6:1.05;}
     jackHop=Math.max(0,jackHop-dt*1.2);
-    for(let i=bals.length-1;i>=0;i--){const b=bals[i];b.y+=b.vy*dt*sp;b.x+=Math.sin(t*.8+b.ph)*10*U*dt;if(b.y<-b.r*3)bals.splice(i,1);}
+    for(let i=bals.length-1;i>=0;i--){const b=bals[i];b.grow=Math.min(1,b.grow+dt*3);if(b.grow<1)continue;b.y+=b.vy*dt*sp;b.x+=Math.sin(t*.8+b.ph)*10*U*dt;if(b.y<-b.r*3)bals.splice(i,1);}
     for(let i=fx.length-1;i>=0;i--){const f=fx[i];f.t+=dt;f.vx*=Math.exp(-dt*1.6);f.vy=f.vy*Math.exp(-dt*1.6)+150*U*dt;f.x+=f.vx*dt;f.y+=f.vy*dt;f.rot+=f.vr*dt;if(f.t>f.life)fx.splice(i,1);}
     for(let i=fly.length-1;i>=0;i--){const f=fly[i];f.t+=dt*1.1;if(f.t>=1){fly.splice(i,1);if(party<=0){fill=Math.min(FULL,fill+1);SSA.marimba(ssNote(10+fill%5),.06);if(fill>=FULL){party=3.4;jackHop=1;SSA.chime(.06);for(let j=0;j<(A.calm?14:28);j++)fx.push({x:Math.random()*A.W,y:-20*U,vx:(Math.random()-.5)*40*U,vy:(30+Math.random()*60)*U,t:0,life:3,col:SS_COL[j%8],sh:['star','heart','circle'][j%3],rot:0,vr:(Math.random()-.5)*3});}}}}
-    for(let i=taps.length-1;i>=0;i--){taps[i].t+=dt;if(taps[i].t>.8)taps.splice(i,1);}
+    for(let i=gifts.length-1;i>=0;i--){const g=gifts[i];g.t+=dt;g.y-=50*U*dt;if(g.t>1.8)gifts.splice(i,1);}
     if(party>0){party-=dt;if(party<1.3)fill=Math.max(0,fill-dt*FULL/1.2);if(party<=0){party=0;fill=0;}}},
    draw(c,t){const W=A.W,H=A.H,U=A.U;ssSky(c,A,t,'#2A1E66','#7A3E8E',23);
     c.fillStyle='#4A2A84';c.beginPath();c.moveTo(0,H);for(let x=0;x<=W;x+=20)c.lineTo(x,H-40*U-Math.sin(x*.008)*16*U);c.lineTo(W,H);c.fill();
-    for(const b of bals)ssBalloon(c,b.x,b.y,b.r,b.col,b.face,t,b.ph);
+    for(const b of bals){const e=b.grow<1?.25+.75*(1-Math.pow(1-b.grow,3)):1;ssBalloon(c,b.x,b.y,b.r*e,b.col,b.face,t,b.ph);}
     /* the jar */
     const J=jar();if(party>0)ssGlow(c,J.x+J.w/2,J.y+J.h/2,J.w*1.3,'rgba(255,217,138,.8)',.5+.2*Math.sin(t*3));
     c.save();ssRR(c,J.x,J.y,J.w,J.h,22*U);c.clip();c.fillStyle='rgba(190,230,255,.13)';c.fillRect(J.x,J.y,J.w,J.h);
@@ -4377,10 +4384,10 @@ SS_GAMES.balloons={label:'Balloons',col:'#D0566E',mode:true,
     for(const f of fly){if(f.t<0)continue;const u=f.t,e=u*u*(3-2*u),tx=J.x+J.w/2,ty=J.y-6*U;const x=f.x0+(tx-f.x0)*e,y=f.y0+(ty-f.y0)*e-Math.sin(u*Math.PI)*120*U;c.fillStyle=f.col;ssShape(c,'circle',x,y,9*U);c.fillStyle='rgba(255,255,255,.5)';ssShape(c,'circle',x-3*U,y-3*U,3*U);}
     for(const f of fx){c.globalAlpha=Math.max(0,Math.min(1,(f.life-f.t)*2));c.fillStyle=f.col;ssShape(c,f.sh,f.x,f.y,(f.sh==='circle'?4:7)*U,f.rot);}c.globalAlpha=1;
     /* little stars where the sky was tapped */
-    for(const s of taps){const u=s.t/.8;c.globalAlpha=1-u;c.fillStyle='#FFE9A8';ssShape(c,'star',s.x,s.y,(10+u*10)*U,u*2);}c.globalAlpha=1;
+    c.textAlign='center';c.textBaseline='middle';for(const g of gifts){const u=g.t/1.8,sc=u<.15?u/.15:1;c.globalAlpha=u<.7?1:(1-u)/.3;c.font=Math.round(g.s*sc)+'px serif';c.fillText(g.ch,g.x,g.y);c.fillStyle='#FFF4D6';for(let k=0;k<5;k++){const a=t*3+k*1.26;ssShape(c,'star',g.x+Math.cos(a)*g.s*.75,g.y+Math.sin(a)*g.s*.75,5*U,a);}}c.globalAlpha=1;
     },
-   down(p){const b=hit(p.x,p.y);if(b){pop(b);p.mode='swipe';return;}taps.push({x:p.x,y:p.y,t:0});SSA.bell(ssNote(8+Math.floor(p.x/A.W*6)),.04);p.mode='swipe';},
-   move(p){if(p.mode==='swipe'){const b=hit(p.x,p.y);if(b)pop(b);}},
+   down(p){const b=hit(p.x,p.y);if(b){pop(b);p.mode='swipe';return;}const J=jar();if(p.y<J.y-20*A.U||p.x<J.x-60*A.U||p.x>J.x+J.w+60*A.U)p.skip=blowUp(p.x,p.y);p.mode='swipe';},
+   move(p){if(p.mode==='swipe'){const b=hit(p.x,p.y);if(b&&b!==p.skip)pop(b);}},
    up(){},key(k){if(k===' '){const b=bals.slice().sort((a,b)=>a.y-b.y)[0];if(b)pop(b);}},destroy(){}};}};
 
 /* ===== 3. Light Pad: eight light-up buttons paint dots in the sky ===== */
@@ -4640,7 +4647,7 @@ SCENES.sensory={title:'Sensory Station',card:{tag:'Calm play',desc:'Pop bubbles 
  let W=800,H=600,U=1,dpr=1,alive=true,raf=0,last=0,T=0,cur=null,game=null,fade=1,tiles=null,tileCvs=[];
  const deco=[];for(let i=0;i<7;i++)deco.push({x:.1+Math.random()*.8,y:Math.random(),r:12+Math.random()*22,h:Math.random()*360,v:.012+Math.random()*.02,ph:Math.random()*6});
  const A={get W(){return W},get H(){return H},get U(){return U},get calm(){return S.calm},get surprise(){return S.sur},ui,S,save:()=>ssSave(S),T:()=>T};
- function resize(){const r=root.getBoundingClientRect();if(!r.width||!r.height)return;dpr=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);W=r.width;H=r.height;U=Math.max(.62,Math.min(1.5,Math.min(W,H)/600));
+ function resize(){const r=root.getBoundingClientRect();if(!r.width||!r.height)return;dpr=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);cv.style.width=r.width+'px';cv.style.height=r.height+'px';W=r.width;H=r.height;U=Math.max(.62,Math.min(1.5,Math.min(W,H)/600));
   fitTiles();if(game&&game.resize)game.resize();}
  /* the six tiles always fit on one screen: 3x2 when wide, 2x3 when tall */
  function fitTiles(){if(!tiles)return;const port=W<H*.95,cols=port?2:3,rows=port?3:2,gap=Math.max(10,Math.min(22,Math.min(W,H)*.024)),label=48,room=H-132;
@@ -4671,10 +4678,10 @@ SCENES.sensory={title:'Sensory Station',card:{tag:'Calm play',desc:'Pop bubbles 
 
  /* pointers: every finger is tracked, so two hands can play at once */
  const pointers=new Map();
- function pt(e){const r=cv.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+ function pt(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)*W/(r.width||W),y:(e.clientY-r.top)*H/(r.height||H)};}
  cv.addEventListener('pointerdown',e=>{e.preventDefault();SFX.get();try{cv.setPointerCapture(e.pointerId);}catch(_){}const q=pt(e),p={id:e.pointerId,x:q.x,y:q.y};pointers.set(e.pointerId,p);
   if(game){if(game.down)game.down(p);}else lobbyTap(p);});
- cv.addEventListener('pointermove',e=>{const p=pointers.get(e.pointerId);if(!p)return;const q=pt(e);p.x=q.x;p.y=q.y;if(game&&game.move)game.move(p);});
+ cv.addEventListener('pointermove',e=>{const p=pointers.get(e.pointerId);if(!p)return;let evs=[e];try{const ce=e.getCoalescedEvents&&e.getCoalescedEvents();if(ce&&ce.length)evs=ce;}catch(_){}for(const ev of evs){const q=pt(ev);p.x=q.x;p.y=q.y;if(game&&game.move)game.move(p);}});
  const end=e=>{const p=pointers.get(e.pointerId);if(!p)return;pointers.delete(e.pointerId);if(game&&game.up)game.up(p);};
  cv.addEventListener('pointerup',end);cv.addEventListener('pointercancel',end);cv.addEventListener('lostpointercapture',end);
  const pops=[];function lobbyTap(p){for(const b of deco){if(Math.hypot(b.x*W-p.x,b.y*H-p.y)<b.r*U+14){pops.push({x:p.x,y:p.y,r:b.r*U,t:0,h:b.h});b.y=1.15;b.x=.1+Math.random()*.8;SSA.bloop(ssNote(Math.round(11-b.r/34*8)));return;}}SSA.bell(ssNote(6+Math.floor(p.x/W*6)),.035);pops.push({x:p.x,y:p.y,r:6*U,t:0,h:50,star:1});}
@@ -4740,8 +4747,8 @@ Object.assign(ICON,{sensory:'🎈'});
 Object.assign(SAYS,{sensory:'Pop bubbles, light up dots, tap for sounds. No rush, no score.'});
 {const at=TILES.findIndex(t=>t[0]==='boogie');TILES.splice(at<0?TILES.length:at+1,0,['sensory','#2A9D8F']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
 PREV.sensory=(x,t,W,H)=>SENSE_THUMB(x,t,W,H);
-HOT.push({id:'sensory',x:150,y:P.s_sense.y+120,w:200,h:220,sub:'Calm play',title:'Sensory Station',kind:'post'});
-{const SH={x:108,y:P.s_sense.y-96};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SH.y,top,bot,340))SENSE_HOUSE_DRAW(ctx,SH.x,SH.y,t);};}
+HOT.push({id:'sensory',x:150,y:P.tower.y+120,w:200,h:220,sub:'Calm play',title:'Sensory Station',kind:'post'});
+{const SH={x:108,y:P.tower.y-96};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SH.y,top,bot,340))SENSE_HOUSE_DRAW(ctx,SH.x,SH.y,t);};}
 /* ==== SENSORY STATION END ==== */
 /* ==== CANDY CHOMP START ==== */
 /* ---------- GAME: Candy Chomp (number game in the Chomp Shop) ---------- */
