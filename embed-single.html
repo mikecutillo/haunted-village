@@ -1460,7 +1460,7 @@ SCENES.spell={title:'Spell Lab',mount(stage){
   from=[...pos];pos=[nx,ny];tw=0;SFX.tone(500+runI*20,.08,'triangle',.06);
   setTimeout(()=>{if(L.c.some(c=>c[0]===nx&&c[1]===ny)&&!got.has(nx+','+ny)){got.add(nx+','+ny);SFX.good();}stepNext();},330);}
  function update(dt){tw=Math.min(1,tw+dt*3.3);bump=Math.max(0,bump-dt*3);}
- function draw(ctx,t){const L=LV[lv];for(let x=0;x<COLS;x++)for(let y=0;y<ROWS;y++){ctx.fillStyle=(x+y)%2?'#1D1142':'#221548';ctx.fillRect(x*CELL,y*CELL,CELL,CELL);}
+ function draw(ctx,t){const L=LV[lv];for(let x=0;x<COLS;x++)for(let y=0;y<ROWS;y++){ctx.fillStyle=(x+y)%2?'#2A1A5E':'#4B3594';ctx.fillRect(x*CELL,y*CELL,CELL,CELL);ctx.strokeStyle='rgba(255,255,255,.18)';ctx.lineWidth=2;ctx.strokeRect(x*CELL+1,y*CELL+1,CELL-2,CELL-2);}
   for(const w of L.w){ctx.fillStyle='#120826';ctx.fillRect(w[0]*CELL,w[1]*CELL,CELL,CELL);drawGrave(ctx,w[0]*CELL+CELL/2,w[1]*CELL+CELL-10,46,'#3B2A66');}
   for(const c of L.c)if(!got.has(c[0]+','+c[1]))drawCandy(ctx,c[0]*CELL+CELL/2,c[1]*CELL+CELL/2+Math.sin(t*4+c[0])*4,'corn',Math.sin(t*2)*.3);
   drawCauldron(ctx,L.g[0]*CELL+CELL/2,L.g[1]*CELL+CELL*.6,64,t);
