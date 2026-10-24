@@ -1828,7 +1828,7 @@ if(!document.getElementById('hvpccss')){const s=document.createElement('style');
 @keyframes pcBounce{0%{transform:scale(.2) translateY(60px)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
 .pp-root{position:relative;height:100%;min-height:0;overflow:auto;background:linear-gradient(#150A3C 0,#301A6E 140px,#3A2266 141px,#2B1A4E 100%);user-select:none;-webkit-user-select:none}
 .pp-sky{position:relative;height:150px;overflow:hidden}
-.pp-bar{position:sticky;top:0;z-index:3;display:flex;gap:10px;align-items:center;justify-content:center;padding:10px;background:rgba(21,10,60,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.pp-bar{position:sticky;top:0;z-index:3;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center;padding:10px;background:rgba(21,10,60,.85);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .pp-pill{background:#6a2fd6;color:#fff;border-radius:14px;padding:8px 16px;font-weight:900;font-size:22px;display:flex;align-items:center;gap:8px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
 .pp-bar .pc-b{width:64px;flex:none}
 .pp-field{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:4px 10px;padding:12px 18px 40px;background:repeating-linear-gradient(#2B1A4E 0 120px,#3A2468 120px 136px)}
@@ -3253,18 +3253,7 @@ PREV.boogie=(x,t,W,H)=>BOOGIE_THUMB(x,t,W,H);
 HOT.push({id:'boogie',x:368,y:P.alley.y-215,w:200,h:200,sub:'Boogie Hall',title:'Monster Boogie',kind:'hang lft'});
 {const BG_HALL={x:110,y:P.alley.y-250};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(BG_HALL.y,top,bot,300))BOOGIE_HALL_DRAW(ctx,BG_HALL.x,BG_HALL.y,t);};}
 /* ==== MONSTER BOOGIE END ==== */
-/* ==== PATCH REG START ==== */
-const PATCH_SPOT={x:665,y:P.barn.y+265,sx:665,sy:P.barn.y+215};
 
-/* ---------- Pumpkin Patch: registration (menu tile, preview, village plot and sign) ---------- */
-GAMES.push({id:'patch',title:'Pumpkin Patch',sub:'Everyone\'s pumpkins',day:1,host:'jack'});
-Object.assign(ICON,{patch:'🌱'});
-Object.assign(SAYS,{patch:'Come see every pumpkin carved in the village!'});
-{const at=TILES.findIndex(t=>t[0]==='carve');TILES.splice(at<0?TILES.length:at+1,0,['patch','#3E7A2A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
-PREV.patch=(x,t,W,H)=>PATCH_THUMB(x,t,W,H);
-HOT.push({id:'patch',x:PATCH_SPOT.sx,y:PATCH_SPOT.sy,w:200,h:220,sub:'Everyone\'s pumpkins',title:'Pumpkin Patch',kind:'post'});
-{const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(PATCH_SPOT.y,top,bot,260))PATCH_PLOT_DRAW(ctx,PATCH_SPOT.x,PATCH_SPOT.y,t);};}
-/* ==== PATCH REG END ==== */
 /* ==== PUMPKIN BOWLING 3D START ==== */
 /* ---------- shared 3D loader (same as Candy Drop; harmless if already present) ---------- */
 if(!window.__hvThree){window.__hvThree=()=>{if(!window.__hvThreeP){const urls=['https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js','https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.min.js','https://unpkg.com/three@0.160.0/build/three.module.min.js'];window.__hvThreeP=urls.reduce((p,u)=>p.catch(()=>import(u)),Promise.reject()).catch(e=>{window.__hvThreeP=null;throw e;});}return window.__hvThreeP;};}
@@ -3552,6 +3541,18 @@ if(typeof PREV!=='undefined')PREV.bowl3d=(x,t,W,H)=>{pvBg(x,W,H);
  x.fillStyle='rgba(255,210,63,.9)';x.font='900 18px Nunito,sans-serif';x.textAlign='left';x.fillText('3D · test',16,H-16);};
 /* ==== PUMPKIN BOWLING 3D END ==== */
 
+/* ==== PATCH REG START ==== */
+const PATCH_SPOT={x:665,y:P.barn.y+265,sx:665,sy:P.barn.y+215};
+
+/* ---------- Pumpkin Patch: registration (menu tile, preview, village plot and sign) ---------- */
+GAMES.push({id:'patch',title:'Pumpkin Patch',sub:'Everyone\'s pumpkins',day:1,host:'jack'});
+Object.assign(ICON,{patch:'🌱'});
+Object.assign(SAYS,{patch:'Come see every pumpkin carved in the village!'});
+{const at=TILES.findIndex(t=>t[0]==='carve');TILES.splice(at<0?TILES.length:at+1,0,['patch','#3E7A2A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
+PREV.patch=(x,t,W,H)=>PATCH_THUMB(x,t,W,H);
+HOT.push({id:'patch',x:PATCH_SPOT.sx,y:PATCH_SPOT.sy,w:200,h:220,sub:'Everyone\'s pumpkins',title:'Pumpkin Patch',kind:'post'});
+{const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(PATCH_SPOT.y,top,bot,260))PATCH_PLOT_DRAW(ctx,PATCH_SPOT.x,PATCH_SPOT.y,t);};}
+/* ==== PATCH REG END ==== */
 const SHORTS=[{id:'short1',title:'The Pumpkin Who Lost Its Glow',desc:'One pumpkin in the patch would not light. A small ghost decides to help. 38 seconds.',scenes:SHORT1,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');c.fillStyle='#14082C';c.fillRect(0,150,320,30);drawPumpkin(c,80,140,26,.6);drawPumpkin(c,250,140,26,.6);drawPumpkin(c,160,146,18,0);ncShort.ghost(c,200,80,50,t);}},
  {id:'short2',title:'Midnight at Moonmere Manor',desc:'When the clock strikes twelve, the manor wakes up. 38 seconds.',scenes:SHORT2,thumb:(c,t)=>{skyGrad(c,320,180,'#0F0728','#2A1152','#3B1A62');drawMoon(c,270,36,18);c.fillStyle='#14082C';c.fillRect(0,165,320,15);drawManor(c,160,166,t,.32);}}];
 /* ==== NEW SHORTS START ==== */
