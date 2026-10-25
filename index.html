@@ -4609,7 +4609,7 @@ function ssSky(c,A,t,top,bot,seed){const W=A.W,H=A.H,g=c.createLinearGradient(0,
 /* ===== 1. Bubbles: tap to pop, hold to blow your own, swipe to pop a lot ===== */
 SS_GAMES.bubbles={label:'Bubbles',col:'#2F8FB8',mode:true,
  icon(c,t){const g=c.createLinearGradient(0,0,0,120);g.addColorStop(0,'#2B2E7A');g.addColorStop(1,'#3E8C9E');c.fillStyle=g;c.fillRect(0,0,160,120);
-  for(let i=0;i<4;i++){const u=(t*.18+i*.25)%1;const r=[24,14,18,10][i];ssBubble(c,28+i*36+Math.sin(t+i)*6,130-u*150,r,(i*80+t*30)%360);}},
+  for(let i=0;i<4;i++){const u=(t*.18+i*.25)%1,r=[22,13,17,10][i],y=120-r-u*(120-2*r);c.globalAlpha=Math.min(1,u*5,(1-u)*5);ssBubble(c,28+i*36+Math.sin(t+i)*5,y,r,(i*80+t*30)%360);}c.globalAlpha=1;},
  make(A){
   const bubs=[],fx=[],falling=[],pile=[];let spawnT=.2,lane=0,cyc=0,pipPuff=0,pipQueue=[],potGlow=0,potStir=0,mabelHop=0,emptyT=0;
   const SIZES=[1,.55,.78,.4,.9,.65];const ITEMS=SS_TREATS;const treat=()=>Math.random()<(A.surprise?.45:.3)?ITEMS[Math.floor(Math.random()*ITEMS.length)]:null;
@@ -5158,7 +5158,7 @@ SCENES.sensory={title:'Sensory Station',card:{tag:'Calm play',desc:'Pop bubbles 
  const cv=el('canvas',{class:'ss-cv'});root.append(cv);const c=cv.getContext('2d');
  const ui=el('div',{class:'ss-ui'});root.append(ui);
  let W=800,H=600,U=1,dpr=1,alive=true,raf=0,last=0,T=0,cur=null,game=null,fade=1,tiles=null,tileCvs=[];
- const deco=[];for(let i=0;i<7;i++)deco.push({x:.1+Math.random()*.8,y:Math.random(),r:12+Math.random()*22,h:Math.random()*360,v:.012+Math.random()*.02,ph:Math.random()*6});
+ const deco=[];if(0)deco.push({x:.1+Math.random()*.8,y:Math.random(),r:12+Math.random()*22,h:Math.random()*360,v:.012+Math.random()*.02,ph:Math.random()*6});
  const A={get W(){return W},get H(){return H},get U(){return U},get calm(){return S.calm},get surprise(){return S.sur},ui,S,save:()=>ssSave(S),T:()=>T};
  function resize(){const r=root.getBoundingClientRect();if(!r.width||!r.height)return;dpr=Math.min(2,window.devicePixelRatio||1);cv.width=Math.round(r.width*dpr);cv.height=Math.round(r.height*dpr);cv.style.width=r.width+'px';cv.style.height=r.height+'px';W=r.width;H=r.height;U=Math.max(.62,Math.min(1.5,Math.min(W,H)/600));
   fitTiles();if(game&&game.resize)game.resize();}
