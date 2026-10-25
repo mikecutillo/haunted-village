@@ -457,6 +457,7 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-si
 .short-view{flex:1;min-height:0;position:relative}
 .short-bar{flex:none;padding:12px 16px;background:#120A2E;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
 .caption{font-size:clamp(15px,2.2vw,20px);font-weight:700;min-height:1.5em;text-wrap:balance}
+.short-voice{flex:none;width:52px;height:44px;padding:0;display:grid;place-items:center;opacity:.7}.short-voice svg{width:26px;height:26px}.short-voice svg .w1,.short-voice svg .w2{opacity:.35}.short-voice.on{opacity:1;background:var(--pumpkin);color:#1A0B33;box-shadow:0 0 0 3px rgba(255,122,26,.35)}.short-voice.on svg .w1,.short-voice.on svg .w2{opacity:1}
 .short-ctl{display:flex;align-items:center;gap:12px}
 .bar{flex:1;height:8px;border-radius:4px;background:rgba(255,244,230,.14);overflow:hidden;cursor:pointer}
 .bar i{display:block;height:100%;width:0;background:var(--pumpkin)}
@@ -2741,17 +2742,42 @@ SCENES.bowl={title:'Pumpkin Bowling',mount(stage){
 
 
 /* ---------- Shorts ---------- */
-function shortScene(stage,scenes){
+/* Read-aloud for the shorts: pre-recorded neural narration in audio/shorts/<id>-<scene>.mp3 (lengths below, seconds).
+   Off unless a kid taps the speaker. When on, each scene waits for its line to finish. Falls back to the device voice if a clip fails. */
+const SHORT_NARR=/*NARR*/{"short1":[5.11,3.38,5.45,4.94,3.98,1.08],"short2":[3.91,5.16,4.58,1.87,3.96,1.08],"short3":[4.39,3.17,2.83,4.1,4.39,2.18,1.08],"short4":[4.94,1.15,2.76,4.58,3.89,3.77,1.08],"short5":[3.94,2.21,3.74,4.39,3.72,2.95,1.08],"short6":[5.16,3.24,4.3,3.14,5.9,4.54,4.3,1.08]};
+const SNARR={on:(()=>{try{return localStorage.getItem('hvShortVoice')==='1';}catch(e){return false;}})(),au:null,
+ set(v){this.on=v;try{localStorage.setItem('hvShortVoice',v?'1':'0');}catch(e){}},
+ audio(){if(!this.au){this.au=new Audio();this.au.preload='auto';}return this.au;}};
+function shortScene(stage,scenes,id){
  const root=el('div',{class:'short'}),vw=el('div',{class:'short-view'}),bar=el('div',{class:'short-bar'}),cap=el('div',{class:'caption'}),ctl=el('div',{class:'short-ctl'});
- const play=el('button',{class:'btn small',type:'button'},'Pause'),prog=el('div',{class:'bar'},el('i'));ctl.append(play,prog);bar.append(cap,ctl);root.append(vw,bar);stage.append(root);
- const W=960,H=540;let t=0,playing=true,ended=false;const total=scenes.reduce((a,s)=>a+s.dur,0);const stars=seedStars(90,W,H*.7,11);
- const g=makeGame(vw,W,H,{update(dt){if(playing&&!ended){t+=dt;if(t>=total){t=total;ended=true;playing=false;play.textContent='Watch again';}}},
-  draw(ctx){let acc=0,sc=scenes[scenes.length-1],p=1;for(const s of scenes){if(t<acc+s.dur){sc=s;p=(t-acc)/s.dur;break;}acc+=s.dur;}
+ const play=el('button',{class:'btn small',type:'button'},'Pause'),prog=el('div',{class:'bar'},el('i'));
+ const voice=el('button',{class:'btn small short-voice',type:'button','aria-label':'Read it to me','aria-pressed':'false'});
+ ctl.append(play,prog,voice);bar.append(cap,ctl);root.append(vw,bar);stage.append(root);
+ const lens=SHORT_NARR[id]||[],W=960,H=540;let t=0,playing=true,ended=false,cur=-1,spoke=-1,alive=true;const stars=seedStars(90,W,H*.7,11);
+ let durs=[],total=0;
+ const plan=()=>{durs=scenes.map((s,i)=>SNARR.on?Math.max(s.dur,lens[i]?lens[i]+.9:s.cap.split(' ').length*.42+.8):s.dur);total=durs.reduce((a,b)=>a+b,0);};
+ const at=tt=>{let acc=0;for(let i=0;i<scenes.length;i++){if(tt<acc+durs[i])return[i,acc];acc+=durs[i];}return[scenes.length-1,total-durs[durs.length-1]];};
+ const hush=()=>{if(SNARR.au){try{SNARR.au.pause();}catch(e){}}try{speechSynthesis.cancel();}catch(e){}};
+ const sayDevice=i=>{try{if(!('speechSynthesis' in window))return;speechSynthesis.cancel();const v=typeof wVoice==='function'?wVoice():null;const u=new SpeechSynthesisUtterance(scenes[i].cap);u.rate=.9;if(v){u.voice=v;u.lang=v.lang;}speechSynthesis.speak(u);}catch(e){}};
+ const say=(i,off)=>{hush();spoke=i;if(!SNARR.on||!playing||!alive)return;const L=lens[i];
+  if(!L){sayDevice(i);return;}if(off>L-.2)return;const au=SNARR.audio();let fell=false;const fall=()=>{if(fell||!alive||spoke!==i)return;fell=true;sayDevice(i);};
+  au.onerror=fall;const src='audio/shorts/'+id+'-'+i+'.mp3';if(!au.src.endsWith(src))au.src=src;
+  const go=()=>{try{au.currentTime=Math.max(0,off);}catch(e){}const pr=au.play();if(pr&&pr.catch)pr.catch(fall);};
+  if(au.readyState>=1||off<.05)go();else au.addEventListener('loadedmetadata',go,{once:true});};
+ const paintVoice=()=>{voice.innerHTML=typeof SPK_SVG!=='undefined'?SPK_SVG:'🔊';voice.classList.toggle('on',SNARR.on);voice.setAttribute('aria-pressed',SNARR.on?'true':'false');};
+ plan();paintVoice();
+ voice.onclick=()=>{SFX.get();const[i]=at(t);SNARR.set(!SNARR.on);plan();t=durs.slice(0,i).reduce((x,y)=>x+y,0);cur=i;paintVoice();
+  if(SNARR.on){if(ended){t=0;ended=false;playing=true;play.textContent='Pause';cur=0;}say(cur,0);}else hush();};
+ const g=makeGame(vw,W,H,{update(dt){if(playing&&!ended){t+=dt;if(t>=total){t=total;ended=true;playing=false;play.textContent='Watch again';}}
+   const[i,acc]=at(t);if(i!==cur){cur=i;if(playing)say(i,t-acc);}},
+  draw(ctx){const[i,acc]=at(t);const sc=scenes[i],p=Math.min(1,(t-acc)/durs[i]);
    ctx.save();sc.draw(ctx,p,t,{W,H,stars});ctx.restore();ctx.fillStyle='#000';ctx.fillRect(0,0,W,30);ctx.fillRect(0,H-30,W,30);
    if(cap.textContent!==sc.cap)cap.textContent=sc.cap;prog.firstChild.style.width=(t/total*100)+'%';}});
- play.onclick=()=>{SFX.get();if(ended){t=0;ended=false;playing=true;play.textContent='Pause';return;}playing=!playing;play.textContent=playing?'Pause':'Play';};
- prog.onclick=e=>{const r=prog.getBoundingClientRect();t=clamp((e.clientX-r.left)/r.width,0,.999)*total;ended=false;if(!playing){playing=true;play.textContent='Pause';}};
- return()=>g.destroy();}
+ play.onclick=()=>{SFX.get();if(ended){t=0;ended=false;playing=true;play.textContent='Pause';cur=0;say(0,0);return;}playing=!playing;play.textContent=playing?'Pause':'Play';
+  if(!playing)hush();else{const[i,acc]=at(t);cur=i;say(i,t-acc);}};
+ prog.onclick=e=>{const r=prog.getBoundingClientRect();t=clamp((e.clientX-r.left)/r.width,0,.999)*total;ended=false;if(!playing){playing=true;play.textContent='Pause';}const[i,acc]=at(t);cur=i;say(i,t-acc);};
+ if(SNARR.on){cur=0;say(0,0);}
+ return()=>{alive=false;hush();g.destroy();};}
 function night(ctx,e,t,moonX=800){skyGrad(ctx,e.W,e.H);drawStars(ctx,e.stars,t);drawMoon(ctx,moonX,110,60);}
 function patch(ctx,t,litGlow,littleGlow,offset=0){ctx.fillStyle='#1B0D3A';hills(ctx,420,16,.005,offset*.01,960,540);ctx.fillStyle='#120826';ctx.fillRect(0,470,960,70);
  const ps=[[150,470,42],[330,480,36],[640,478,40],[820,470,44],[480,440,30]];ps.forEach(([x,y,r],i)=>drawPumpkin(ctx,x-offset,y,r,litGlow*(.6+.4*Math.sin(t*5+i))));
@@ -5836,6 +5862,30 @@ SHORTS.push(
  {id:'short3',title:"Frankie's Happy Buzz",desc:'Gus has a question about bolts. Frankie has a very bright answer. 44 seconds.',scenes:SHORT3,thumb:saThumb(['#0F0728','#2A1152','#3B1A62'],[['frankie',140,120],['gus',205,82]])},
  {id:'short4',title:'Wolfie and the Shy Moon',desc:'Clouds hide the moon, and Wolfie needs some help. 45 seconds.',scenes:SHORT4,thumb:saThumb(['#0E0630','#2A1460','#5A2A8A'],[['wolfie',150,118],['flutter',212,40]])},
  {id:'short5',title:'Nick Took a Wrong Turn',desc:'Nick followed the wrong tracker and found a new home. 45 seconds.',scenes:SHORT5,thumb:saThumb(['#0F0728','#2A1152','#3B1A62'],[['nick',140,100],['jack',205,62]])});
+/* Short 6: Mabel, Rattles, Gourdon and Midnight. Rustic dirt lane, no road markings. */
+function sa6Lane(ctx,e,t,moonX=780){night(ctx,e,t,moonX);ctx.fillStyle='#24124A';hills(ctx,410,18,.006,4,960,540);
+ drawCottage(ctx,170,450,t,'#5B2E4E','#2A1548',160,112);drawCottage(ctx,800,450,t,'#3E2D6E','#22134A',170,124);
+ ctx.fillStyle='#3A2758';ctx.fillRect(0,450,960,90);ctx.fillStyle='#6B5A48';ctx.beginPath();ctx.moveTo(0,540);ctx.lineTo(0,488);ctx.quadraticCurveTo(480,462,960,488);ctx.lineTo(960,540);ctx.fill();
+ ctx.fillStyle='rgba(40,28,20,.35)';for(let i=0;i<26;i++){const x=(i*137.7)%960,y=496+(i*29.3)%40;ctx.beginPath();ctx.ellipse(x,y,4+(i%3)*2,2.4,0,0,TAU);ctx.fill();}}
+function sa6Hic(ctx,x,y,p,big){saText(ctx,big?'HIC!':'Hic!',x,y-Math.sin(p*Math.PI)*20,big?78:52,big?'#FF7A1A':'#FFE29A',Math.sin(Math.min(1,p)*Math.PI));}
+const SHORT6=[
+ {dur:6,cap:'Every Halloween night, Mabel flies the candy route. She has never once been late.',draw(ctx,p,t,e){sa6Lane(ctx,e,t);SA(ctx,'mabelfly',lerp(-160,560,ease(p)),210+Math.sin(t*3)*12,150,{w:250,rot:-.06});}},
+ {dur:6,cap:'But tonight, her broom had the hiccups. Hic! Hic!',draw(ctx,p,t,e){sa6Lane(ctx,e,t);const k=(p*3)%1,j=Math.max(0,1-k*4)*40;SA(ctx,'mabelfly',560,210-j,150,{w:250,rot:-.06+(k<.25?-.18:0)});if(p>.15)sa6Hic(ctx,700,140,k,false);}},
+ {dur:7,cap:'Then came one great big HIC! And all of her candy spilled out.',draw(ctx,p,t,e){sa6Lane(ctx,e,t);const q=clamp((p-.2)/.2,0,1),j=q<1?q*90:Math.max(0,90-(p-.4)*300);SA(ctx,'mabelfly',560,210-j,150,{w:250,rot:-.06-(q>0&&q<1?.3:0)});if(p>.2&&p<.7)sa6Hic(ctx,720,110,(p-.2)/.5,true);
+   for(let i=0;i<12;i++){const u=clamp((p-.32-i*.025)/.5,0,1);if(u<=0)continue;const x=540+(i-5.5)*34*u,y=lerp(180,500-(i%3)*8,u*u);drawCandy(ctx,x,y,['corn','lolly','mint'][i%3],u*9+i);}}},
+ {dur:7,cap:'Gourdon rolled down the lane and scooped up every piece.',draw(ctx,p,t,e){sa6Lane(ctx,e,t);const gx=lerp(-80,820,ease(p));
+   for(let i=0;i<12;i++){const x=540+(i-5.5)*34;if(x<gx-20)continue;drawCandy(ctx,x,500-(i%3)*8,['corn','lolly','mint'][i%3],9+i);}
+   ctx.save();ctx.translate(gx,450);ctx.rotate(gx*.02);SA(ctx,'gourdon',0,52,110);ctx.restore();SA(ctx,'mabel',260,505,200,{flip:true});}},
+ {dur:7,cap:'"Hold still, broom," said Rattles. He drummed a slow, steady beat. Boom. Tap. Boom.',draw(ctx,p,t,e){sa6Lane(ctx,e,t);const b=(t*1.6)%1;SA(ctx,'rattles',480,505,220,{bob:-Math.max(0,1-b*5)*10});SA(ctx,'mabel',250,505,200,{bob:walkBob(t,3.2,4)});SA(ctx,'gourdon',720,505,100,{rot:Math.sin(t*5)*.2});
+   if(b<.35)saText(ctx,Math.floor(t*1.6)%2?'Tap':'Boom',480,250,46,'#C9B8F0',1-b*2.8);}},
+ {dur:7,cap:'The broom swayed to the music. Swish, swish. And the hiccups were gone!',draw(ctx,p,t,e){sa6Lane(ctx,e,t);SA(ctx,'rattles',480,505,220,{bob:walkBob(t,5,8)});SA(ctx,'gourdon',720,505,100,{rot:Math.sin(t*5)*.2,bob:walkBob(t,5,8)});SA(ctx,'midnight',620,505,90,{bob:walkBob(t+.3,5,8)});
+   SA(ctx,'mabelfly',260,330+Math.sin(t*2)*10,140,{w:230,rot:Math.sin(t*2.4)*.12});saHearts(ctx,330,250,t,5,'#FFD23F');}},
+ {dur:7,cap:'Mabel flew off with a full bag of candy. And she was still not late.',draw(ctx,p,t,e){sa6Lane(ctx,e,t,700);SA(ctx,'rattles',380,505,200);SA(ctx,'gourdon',540,505,100);SA(ctx,'midnight',660,505,90);
+   const q=ease(p);SA(ctx,'mabelfly',lerp(260,1120,q),lerp(330,90,q)+Math.sin(t*3)*8,lerp(140,90,q),{w:lerp(230,150,q),rot:-.1});
+   ctx.fillStyle='rgba(255,226,154,.8)';for(let i=1;i<8;i++){ctx.beginPath();ctx.arc(lerp(260,1120,q)-i*20,lerp(330,90,q)+30+Math.sin(t*6+i)*4,Math.max(1,4-i*.4),0,TAU);ctx.fill();}}},
+ {dur:5,cap:'The End',draw(ctx,p,t,e){saEnd(ctx,e,p,t,['rattles','mabel','gourdon']);}},
+];
+SHORTS.push({id:'short6',title:"Mabel's Hiccupy Broom",desc:'The broom gets the hiccups, and the band saves the candy route. 52 seconds.',scenes:SHORT6,thumb:saThumb(['#0F0728','#2A1152','#3B1A62'],[['mabel',140,120],['gourdon',212,54]])});
 /* ==== NEW SHORTS END ==== */
 SCENES.shorts={title:'Moonmere Theater',mount(stage){
  const root=el('div',{class:'thr'});root.append(el('div',{class:'thr-curt l'}),el('div',{class:'thr-curt r'}),el('div',{class:'thr-val'}));
@@ -5845,7 +5895,7 @@ SCENES.shorts={title:'Moonmere Theater',mount(stage){
  const unmute=()=>{if(window.__vidMuted){window.__vidMuted=false;SFX.setMuted(false);}};
  const poster=(media,title,sub,badge,go,href)=>{const f=el('div',{class:'frame'},media,badge?el('span',{class:'badge'},badge):null,el('span',{class:'play'},'▶'),el('div',{class:'cap'},el('b',{},title),el('small',{},sub)));const b=href?el('a',{class:'tposter',href,target:'_blank',rel:'noopener'},f):el('button',{class:'tposter',type:'button','aria-label':'Play '+title},f);if(go)b.onclick=go;return b;};
  function lobby(){body.innerHTML='';const grid=el('div',{class:'tposters'});
-  for(const s of SHORTS){const cv=miniCanvas(320,180);s.thumb(cv.ctx,0);grid.append(poster(cv,s.title,'Made in the village',"Our short",()=>{stage.innerHTML='';unmount=shortScene(stage,s.scenes);$('#modalTitle').textContent=s.title;}));}
+  for(const s of SHORTS){const cv=miniCanvas(320,180);s.thumb(cv.ctx,0);grid.append(poster(cv,s.title,'Made in the village',"Our short",()=>{stage.innerHTML='';unmount=shortScene(stage,s.scenes,s.id);$('#modalTitle').textContent=s.title;}));}
   body.append(grid);}
  lobby();
  return()=>{unmute();};}};
