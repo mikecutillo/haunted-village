@@ -9292,7 +9292,7 @@ const DOORS=(()=>{
   list:all,
   tap(x,y,t){const d=hitDoor(x,y);if(!d)return false;
    if(d.house){/* neighborhood houses: the neighbor comes out first, then the house search opens */
-    if(t-d.knock<1.6)return true;knock(d,t);KA.soon(()=>openScene(d.id),'🏠');return true;}
+    if(t-d.knock<1.6)return true;knock(d,t);setTimeout(()=>openScene(d.id),1500);return true;}
    if(t-d.knock<.6)return true;knock(d,t);return true;},
   /* door glow and the character, drawn on top of the buildings */
   draw(ctx,t,top,bot){for(const d of all()){const u=t-d.knock;if(u<0||u>4.6)continue;if(d.y<top-200||d.y>bot+200)continue;
