@@ -3482,9 +3482,9 @@ Object.assign(ICON,{hayride:'🚜'});
 Object.assign(SAYS,{hayride:'Hop on the hay wagon and toss candy into every trick-or-treat bag!'});
 TILES.splice(5,0,['hayride','#D06A1A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);
 PREV.hayride=(x,t,W,H)=>HAYRIDE_THUMB(x,t,W,H);
-HOT.push({id:'hayride',x:130,y:P.s_hayride.y,w:200,h:220,sub:'Hayride stop',title:'Haunted Hayride',kind:'post'});
-/* the parked wagon at the bottom of the street, across the road from the sign */
-{const HR_STOP={x:640,y:P.s_hayride.y+5};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(HR_STOP.y,top,bot,260))HAYRIDE_STOP_DRAW(ctx,HR_STOP.x,HR_STOP.y,t);};}
+HOT.push({id:'hayride',x:-30,y:P.s_hayride.y,w:200,h:220,sub:'Hayride stop',title:'Haunted Hayride',kind:'post'});
+/* the parked wagon beside its sign, tractor facing the road */
+{const HR_STOP={x:230,y:P.s_hayride.y+5};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(HR_STOP.y,top,bot,260))HAYRIDE_STOP_DRAW(ctx,HR_STOP.x,HR_STOP.y,t);};}
 /* ==== HAUNTED HAYRIDE END ==== */
 
 
@@ -9849,6 +9849,7 @@ const BLDG=(()=>{const L=[];const add=(id,ax,ay,x0,x1,y0,y1)=>L.push({id,x0:ax+x
  if(P.s_boogie)add('boogie',110,P.s_boogie.y-46,-142,141,-180,0);
  if(P.s_lib)add('typing',690,P.s_lib.y-46,-109,132,-255,0);
  if(P.s_chomp)add('chomp',690,P.s_chomp.y-46,-188,137,-315,0);
+ if(P.s_hayride)add('hayride',230,P.s_hayride.y+5,-150,150,-145,20);
  if(P.s_bee)add('spellboo',120,P.s_bee.y-46,-130,130,-262,0);
  return L;})();
 /* ==== HOUSE TAP END ==== */
