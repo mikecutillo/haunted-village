@@ -435,6 +435,16 @@ label.chk{display:inline-flex;align-items:center;gap:6px;font-weight:800;font-si
 .mcard .front{background:var(--card);transform:rotateY(180deg)}
 .mcard.done .front{background:#1F3B2A;border-color:var(--slime)}
 .mcard canvas{width:70%;height:70%}
+.gm-pick{display:flex;justify-content:center;gap:10px;margin:0 auto 4px}
+.gm-lv{display:flex;flex-direction:column;align-items:center;gap:0;min-width:88px;padding:6px 14px 4px;border-radius:16px;border:2px solid var(--line);background:var(--card);color:var(--ink,#fff);cursor:pointer;font-weight:800;line-height:1.1;transition:transform .15s,background .15s}
+.gm-lv .gh{font-size:24px;letter-spacing:-2px}
+.gm-lv .ct{font-size:13px;color:var(--muted)}
+.gm-lv.on{background:linear-gradient(135deg,#6B3FC4,#4B2A8C);border-color:var(--candle);transform:scale(1.06)}
+.gm-lv.on .ct{color:var(--candle)}
+.grid6{gap:8px}
+.grid6 .mcard .f{border-radius:10px}
+.grid6 .mcard .back{font-size:24px}
+.grid6 .mcard canvas{width:82%;height:82%}
 
 /* shorts */
 .short{display:flex;flex-direction:column;height:100%;min-height:480px}
@@ -2497,20 +2507,36 @@ SCENES.spell={title:'Spell Lab',mount(stage){
  load();return()=>g.destroy();}};
 
 /* ---------- Ghost Match ---------- */
+/* Three levels, picked with ghost buttons (no reading needed). Level 1 is the original 16-card board.
+   Level 2: 24 cards (12 pairs). Level 3: 36 cards (18 pairs). Best moves are kept per level. */
+const GM_LEVELS=[{g:'👻',pairs:8,cols:4,rows:4,maxW:520},{g:'👻👻',pairs:12,cols:6,rows:4,maxW:720},{g:'👻👻👻',pairs:18,cols:6,rows:6,maxW:720}];
 SCENES.match={title:'Ghost Match',mount(stage){
- const ICONS=[['jack','jack',(c)=>drawPumpkin(c,45,48,26,.5)],['pip','pip',(c)=>drawGhost(c,45,44,56,0)],['flutter','flutter',(c)=>drawBat(c,45,45,30,.8,'#3B2466')],['mabel','mabel',(c)=>drawWitch(c,46,48,28,-.1,0)],['rattles','rattles',(c)=>drawSkeleton(c,45,80,34,.5)],['bubbles','bubbles',(c)=>drawCauldron(c,45,60,56,0)],['frank','frankie',(c)=>drawFrank(c,45,86,.42,0)],['midnight','midnight',(c)=>drawCat(c,45,40,0,.6)]].map(([k,key,old])=>[k,(c)=>{if(!ncFit(c,key,45,86,80,80))old(c);}]);
+ const ICONS=[['jack','jack',(c)=>drawPumpkin(c,45,48,26,.5)],['pip','pip',(c)=>drawGhost(c,45,44,56,0)],['flutter','flutter',(c)=>drawBat(c,45,45,30,.8,'#3B2466')],['mabel','mabel',(c)=>drawWitch(c,46,48,28,-.1,0)],['rattles','rattles',(c)=>drawSkeleton(c,45,80,34,.5)],['bubbles','bubbles',(c)=>drawCauldron(c,45,60,56,0)],['frank','frankie',(c)=>drawFrank(c,45,86,.42,0)],['midnight','midnight',(c)=>drawCat(c,45,40,0,.6)],
+  ['dracula','dracula',(c)=>drawDracula(c,45,80,.5,0)],['mummy','mummy',(c)=>drawMummy(c,45,80,.5,0)],['patches','patches',(c)=>drawGhost(c,45,44,56,0)],['wolfie','wolfie',(c)=>drawWerewolf(c,45,80,.5,0)],
+  ['horseman','horseman',(c)=>drawPumpkin(c,45,48,26,.5)],['bea','bea',(c)=>drawBat(c,45,45,30,.8,'#C98A2A')],['finn','finn',(c)=>drawCat(c,45,40,0,.6)],['zed','zed',(c)=>drawFrank(c,45,86,.42,0)],['june','june',(c)=>drawPumpkin(c,45,48,26,.5)],['nick','nick',(c)=>drawGhost(c,45,44,56,0)]
+ ].map(([k,key,old])=>[k,(c)=>{if(!ncFit(c,key,45,86,80,80))old(c);}]);
  const root=el('div',{class:'scene'});stage.append(root);
- const hud=el('div',{class:'row',style:'justify-content:space-between;max-width:520px;margin:0 auto;width:100%;font-weight:800'});const moves=el('span'),timer=el('span',{style:'font-variant-numeric:tabular-nums'}),best=el('span',{style:'color:var(--muted)'});hud.append(moves,timer,best);
- const grid=el('div',{class:'grid4'});root.append(hud,grid);
- let deck,open=[],lock=false,n=0,pairs=0,t0=0,iv=null,bestV=store.get('hv-match-best',null);
- function setup(){deck=[...ICONS,...ICONS].map((d,i)=>({k:d[0],draw:d[1],i})).sort(()=>Math.random()-.5);grid.innerHTML='';open=[];lock=false;n=0;pairs=0;t0=0;if(iv)clearInterval(iv);iv=null;
+ let lv=Math.min(2,Math.max(0,+store.get('hv-match-lvl',0)||0));
+ const pick=el('div',{class:'gm-pick',role:'group','aria-label':'Pick a level'});
+ const pickBtns=GM_LEVELS.map((L,i)=>{const b=el('button',{class:'gm-lv',type:'button','aria-label':'Level '+(i+1)+', '+(L.pairs*2)+' cards'},el('span',{class:'gh'},L.g),el('span',{class:'ct'},String(L.pairs*2)));b.onclick=()=>{if(i===lv&&!t0)return;SFX.click();lv=i;setup();};pick.append(b);return b;});
+ const hud=el('div',{class:'row gm-hud',style:'justify-content:space-between;margin:0 auto;width:100%;font-weight:800'});const moves=el('span'),timer=el('span',{style:'font-variant-numeric:tabular-nums'}),best=el('span',{style:'color:var(--muted)'});hud.append(moves,timer,best);
+ const grid=el('div',{class:'grid4'});root.append(pick,hud,grid);
+ let deck,open=[],lock=false,n=0,pairs=0,t0=0,iv=null,bestV=null;
+ const bestKey=i=>i===0?'hv-match-best':'hv-match-best-'+(i+1);
+ function size(){const L=GM_LEVELS[lv];const w='min('+L.maxW+'px, calc(((100dvh - 250px - '+(10*(L.rows-1))+'px) / '+L.rows+') * '+L.cols+' + '+(10*(L.cols-1))+'px))';grid.style.maxWidth=w;hud.style.maxWidth=L.maxW+'px';}
+ function setup(){const L=GM_LEVELS[lv];try{store.set('hv-match-lvl',lv);}catch(e){}bestV=store.get(bestKey(lv),null);
+  pickBtns.forEach((b,i)=>b.classList.toggle('on',i===lv));
+  grid.className='grid4'+(L.cols===6?' grid6':'');grid.style.gridTemplateColumns='repeat('+L.cols+',minmax(0,1fr))';size();
+  const set=ICONS.slice(0,L.pairs);deck=[...set,...set].map((d,i)=>({k:d[0],draw:d[1],i})).sort(()=>Math.random()-.5);grid.innerHTML='';open=[];lock=false;n=0;pairs=0;t0=0;if(iv)clearInterval(iv);iv=null;
   deck.forEach(d=>{const cv=miniCanvas(90,90);d.draw(cv.ctx);const card=el('button',{class:'mcard',type:'button','aria-label':'Card'},el('div',{class:'in'},el('div',{class:'f back'},'?'),el('div',{class:'f front'},cv)));card.onclick=()=>flip(card,d);d.el=card;grid.append(card);});upd();}
  function upd(){moves.textContent='Moves: '+n;timer.textContent=t0?Math.floor((Date.now()-t0)/1000)+'s':'0s';best.textContent=bestV?'Best: '+bestV+' moves':'';}
  function flip(card,d){if(lock||card.classList.contains('flip'))return;if(!t0){t0=Date.now();iv=setInterval(upd,500);}SFX.flip();card.classList.add('flip');open.push(d);
-  if(open.length===2){n++;upd();lock=true;const[a,b]=open;if(a.k===b.k){setTimeout(()=>{a.el.classList.add('done');b.el.classList.add('done');open=[];lock=false;pairs++;SFX.good();if(pairs===8)finish();},350);}else{setTimeout(()=>{a.el.classList.remove('flip');b.el.classList.remove('flip');open=[];lock=false;},800);}}}
- function finish(){clearInterval(iv);iv=null;const secs=Math.floor((Date.now()-t0)/1000);if(!bestV||n<bestV){bestV=n;store.set('hv-match-best',n);}upd();
-  const o=overlay(stage,{host:'pip',tag:'All pairs found',title:'Ghost Match',text:'Finished in '+secs+' seconds.',btn:'Play again',cb:setup,score:n+' moves',stars:n<=12?3:n<=18?2:1});o.style.position='fixed';}
- setup();return()=>{if(iv)clearInterval(iv);};}};
+  if(open.length===2){n++;upd();lock=true;const[a,b]=open;if(a.k===b.k){setTimeout(()=>{a.el.classList.add('done');b.el.classList.add('done');open=[];lock=false;pairs++;SFX.good();if(pairs===GM_LEVELS[lv].pairs)finish();},350);}else{setTimeout(()=>{a.el.classList.remove('flip');b.el.classList.remove('flip');open=[];lock=false;},800);}}}
+ function finish(){clearInterval(iv);iv=null;const L=GM_LEVELS[lv],P=L.pairs;const secs=Math.floor((Date.now()-t0)/1000);if(!bestV||n<bestV){bestV=n;store.set(bestKey(lv),n);}upd();
+  const next=lv<GM_LEVELS.length-1;
+  const o=overlay(stage,{host:'pip',tag:'All pairs found '+L.g,title:'Ghost Match',text:'Finished in '+secs+' seconds.',btn:next?'▶ '+GM_LEVELS[lv+1].g:'↻ '+L.g,cb:()=>{if(next)lv++;setup();},score:n+' moves',stars:n<=P*1.5?3:n<=P*2.25?2:1});o.style.position='fixed';}
+ window.addEventListener('resize',size);
+ setup();return()=>{if(iv)clearInterval(iv);window.removeEventListener('resize',size);};}};
 
 
 
