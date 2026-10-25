@@ -4559,7 +4559,8 @@ SS_GAMES.balloons={label:'Balloons',col:'#D0566E',mode:true,
   const bals=[],fx=[],fly=[],gifts=[],pairs=[];let mine=0,spawnT=.3,ci=0,lane=0,fill=0,party=0,jackHop=0,pile=[],hint=1;
   let holder={key:SS_HOLDERS[0],idx:0,held:[],arrive:0,hop:0},leaver=null;
   {const r=seeded(9);for(let i=0;i<FULL;i++)pile.push({u:r(),v:r(),c:CANDY[i%CANDY.length],k:r()<.5?'circle':'star',rot:r()*6});}
-  const jar=()=>{const U=A.U,w=120*U,h=130*U;return{x:A.W/2-w/2,y:A.H-h-10*U,w,h};};
+  /* a pumpkin-shaped glass jar on the right, with Jack sitting beside it */
+  const jar=()=>{const U=A.U,w=Math.min(150*U,A.W*.3),h=w*.92;return{x:A.W-w-Math.max(14*U,A.W*.04),y:A.H-h-10*U,w,h};};
   const spd=()=>A.calm?.6:1;
   /* where the friend stands, and where its hand is */
   const hpos=(h)=>{const U=A.U,s=Math.min(120*U,A.W*.24),slide=h.arrive>0?h.arrive*h.arrive*(-s*2.2):0;const x=Math.max(s*.75,A.W*.15)+slide,y=A.H-10*U;return{x,y,s,hx:x+s*.22,hy:y-s*.52};};
@@ -4570,7 +4571,8 @@ SS_GAMES.balloons={label:'Balloons',col:'#D0566E',mode:true,
   function nextType(){if(A.surprise){const lone=bals.filter(b=>!b.busy&&!bals.some(o=>o!==b&&!o.busy&&o.k===b.k));if(lone.length&&Math.random()<.5)return BAL[lone[Math.floor(Math.random()*lone.length)].k];return BAL[Math.floor(Math.random()*BAL.length)];}
    const k=ci++;return BAL[(Math.floor(k/4)*2+(k%2))%BAL.length];}
   function gift(){return Math.random()<(A.surprise?.45:.3)?SS_TREATS[Math.floor(Math.random()*SS_TREATS.length)]:null;}
-  function spawn(){const U=A.U,b=nextType();const lanes=[.14,.36,.64,.86],x=A.surprise?A.W*(.08+Math.random()*.84):A.W*lanes[lane++%4];
+  function spawn(){const U=A.U,b=nextType();/* new balloons rise in the open sky left of the jar */
+   const J=jar(),span=Math.max(A.W*.5,J.x-40*U),lanes=[.12,.37,.62,.87],x=A.surprise?span*(.08+Math.random()*.84):span*lanes[lane++%4];
    bals.push({...b,x,y:A.H+70*U,r:(44+Math.random()*10)*U,vy:-(42+Math.random()*14)*U,ph:Math.random()*TAU,gift:gift(),grow:1});}
   function blowUp(x,y){const U=A.U,b=A.surprise?BAL[Math.floor(Math.random()*BAL.length)]:BAL[mine++%BAL.length];bals.push({...b,x,y,r:(44+Math.random()*10)*U,vy:-(36+Math.random()*12)*U,ph:Math.random()*TAU,gift:gift(),grow:0});SSA.tone(300,.35,'sine',.05,0,620);return bals[bals.length-1];}
   function pop(b){const i=bals.indexOf(b);if(i<0)return;bals.splice(i,1);const U=A.U;
@@ -4624,14 +4626,31 @@ SS_GAMES.balloons={label:'Balloons',col:'#D0566E',mode:true,
      if(b.held){ssGlow(c,b.x,b.y,b.r*1.6,'rgba(255,255,255,.9)',.3);}
      ssBalloon(c,b.x,b.y,b.r*e,b.col,b.face,t,b.ph);}
     for(const p of pairs){const u=Math.min(1,p.t),e=u*u*(3-2*u);[p.a,p.b].forEach((o,j)=>{const s=slot(p.h,p.i0+j,0);const x=o.x0+(s.x-o.x0)*e,y=o.y0+(s.y-o.y0)*e-Math.sin(u*Math.PI)*40*U,r=o.r0+(s.r-o.r0)*e;ssBalloon(c,x,y,r,o.col,o.face,t,o.ph,true);});}
-    /* the jar */
-    const J=jar();if(party>0)ssGlow(c,J.x+J.w/2,J.y+J.h/2,J.w*1.3,'rgba(255,217,138,.8)',.5+.2*Math.sin(t*3));
-    c.save();ssRR(c,J.x,J.y,J.w,J.h,22*U);c.clip();c.fillStyle='rgba(190,230,255,.13)';c.fillRect(J.x,J.y,J.w,J.h);
-    const shown=Math.round(fill);for(let i=0;i<shown;i++){const p=pile[i],row=Math.floor(i/6),x=J.x+14*U+((i%6)+.5*(row%2))*(J.w-28*U)/6,y=J.y+J.h-12*U-row*15*U-p.v*4*U;c.fillStyle=p.c;ssShape(c,p.k,x,y,8*U,p.rot);}
-    c.restore();c.strokeStyle='rgba(230,245,255,.7)';c.lineWidth=4*U;ssRR(c,J.x,J.y,J.w,J.h,22*U);c.stroke();
-    c.fillStyle='rgba(255,255,255,.25)';ssRR(c,J.x+10*U,J.y+12*U,8*U,J.h-30*U,4*U);c.fill();
-    c.fillStyle='#C98445';ssRR(c,J.x-6*U,J.y-12*U,J.w+12*U,16*U,7*U);c.fill();
-    const hop=Math.abs(Math.sin(jackHop*Math.PI*3))*28*U*(jackHop>0?1:0);ssChar(c,'jack',J.x+J.w+70*U,H-10*U-hop,100*U,100*U);
+    /* the jar: a glass jack-o'-lantern with a stem lid; the carved face glows brighter as it fills */
+    const J=jar(),jx=J.x+J.w/2,nk=J.h*.16,by=J.y+nk,bh=J.h-nk,bcy=by+bh*.55,lw=J.w*.5,glow=fill/FULL;
+    const body=()=>{c.beginPath();c.ellipse(jx-J.w*.24,bcy,J.w*.3,bh*.46,0,0,TAU);c.moveTo(jx+J.w*.54,bcy);c.ellipse(jx+J.w*.24,bcy,J.w*.3,bh*.46,0,0,TAU);c.moveTo(jx+J.w*.33,bcy);c.ellipse(jx,bcy,J.w*.33,bh*.48,0,0,TAU);c.rect(jx-lw*.42,J.y+nk*.4,lw*.84,nk+bh*.2);};
+    if(party>0)ssGlow(c,jx,bcy,J.w*1.2,'rgba(255,170,70,.9)',.45+.2*Math.sin(t*3));
+    ssGlow(c,jx,bcy,J.w*.8,'rgba(255,150,50,.9)',.1+glow*.25);
+    c.save();body();c.clip();
+    const gg=c.createRadialGradient(jx,bcy,4,jx,bcy,J.w*.6);gg.addColorStop(0,'rgba(255,170,80,'+(.3+glow*.2)+')');gg.addColorStop(1,'rgba(230,100,30,.42)');c.fillStyle=gg;c.fillRect(J.x-10,J.y,J.w+20,J.h+10);
+    const shown=Math.round(fill);for(let i=0;i<shown;i++){const p=pile[i],row=Math.floor(i/6),x=J.x+J.w*.14+((i%6)+.5*(row%2))*(J.w*.72)/6,y=J.y+J.h-14*U-row*15*U-p.v*4*U;c.fillStyle=p.c;ssShape(c,p.k,x,y,8*U,p.rot);}
+    /* the carved face, drawn into the glass */
+    c.fillStyle='rgba(255,196,90,'+(.28+glow*.5+(party>0?.2:0))+')';const fw=J.w*.12,fy=bcy-bh*.12;
+    for(const sx of[-1,1]){c.beginPath();c.moveTo(jx+sx*J.w*.2-fw*.8,fy+fw*.5);c.lineTo(jx+sx*J.w*.2,fy-fw*.6);c.lineTo(jx+sx*J.w*.2+fw*.8,fy+fw*.5);c.closePath();c.fill();}
+    c.beginPath();c.moveTo(jx-J.w*.3,bcy+bh*.08);c.quadraticCurveTo(jx,bcy+bh*.42,jx+J.w*.3,bcy+bh*.08);c.quadraticCurveTo(jx,bcy+bh*.24,jx-J.w*.3,bcy+bh*.08);c.fill();
+    c.restore();
+    /* ribs and rim of the glass */
+    c.strokeStyle='rgba(255,190,120,.75)';c.lineWidth=3.5*U;c.beginPath();c.ellipse(jx-J.w*.24,bcy,J.w*.3,bh*.46,0,Math.PI*.55,Math.PI*1.45);c.stroke();
+    c.beginPath();c.ellipse(jx+J.w*.24,bcy,J.w*.3,bh*.46,0,-Math.PI*.45,Math.PI*.45);c.stroke();
+    c.strokeStyle='rgba(255,190,120,.6)';c.lineWidth=2.5*U;c.beginPath();c.ellipse(jx,bcy,J.w*.33,bh*.48,0,Math.PI*1.18,Math.PI*1.82,false);c.stroke();c.beginPath();c.ellipse(jx,bcy,J.w*.33,bh*.48,0,Math.PI*.15,Math.PI*.85);c.stroke();
+    c.strokeStyle='rgba(255,190,120,.75)';c.lineWidth=3*U;c.beginPath();c.moveTo(jx-lw*.42,J.y+nk*.4);c.lineTo(jx-lw*.42,bcy-bh*.44);c.moveTo(jx+lw*.42,J.y+nk*.4);c.lineTo(jx+lw*.42,bcy-bh*.44);c.stroke();
+    c.fillStyle='rgba(255,255,255,.28)';c.beginPath();c.ellipse(jx-J.w*.3,bcy-bh*.12,J.w*.04,bh*.2,.2,0,TAU);c.fill();
+    /* lid: an orange band with a curly green stem */
+    c.fillStyle='#C2581A';ssRR(c,jx-lw*.55,J.y+2*U,lw*1.1,nk*.62,nk*.25);c.fill();c.fillStyle='#FF8A2E';ssRR(c,jx-lw*.55,J.y,lw*1.1,nk*.5,nk*.25);c.fill();
+    c.fillStyle='#4E8A3E';ssRR(c,jx-J.w*.04,J.y-nk*.7,J.w*.08,nk*.8,J.w*.03);c.fill();
+    c.strokeStyle='#6FB04E';c.lineWidth=3*U;c.lineCap='round';c.beginPath();c.moveTo(jx+J.w*.03,J.y-nk*.5);c.bezierCurveTo(jx+J.w*.16,J.y-nk*.9,jx+J.w*.2,J.y-nk*.1,jx+J.w*.11,J.y-nk*.25);c.stroke();
+    /* Jack sits beside the jar */
+    const hop=Math.abs(Math.sin(jackHop*Math.PI*3))*28*U*(jackHop>0?1:0),js=Math.min(96*U,J.w*.66);ssChar(c,'jack',J.x-js*.5,H-10*U-hop,js,js);
     for(const f of fly){if(f.t<0)continue;const u=f.t,e=u*u*(3-2*u),tx=J.x+J.w/2,ty=J.y-6*U;const x=f.x0+(tx-f.x0)*e,y=f.y0+(ty-f.y0)*e-Math.sin(u*Math.PI)*120*U;c.fillStyle=f.col;ssShape(c,'circle',x,y,9*U);c.fillStyle='rgba(255,255,255,.5)';ssShape(c,'circle',x-3*U,y-3*U,3*U);}
     for(const f of fx){c.globalAlpha=Math.max(0,Math.min(1,(f.life-f.t)*2));c.fillStyle=f.col;ssShape(c,f.sh,f.x,f.y,(f.sh==='circle'?4:7)*U,f.rot);}c.globalAlpha=1;
     c.textAlign='center';c.textBaseline='middle';for(const g of gifts){const u=g.t/1.8,sc=u<.15?u/.15:1;c.globalAlpha=u<.7?1:(1-u)/.3;c.font=Math.round(g.s*sc)+'px serif';c.fillText(g.ch,g.x,g.y);c.fillStyle='#FFF4D6';for(let k=0;k<5;k++){const a=t*3+k*1.26;ssShape(c,'star',g.x+Math.cos(a)*g.s*.75,g.y+Math.sin(a)*g.s*.75,5*U,a);}}c.globalAlpha=1;
