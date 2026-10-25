@@ -1777,8 +1777,8 @@ function overlay(wrap,o){
 function starsFor(v,a,b,c){return v>=c?3:v>=b?2:v>=a?1:0;}
 
 /* ---------- Candy Drop ---------- */
-/* Endless: catch candy until the hearts run out. Poison apples and rats are rare and slow for the
-   first two minutes, then ramp up. Glowing candy gives a power: slow-mo, big pail, magnet, shield, or a heart back. */
+/* Endless: catch candy until you catch a poison apple or a rat. One bad catch ends the game. Poison apples and rats are rare and slow for the
+   first two minutes, then ramp up. Glowing candy gives a power: slow-mo, big pail, magnet, or shield. */
 function drawRat(ctx,x,y,rot,t){ctx.save();ctx.translate(x,y);ctx.rotate(rot);
  ctx.strokeStyle='#F2A0B8';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(0,16);for(let i=1;i<=8;i++)ctx.lineTo(Math.sin(t*9+i*.8)*7,16+i*4);ctx.stroke();
  ctx.fillStyle='#7E7590';ctx.beginPath();ctx.ellipse(0,2,15,19,0,0,TAU);ctx.fill();
@@ -1794,23 +1794,23 @@ function drawPoisonApple(ctx,x,y,rot,t){ctx.save();ctx.translate(x,y);ctx.rotate
  ctx.fillStyle='#FFF4E6';ctx.beginPath();ctx.arc(0,7,7,0,TAU);ctx.fill();ctx.fillRect(-4,11,8,5);ctx.fillStyle='#1A0B2A';ctx.beginPath();ctx.arc(-2.6,6,2,0,TAU);ctx.arc(2.6,6,2,0,TAU);ctx.fill();
  ctx.fillStyle='#3B2A14';ctx.fillRect(-1.5,-20,3,9);ctx.fillStyle='#2E8A3A';ctx.beginPath();ctx.ellipse(6,-17,7,3.5,-.5,0,TAU);ctx.fill();
  ctx.restore();}
-const CANDY_POW={slow:{icon:'❄️',col:'#5FD3FF',dur:8},big:{icon:'🎃',col:'#FFC34D',dur:9},magnet:{icon:'🧲',col:'#FF5FB8',dur:8},shield:{icon:'🛡️',col:'#7DFF8A',dur:12},heart:{icon:'❤️',col:'#FF4F6E',dur:0}};
+const CANDY_POW={slow:{icon:'❄️',col:'#5FD3FF',dur:8},big:{icon:'🎃',col:'#FFC34D',dur:9},magnet:{icon:'🧲',col:'#FF5FB8',dur:8},shield:{icon:'🛡️',col:'#7DFF8A',dur:12}};
 function drawGlowCandy(ctx,x,y,p,t){const P=CANDY_POW[p],pulse=1+Math.sin(t*7)*.12;ctx.save();ctx.translate(x,y);
  const g=ctx.createRadialGradient(0,0,4,0,0,48*pulse);g.addColorStop(0,P.col);g.addColorStop(.45,P.col+'88');g.addColorStop(1,P.col+'00');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,48*pulse,0,TAU);ctx.fill();
  ctx.save();ctx.rotate(t*2);ctx.strokeStyle='#FFF';ctx.lineWidth=2;for(let i=0;i<6;i++){ctx.rotate(TAU/6);ctx.beginPath();ctx.moveTo(26,0);ctx.lineTo(34,0);ctx.stroke();}ctx.restore();
  ctx.fillStyle=P.col;ctx.beginPath();ctx.moveTo(-15,-5);ctx.lineTo(-28,-13);ctx.lineTo(-25,0);ctx.lineTo(-28,13);ctx.lineTo(-15,5);ctx.moveTo(15,-5);ctx.lineTo(28,-13);ctx.lineTo(25,0);ctx.lineTo(28,13);ctx.lineTo(15,5);ctx.fill();
  ctx.fillStyle='#FFF';ctx.beginPath();ctx.arc(0,0,18,0,TAU);ctx.fill();ctx.font='22px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(P.icon,0,1);ctx.restore();}
 SCENES.candy={title:'Candy Drop',mount(stage){
- const W=900,H=600;let count=0,lives=3,el2=0,items=[],spawn=0,bSpawn=3,pSpawn=10,state='ready',bx=W/2,tx=W/2,puffs=[],floats=[],pow={},shield=false,ann=null,warned=false,hudTxt='',powTxt='',T=0;
+ const W=900,H=600;let count=0,hitBy='',el2=0,items=[],spawn=0,bSpawn=3,pSpawn=10,state='ready',bx=W/2,tx=W/2,puffs=[],floats=[],pow={},shield=false,ann=null,warned=false,hudTxt='',powTxt='',T=0;
  const stars=seedStars(70,W,H*.6,21);const fogs=[{x:100,y:H-40,w:300,v:8},{x:600,y:H-30,w:260,v:5}];
  const g=makeGame(stage,W,H,{update,draw});const hud=el('div',{class:'hud',style:'font-size:30px;gap:22px;align-items:center'});
  const pills=el('div',{style:'position:absolute;top:12px;right:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-end;pointer-events:none'});
  g.wrap.append(hud,pills,el('div',{class:'hint'},'Move with your mouse, finger, or arrow keys'));
- function reset(){count=0;lives=3;el2=0;items=[];spawn=0;bSpawn=3;pSpawn=10;puffs=[];floats=[];pow={};shield=false;ann=null;warned=false;bx=tx=W/2;}
+ function reset(){count=0;hitBy='';el2=0;items=[];spawn=0;bSpawn=3;pSpawn=10;puffs=[];floats=[];pow={};shield=false;ann=null;warned=false;bx=tx=W/2;}
  function start(){reset();state='play';}
- function end(){state='over';SFX.over();hvGameOver(g.wrap,'candy',count,{host:'jack',tag:'Out of hearts',title:'Candy Drop',text:'You caught '+count+' candies.',btn:'Play again',cb:start,score:count,stars:starsFor(count,25,75,150)});}
+ function end(){state='over';SFX.over();hvGameOver(g.wrap,'candy',count,{host:'jack',tag:hitBy==='rat'?'Eek, a rat!':'Poison apple!',title:'Candy Drop',text:'You caught '+count+' candies.',btn:'Play again',cb:start,score:count,stars:starsFor(count,25,75,150)});}
  const on=k=>pow[k]>0;
- function give(p){SFX.chime();ann={icon:CANDY_POW[p].icon,t:0};if(p==='heart'){lives=Math.min(3,lives+1);return;}if(p==='shield'){shield=true;}pow[p]=CANDY_POW[p].dur;}
+ function give(p){SFX.chime();ann={icon:CANDY_POW[p].icon,t:0};if(p==='shield'){shield=true;}pow[p]=CANDY_POW[p].dur;}
  function update(dt){T+=dt;if(state!=='play')return;el2+=dt;
   const k=Math.max(0,(el2-120)/150),kc=Math.min(1,k);
   if(!warned&&el2>=120){warned=true;SFX.hiss();ann={icon:'🐀',t:0};}
@@ -1823,19 +1823,19 @@ SCENES.candy={title:'Candy Drop',mount(stage){
    for(let i=0;i<n;i++){const rat=el2>=120?Math.random()<.5:Math.random()<.35;
     items.push({k:'bad',x:60+Math.random()*(W-120),x0:0,y:-40-i*90,v:(100+Math.random()*40)*(1+.9*kc+.3*Math.min(1,Math.max(0,k-1))),type:rat?'rat':'apple',rot:0,rv:rat?0:(Math.random()-.5)*2,wob:k>.25?(50+110*kc):0,ph:Math.random()*6});}
    for(const it of items)if(it.k==='bad'&&!it.x0)it.x0=it.x;}
-  pSpawn-=dt;if(pSpawn<=0){pSpawn=14+Math.random()*8;const opts=['slow','big','magnet','shield'];if(lives<3)opts.push('heart','heart');items.push({k:'pow',p:pick(opts),x:80+Math.random()*(W-160),y:-40,v:120,rot:0,rv:0});}
+  pSpawn-=dt;if(pSpawn<=0){pSpawn=14+Math.random()*8;const opts=['slow','big','magnet','shield'];items.push({k:'pow',p:pick(opts),x:80+Math.random()*(W-160),y:-40,v:120,rot:0,rv:0});}
   if(keys.ArrowLeft)tx-=560*dt;if(keys.ArrowRight)tx+=560*dt;tx=clamp(tx,50,W-50);bx+=(tx-bx)*Math.min(1,dt*14);
   for(const it of items){it.y+=it.v*dt*slow;it.rot+=it.rv*dt;
    if(it.k==='bad'&&it.wob){it.ph+=dt*2.2*slow;it.x=clamp(it.x0+Math.sin(it.ph)*it.wob,30,W-30);if(it.type==='rat')it.rot=Math.cos(it.ph)*.5;}
    if(it.k!=='bad'&&on('magnet')&&it.y>H*.25)it.x+=(bx-it.x)*Math.min(1,dt*3);}
-  items=items.filter(it=>{if(it.y>H-50-70*size&&it.y<H-55&&Math.abs(it.x-bx)<reach){
+  items=items.filter(it=>{if(state!=='play')return true;if(it.y>H-50-70*size&&it.y<H-55&&Math.abs(it.x-bx)<reach){
     if(it.k==='bad'){if(shield){shield=false;delete pow.shield;SFX.zap();puffs.push({x:it.x,y:it.y,t:0,c:'#7DFF8A'});return false;}
-     lives--;SFX.bad();puffs.push({x:it.x,y:it.y,t:0,c:it.type==='rat'?'#B8B0C8':'#8CFF4F'});floats.push({x:it.x,y:it.y-20,t:0,txt:'💔'});if(lives<=0)end();}
+     hitBy=it.type;SFX.bad();puffs.push({x:it.x,y:it.y,t:0,c:it.type==='rat'?'#B8B0C8':'#8CFF4F'});floats.push({x:it.x,y:it.y-20,t:0,txt:'💥'});end();return false;}
     else if(it.k==='pow'){give(it.p);puffs.push({x:it.x,y:it.y,t:0,c:CANDY_POW[it.p].col});}
     else{count++;SFX.good();puffs.push({x:it.x,y:it.y,t:0,c:'#FFD23F'});floats.push({x:it.x,y:it.y-20,t:0,txt:'+1'});}
     return false;}return it.y<H+60;});
   for(const p of puffs)p.t+=dt;puffs=puffs.filter(p=>p.t<.5);for(const f of floats)f.t+=dt;floats=floats.filter(f=>f.t<.8);if(ann){ann.t+=dt;if(ann.t>1.3)ann=null;}
-  const h='<span>🍬 '+count+'</span><span style="color:#ff6b8a">'+'♥'.repeat(Math.max(0,lives))+'<span style="opacity:.25">'+'♥'.repeat(3-Math.max(0,lives))+'</span></span>';if(h!==hudTxt){hud.innerHTML=h;hudTxt=h;}
+  const h='<span>🍬 '+count+'</span>';if(h!==hudTxt){hud.innerHTML=h;hudTxt=h;}
   let ph='';for(const p in pow){const P=CANDY_POW[p];ph+='<div style="display:flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:rgba(12,6,34,.75);border:2px solid '+P.col+'"><span style="font-size:24px">'+P.icon+'</span><i style="display:block;width:70px;height:8px;border-radius:4px;background:rgba(255,244,232,.15);overflow:hidden"><b style="display:block;height:100%;width:'+Math.round(100*pow[p]/P.dur)+'%;background:'+P.col+'"></b></i></div>';}
   if(ph!==powTxt){pills.innerHTML=ph;powTxt=ph;}}
  function draw(ctx,t){skyGrad(ctx,W,H);drawStars(ctx,stars,t);drawMoon(ctx,760,90,46);ctx.fillStyle='#1A0B3A';hills(ctx,H-150,18,.005,2,W,H);drawBakery(ctx,160,H-50,t,150,100);drawCottage(ctx,760,H-50,t);drawTree(ctx,460,H-140,120,'#120826');
@@ -1853,7 +1853,7 @@ SCENES.candy={title:'Candy Drop',mount(stage){
   if(ann){const a=ann.t,sc=a<.25?a/.25*1.3:1.3-Math.min(.3,(a-.25));ctx.save();ctx.globalAlpha=a>1?Math.max(0,1-(a-1)/.3):1;ctx.translate(W/2,H/2-40);ctx.scale(sc,sc);ctx.font='110px serif';ctx.fillText(ann.icon,0,0);ctx.restore();}}
  const mv=e=>{if(e.pointerType==='mouse'&&e.buttons===0&&state!=='play')return;tx=clamp(g.toWorld(e).x,50,W-50);};
  g.canvas.addEventListener('pointermove',mv);g.canvas.addEventListener('pointerdown',mv);
- overlay(g.wrap,{host:'jack',tag:'Jack hosts',title:'Candy Drop',text:'🍬 Catch the candy. 🍏🐀 Dodge poison apples and rats. ✨ Glowing candy gives you a power!',btn:'Start',cb:start});
+ overlay(g.wrap,{host:'jack',tag:'Jack hosts',title:'Candy Drop',text:'🍬 Catch the candy. 🍏🐀 Never catch poison apples or rats. One touch ends the game! ✨ Glowing candy gives you a power!',btn:'Start',cb:start});
  return()=>g.destroy();}};
 
 /* ---------- Witch Flight ---------- */
