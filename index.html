@@ -8883,7 +8883,9 @@ const AV_OUTFITS=[
  {id:'mermaid',k:'marina',legs:[4,5,6,7,8,9],body:[11,12,13,14,15],torso:1},
  {id:'croc',k:'snap',back:[1,2,3,4,5,6,7],body:[11,12,13,14,15,16,17,18]}];
 /* bottoms: every costume's legs and shoes (duplicates dropped), back extras: every costume's wings, capes and tails */
-let AV_BOTS=null;function avBots(){if(AV_BOTS)return AV_BOTS;const seen=new Set();AV_BOTS=AV_OUTFITS.filter(o=>{const k=o.legs?'L'+o.id:avSrc(o.k).legs.join('')+(o.legX||'');if(seen.has(k))return false;seen.add(k);return true;}).map(o=>o.id);return AV_BOTS;}
+/* fairy and cheer legs are bare (their skirts cover them), so they are not offered as bottoms on their own */
+const AV_BARE=['fairy','cheer'];
+let AV_BOTS=null;function avBots(){if(AV_BOTS)return AV_BOTS;const seen=new Set();AV_BOTS=AV_OUTFITS.filter(o=>{if(AV_BARE.includes(o.id))return false;const k=o.legs?'L'+o.id:avSrc(o.k).legs.join('')+(o.legX||'');if(seen.has(k))return false;seen.add(k);return true;}).map(o=>o.id);return AV_BOTS;}
 const AV_BACKS=['none',...AV_OUTFITS.filter(o=>o.back).map(o=>o.id)];
 const AV_HATS=[
  {id:'none'},
@@ -8969,7 +8971,7 @@ const AV_DEF={skin:3,hair:6,hairCol:3,outfit:'dino',bot:'same',back:'same',topCo
 function avFix(c){c=Object.assign({},AV_DEF,c||{});const ok=(L,v)=>L.some(x=>x.id===v);
  if(!(c.skin>=0&&c.skin<AV_SKINS.length))c.skin=AV_DEF.skin;if(!(c.hair>=-1&&c.hair<AV_HAIRS.length))c.hair=AV_DEF.hair;if(!(c.hairCol>=0&&c.hairCol<AV_HAIRC.length))c.hairCol=AV_DEF.hairCol;
  if(!ok(AV_OUTFITS,c.outfit))c.outfit=AV_DEF.outfit;if(!ok(AV_HATS,c.hat))c.hat='none';if(!ok(AV_FACES,c.face))c.face='none';if(!ok(AV_HELD,c.held))c.held='none';
- if(c.bot!=='same'&&!ok(AV_OUTFITS,c.bot))c.bot='same';if(!ok(AV_MOODS,c.mood))c.mood='happy';if(!(c.topCol>=-1&&c.topCol<AV_CLOTH.length))c.topCol=-1;if(!(c.botCol>=-1&&c.botCol<AV_CLOTH.length))c.botCol=-1;if(c.back!=='same'&&!AV_BACKS.includes(c.back))c.back='same';return c;}
+ if(c.bot!=='same'&&!ok(AV_OUTFITS,c.bot))c.bot='same';if(AV_BARE.includes(c.bot)&&c.bot!==c.outfit)c.bot='same';if(!ok(AV_MOODS,c.mood))c.mood='happy';if(!(c.topCol>=-1&&c.topCol<AV_CLOTH.length))c.topCol=-1;if(!(c.botCol>=-1&&c.botCol<AV_CLOTH.length))c.botCol=-1;if(c.back!=='same'&&!AV_BACKS.includes(c.back))c.back='same';return c;}
 let AV_UID=0;
 function avColorsOf(cfg){const c=avFix(cfg),S=AV_SKINS[c.skin],skip=new Set([S[0],S[1],S[2],'#2A1548','#1A0B3A','#FFF','#FFFFFF','#F6A08F','#FF6F8E']),O=AV_OUTFITS.find(x=>x.id===c.outfit),B=c.bot==='same'?O:AV_OUTFITS.find(x=>x.id===c.bot);
  const src=k=>avSrc(k),pick=(k,idx)=>(idx||[]).map(i=>src(k).els[i]||'').join('');
@@ -9141,7 +9143,7 @@ Object.assign(SAYS,{avatar:'Make your own trick-or-treater and send them out on 
 PREV.avatar=(x,t,W,H)=>AV_THUMB(x,t,W,H);
 /* the sign picture is drawn once at boot, before the cast images finish loading: redraw it when they are ready */
 setTimeout(function avSignFix(n=0){if(NC.leo&&NC.finn&&NC.zoe){document.querySelectorAll('[data-id="avatar"] canvas').forEach(c=>{try{c.stop&&c.stop();}catch(e){}});}else if(n<40)setTimeout(()=>avSignFix(n+1),250);},300);
-HOT.push({id:'avatar',x:AV_AT.x-202,y:AV_AT.y+65,w:200,h:200,sub:'Make your own kid',title:'Character Creator',kind:'hang rgt'});
+HOT.push({id:'avatar',x:AV_AT.x-218,y:AV_AT.y-40,w:200,h:200,sub:'Make your own kid',title:'Character Creator',kind:'hang rgt'});
 /* drawn with the road layer (before the street life), so our kids walk out in front of the house, not behind it */
 {const _dr=drawRoad;drawRoad=function(ctx,top,bot,t,x0,x1){_dr(ctx,top,bot,t,x0,x1);if(AV_AT.y+40>top&&AV_AT.y-280<bot)AV_HOUSE_DRAW(ctx,AV_AT.x,AV_AT.y,t);};}
 
@@ -9169,7 +9171,7 @@ if(!document.getElementById('hvavcss')){const s=document.createElement('style');
 .av-bub{position:absolute;z-index:4;left:50%;top:5%;transform:translateX(-50%);background:#FFF4E6;color:#2A1858;font:800 clamp(18px,2.6vw,28px)/1.2 "Baloo 2",sans-serif;padding:12px 20px;border-radius:22px;box-shadow:0 10px 30px rgba(0,0,0,.35);max-width:88%;text-align:center;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none}
 .av-bub.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
 .av-bub::after{content:'';position:absolute;left:50%;bottom:-12px;margin-left:-12px;border:12px solid transparent;border-top-color:#FFF4E6;border-bottom:0}
-.av-right{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;padding:12px 14px 12px 4px;gap:10px}
+.av-right{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;overflow-y:auto;padding:12px 14px 12px 4px;gap:10px}
 .av-tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
 .av-tab{width:clamp(44px,5.4vw,64px);height:clamp(44px,5.4vw,64px);border-radius:18px;border:none;background:rgba(255,255,255,.12);font-size:clamp(24px,3.2vw,34px);line-height:1;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.25);transition:transform .1s;display:grid;place-items:center;padding:0}
 .av-tab.on{background:#FFC34D;box-shadow:0 5px 0 #B47A12}
@@ -9216,13 +9218,15 @@ if(!document.getElementById('hvavcss')){const s=document.createElement('style');
 .av-mini .del{position:absolute;top:-6px;right:-6px;width:34px;height:34px;border-radius:50%;border:none;background:#C2304A;color:#fff;font-size:18px;display:grid;place-items:center;box-shadow:0 3px 0 rgba(0,0,0,.3);cursor:pointer;padding:0}
 .av-mini .del i{position:absolute;inset:0;border-radius:50%;background:conic-gradient(#FFC34D var(--p,0%),transparent 0);opacity:.85;pointer-events:none}
 .av-mini .del span{position:relative}
-.av-plate{min-height:clamp(60px,9vw,84px);border-radius:22px;background:#F6E9D2;color:#2A1858;font:900 clamp(34px,5vw,52px)/1 "Baloo 2",sans-serif;display:grid;place-items:center;letter-spacing:.04em;box-shadow:inset 0 -6px 0 rgba(42,21,72,.15)}
+.av-namerow{display:flex;gap:10px;align-items:center}
+.av-namerow .av-plate{flex:1;min-width:0}
+.av-plate{min-height:clamp(56px,min(9vw,10vh),84px);border-radius:22px;background:#F6E9D2;color:#2A1858;font:900 clamp(34px,5vw,52px)/1 "Baloo 2",sans-serif;display:grid;place-items:center;letter-spacing:.04em;box-shadow:inset 0 -6px 0 rgba(42,21,72,.15)}
 .av-plate.empty::after{content:'✏️';opacity:.4}
 .av-keys{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
-.av-key{height:clamp(46px,6.4vw,62px);border:none;border-radius:14px;background:rgba(255,244,230,.16);color:#FFF4E6;font:900 clamp(22px,3vw,30px)/1 "Baloo 2",sans-serif;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.28)}
+.av-key{height:clamp(38px,min(6.4vw,7.4vh),62px);border:none;border-radius:14px;background:rgba(255,244,230,.16);color:#FFF4E6;font:900 clamp(22px,3vw,30px)/1 "Baloo 2",sans-serif;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.28)}
 .av-key:active{transform:translateY(3px)}
 .av-key.wide{grid-column:span 2;background:#C2304A}
-.av-card{flex:1;min-height:0;overflow:auto;border-radius:18px;background:rgba(12,6,34,.35);padding:10px 14px;display:flex;flex-direction:column;gap:4px;font:700 clamp(15px,1.9vw,19px)/1.3 "Baloo 2",sans-serif}
+.av-card{flex:1 1 0;min-height:0;overflow:auto;border-radius:18px;background:rgba(12,6,34,.35);padding:10px 14px;display:flex;flex-direction:column;gap:4px;font:700 clamp(15px,1.9vw,19px)/1.3 "Baloo 2",sans-serif}
 .av-card b{font-size:1.5em}
 .av-step{display:flex;gap:6px;justify-content:center}
 .av-step i{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.25)}
@@ -9242,8 +9246,7 @@ SCENES.avatar={title:'Character Creator',keepSong:true,mount(stage){
  const TABS=[['outfit','👕'],['bot','👖'],['back','🦋'],['color','🎨'],['hair','💇'],['hat','🎩'],['face','😎'],['held','🪄']];
  const head='40 66 220 220',full='-30 6 360 410';
  function thumb(over,vb,u){return avSVG(Object.assign({},cfg,over),{uid:'t'+u,size:1,vb,attrs:' preserveAspectRatio="xMidYMid meet"'});}
- function opts(){const L=opts0();return L.filter(o=>!/av-x/.test(o.html)).concat(L.filter(o=>/av-x/.test(o.html)));}
- function opts0(){switch(tab){
+ function opts(){switch(tab){
   case 'outfit':return AV_OUTFITS.map((o,i)=>({on:cfg.outfit===o.id,html:thumb({outfit:o.id,bot:'same',back:'same',held:'none'},full,'o'+i),set:{outfit:o.id,bot:'same',back:'same'},tall:1}));
   case 'bot':{const cur=cfg.bot==='same'?cfg.outfit:cfg.bot;return avBots().map((id,i)=>({on:cur===id||(cfg.bot==='same'&&avBots().indexOf(cfg.outfit)<0&&false),html:thumb({bot:id,held:'none'},'20 236 260 180','b'+i),set:{bot:id}}));}
   case 'back':{const cur=cfg.back==='same'?(AV_OUTFITS.find(o=>o.id===cfg.outfit).back?cfg.outfit:'none'):cfg.back;return AV_BACKS.map((id,i)=>({on:cur===id,html:id==='none'?'<span class="av-x">✕</span>':thumb({back:id,held:'none'},full,'k'+i),set:{back:id},tall:1}));}
@@ -9291,7 +9294,7 @@ SCENES.avatar={title:'Character Creator',keepSong:true,mount(stage){
   const plate=el('div',{class:'av-plate'});const keys=el('div',{class:'av-keys'});const bar=el('div',{class:'av-bar'});
   const card=el('div',{class:'av-card'});
   const T=emo.map(e=>AV_TRAIT[e]);card.append(el('b',{},emo.join(' ')),el('span',{},T.map(x=>x[0]).join(' ')));
-  const go=el('button',{class:'av-big home','aria-label':'Go trick-or-treating'},'🏘️');
+  const go=el('button',{class:'av-big go','aria-label':'Done'},'✔');
   const paint=()=>{plate.textContent=name||'';plate.classList.toggle('empty',!name);go.disabled=!name;};
   const add=ch=>{if(name.length>=10)return;SFX.click();name=(name+ch);name=name.charAt(0).toUpperCase()+name.slice(1).toLowerCase();paint();};
   'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(ch=>{const b=el('button',{class:'av-key'},ch);b.onclick=()=>add(ch);keys.append(b);});
@@ -9299,7 +9302,8 @@ SCENES.avatar={title:'Character Creator',keepSong:true,mount(stage){
   const back=el('button',{class:'av-big back','aria-label':'Back'},'⬅');back.onclick=()=>{SFX.click();lines();};
   const dice=el('button',{class:'av-big dice','aria-label':'Name idea'},'🎲');dice.onclick=()=>{SFX.jump();let n;do{n=AV_NAMES[Math.floor(Math.random()*AV_NAMES.length)];}while(n===name&&AV_NAMES.length>1);name=n;paint();say('Hi, I\'m '+name+'!');};
   go.onclick=()=>{if(name)finish();};
-  bar.append(back,dice,dots(3),go);right.append(plate,keys,card,bar);paint();
+  const row=el('div',{class:'av-namerow'},plate,go);
+  bar.append(back,dice,dots(3));right.append(row,keys,card,bar);paint();
   if(keyFn)removeEventListener('keydown',keyFn,true);keyFn=e=>{if(step!=='name'||!alive)return;if(/^[a-zA-Z]$/.test(e.key)){e.preventDefault();add(e.key);}else if(e.key==='Backspace'){e.preventDefault();name=name.slice(0,-1);paint();}else if(e.key==='Enter'&&name){e.preventDefault();finish();}};addEventListener('keydown',keyFn,true);}
  function lines(){right.innerHTML='';step='lines';
   const slots=el('div',{class:'av-slots'});emo.forEach(e=>slots.append(el('div',{class:'av-slot full'},e)));
