@@ -9386,7 +9386,6 @@ function enter(fromMenu){const boot=$('#boot');if(boot.hidden)return;SFX.get();S
  openScene('jam',{force:true,compose:true,onDone:()=>{closeScene();toast('Your song is playing through the whole village.');after();}});}
 $('#playBtn').onclick=()=>enter(false);
 $('#menuBtn').addEventListener('click',()=>enter(true));
-if(song&&song.m&&song.m.length){$('#bootText').textContent='Welcome back. Your village song is ready: '+song.m.map(id=>MEMBERS.find(m=>m.id===id).name).join(', ')+'.';}
 })();
 </script>
 
