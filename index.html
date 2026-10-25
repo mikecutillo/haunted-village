@@ -1236,7 +1236,7 @@ const PLACES=[
  {id:'s_hayride',slot:true,side:'L'},/* Hayride stop */
  {id:'shed',hot:'coloring',side:'R',sub:'Art Shed',title:'Coloring Pages',h:150,street:true},
  {id:'wagon',hot:'dressup',side:'L',sub:"Mabel's Wardrobe",title:'Dress Up Mabel',zone:'C',h:180,yard:'campfire',street:true},
- {id:'alley',hot:'bowl',side:'R',sub:'Strike Lanes',h:160},
+ {id:'alley',hot:'bowl3d',side:'R',sub:'Strike Lanes',h:160},
 ];
 let ZB=0,ZC=0,MAIN_Y=0;const P={},MAINS=[];
 {let y=1100;for(const pl of PLACES){pl.y=y;pl.x=pl.side==='L'?LX:RX;pl.far=pl.side==='L'?LROAD:RROAD;P[pl.id]=pl;if(pl.zone==='B')ZB=y-250;if(pl.zone==='C')ZC=y-250;if(pl.main){MAIN_Y=y-20;MAINS.push(MAIN_Y);}y+=GAP;if(pl.street){MAINS.push(pl.y+226);y+=200;}}}
@@ -4098,7 +4098,7 @@ mount(stage){
 }};
 
 /* ---------- registration: menu tile only, no building or sign in the village ---------- */
-if(typeof GAMES!=='undefined'&&!GAMES.find(g=>g.id==='bowl3d')){GAMES.push({id:'bowl3d',title:'Pumpkin Bowling 3D',sub:'Game · test',day:1,host:'jack'});}
+if(typeof GAMES!=='undefined'&&!GAMES.find(g=>g.id==='bowl3d')){GAMES.push({id:'bowl3d',title:'Pumpkin Bowling 3D',sub:'Game',day:1,host:'jack'});}
 if(typeof ICON!=='undefined')ICON.bowl3d='🎳';
 if(typeof SAYS!=='undefined')SAYS.bowl3d='Real physics on the graveyard lane. Flick to roll, add hook, pick up the spare!';
 if(typeof TILES!=='undefined'&&!TILES.find(t=>t[0]==='bowl3d')){const at=TILES.findIndex(t=>t[0]==='bowl');TILES.splice(at<0?TILES.length:at+1,0,['bowl3d','#B8322A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
