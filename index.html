@@ -8937,7 +8937,6 @@ const inEll=(u,v,cx,cy,rx,ry)=>((u-cx)/rx)**2+((v-cy)/ry)**2<=1;
 function inPoly(u,v,p){let c=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i],b=p[j];if((a[1]>v)!==(b[1]>v)&&u<(b[0]-a[0])*(v-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
 const mirror=p=>p.map(([a,b])=>[-a,b]).reverse();
 function shapesHit(u,v,list){for(const s of list){if(s.e?inEll(u,v,...s.e):inPoly(u,v,s.p))return true;}return false;}
-const BATWING=[[-.18,.12],[-.5,.36],[-.95,.3],[-.82,.1],[-.74,-.06],[-.62,.04],[-.5,-.16],[-.38,-.02],[-.3,-.2],[-.16,-.1]];
 /* ---- faces in the village's vector style: ink eyes with a white highlight, small smiles, round cheeks ----
    a face is {e:eyes, h:eye highlights, m:mouth, k:cheeks, r:little raised bits (noses, fangs)}; shapes are {e:[cx,cy,rx,ry]} or {p:[[x,y]...]} */
 const FE=(x,y,rx,ry)=>({e:[x,y,rx,ry]});
@@ -8963,48 +8962,6 @@ function vFace(cx,cy,s,kind,q={}){const P=Object.assign({ex:.4,ey:.12,rx:.15,ry:
  else if(kind==='cat'){F.r.push({p:[[X(-.07),Y(-.04)],[X(.07),Y(-.04)],[X(0),Y(-.12)]]});for(const sd of[-1,1])F.m.push(arcP(X(sd*.08),Y(-.13),S(.08),Math.PI*1.05,Math.PI*1.95,S(.045)));}
  else smile(-.24,.18,.065);
  return F;}
-const FACE2D={
- pumpkin:[vFace(0,.04,1.05,'jack',{ex:.36,ey:.2,kx:.66,ky:-.05}),vFace(0,.04,1.05,'happy',{kx:.64}),vFace(0,.04,1.05,'wink',{kx:.64})],
- ghost:[vFace(0,.26,.82,'happy'),vFace(0,.26,.82,'boo'),vFace(0,.26,.82,'wink')],
- bat:[vFace(0,.08,.3,'fang',{hl:false,kx:.55}),vFace(0,.08,.3,'boo',{hl:false,kx:.55}),vFace(0,.08,.3,'happy',{hl:false,kx:.55})],
- cat:[vFace(0,.06,.95,'cat'),vFace(0,.06,.95,'boo'),vFace(0,.06,.95,'wink')],
- skull:[vFace(0,.16,.95,'skull',{ex:.36,ey:.16,rx:.2}),vFace(0,.16,.95,'boo',{ex:.36,ey:.16,rx:.2,ry:.22,cheeks:1,kx:.6}),vFace(0,.16,.95,'wink',{ex:.36,ey:.16,rx:.2,ry:.22,kx:.6})],
- moon:[{e:[FE(-.55,.2,.08,.1)],h:[FE(-.52,.24,.035,.035)],m:[arcP(-.56,-.02,.12,Math.PI*1.2,Math.PI*1.8,.06)],k:[FE(-.72,-.02,.07,.05)],r:[]},
-  {e:[],h:[],m:[arcP(-.55,.2,.08,Math.PI*.15,Math.PI*.85,.05),FE(-.55,-.15,.05,.06)],k:[FE(-.72,-.02,.07,.05)],r:[]},
-  {e:[FE(-.55,.2,.08,.1)],h:[FE(-.52,.24,.035,.035)],m:[halfEll(-.55,-.06,.11,.11)],k:[FE(-.72,-.02,.07,.05)],r:[]}],
- corn:[vFace(0,-.08,.5,'happy',{hl:false}),vFace(0,-.08,.5,'boo',{hl:false}),vFace(0,-.08,.5,'wink',{hl:false})]};
-/* flat pictures: 1 = carve or cut, 2 = shallow cheek or bump */
-function faceCode(u,v,F,cut){if(shapesHit(u,v,F.e)){return(!cut&&shapesHit(u,v,F.h))?0:1;}if(shapesHit(u,v,F.m))return shapesHit(u,v,F.r)?0:1;if(shapesHit(u,v,F.k)||shapesHit(u,v,F.r))return 2;return 0;}
-const PMODELS={
- pumpkin:{name:'Pumpkin',emoji:'🎃',vmin:-.82,vmax:1.0,faces:['Jack','Happy','Wink'],
-  inside:(u,v)=>inEll(u,v,0,0,1,.82)||(Math.abs(u+.02*(v-.8))<.09&&v>.72&&v<1.0),
-  relief:(u,v)=>v>.72?.5:Math.sqrt(Math.max(0,1-u*u-(v/.82)**2))*(.88+.12*Math.cos(u*Math.PI*3.5)),
-  face:(u,v,f,c)=>faceCode(u,v,FACE2D.pumpkin[f],c)},
- ghost:{name:'Ghost',emoji:'👻',vmin:-.9,vmax:1.0,faces:['Happy','Boo!','Wink'],
-  inside:(u,v)=>Math.abs(u)<.8&&v>-.86+.09*Math.abs(Math.sin(u*Math.PI*3.5))&&(v<=.2?true:inEll(u,v,0,.2,.8,.8)),
-  relief:(u,v)=>Math.sqrt(Math.max(0,1-(u/.82)**2))*(v>.2?Math.sqrt(Math.max(0,1-((v-.2)/.82)**2)):1),
-  face:(u,v,f,c)=>faceCode(u,v,FACE2D.ghost[f],c)},
- bat:{name:'Bat',emoji:'🦇',vmin:-.45,vmax:.5,faces:['Fangs','Boo!','Happy'],
-  inside:(u,v)=>inEll(u,v,0,0,.2,.32)||shapesHit(u,v,[{p:BATWING},{p:mirror(BATWING)},{p:[[-.15,.3],[-.1,.5],[-.01,.32]]},{p:[[.01,.32],[.1,.5],[.15,.3]]}]),
-  relief:(u,v)=>.3+.7*Math.exp(-((u/.28)**2)),
-  face:(u,v,f,c)=>faceCode(u,v,FACE2D.bat[f],c)},
- cat:{name:'Cat',emoji:'🐱',vmin:-.72,vmax:.9,faces:['Sweet','Boo!','Wink'],
-  inside:(u,v)=>inEll(u,v,0,0,.85,.72)||shapesHit(u,v,[{p:[[-.8,.2],[-.72,.9],[-.2,.6]]},{p:mirror([[-.8,.2],[-.72,.9],[-.2,.6]])}]),
-  relief:(u,v)=>Math.sqrt(Math.max(0,1-(u/.9)**2-(v/.78)**2)),
-  face:(u,v,f,c)=>faceCode(u,v,FACE2D.cat[f],c)},
- skull:{name:'Skull',emoji:'💀',vmin:-.75,vmax:.95,faces:['Grin','Boo!','Wink'],
-  inside:(u,v)=>inEll(u,v,0,.15,.8,.8)||(Math.abs(u)<.5&&v>-.75&&v<.1),
-  relief:(u,v)=>Math.sqrt(Math.max(0,1-(u/.82)**2-((v-.15)/.82)**2))*(v<.1?.9:1)||.25,
-  face:(u,v,f,c)=>faceCode(u,v,FACE2D.skull[f],c)},
- moon:{name:'Moon',emoji:'🌙',vmin:-.9,vmax:.9,faces:['Happy','Sleepy','Boo!'],
-  inside:(u,v)=>inEll(u,v,0,0,.9,.9)&&!inEll(u,v,.42,.15,.72,.72),
-  relief:(u,v)=>Math.sqrt(Math.max(0,1-(u*u+v*v)/.81)),
-  face:(u,v,f,c)=>faceCode(u,v,FACE2D.moon[f],c)},
- corn:{name:'Candy corn',emoji:'🍬',vmin:-.85,vmax:.95,faces:['Happy','Boo!','Wink'],
-  inside:(u,v)=>inPoly(u,v,[[-.7,-.62],[.7,-.62],[0,.95]])||inEll(u,v,0,-.62,.7,.23),
-  relief:(u,v)=>Math.sqrt(Math.max(0,1-(u/.8)**2))*(Math.abs(v+.5)<.035||Math.abs(v-.3)<.035?.55:1),
-  face:(u,v,f,c)=>faceCode(u,v,FACE2D.corn[f],c)}
-};
 const PSIZES=[['Small',40],['Medium',60],['Large',80]];
 const PLASTIC=[236,230,248];   /* one neutral preview color; filament color is picked at print time */
 
@@ -9063,6 +9020,8 @@ const PCHARS={
    d=smin(d,Math.min(sdEll(x,y,z,-.12,-.13,.16,.12,.07,.075),sdEll(x,y,z,.12,-.13,.16,.12,.07,.075),sdSph(x,y,z,0,-.16,.16,.05)),.02);
    return Math.max(d,.04-z);}}
 };
+/* flat pictures use the same characters, seen from the front */
+const PMODELS=PCHARS;
 const HATS=[['🧙','Witch hat',(x,y,z,c)=>sdRev(x,y,z,c.hz,c.hs,[[0,-.14],[.13,-.14],[.3,0],[.3,.03],[.12,.05],[.02,.42],[0,.42]])],
  ['🎩','Top hat',(x,y,z,c)=>sdRev(x,y,z,c.hz,c.hs,[[0,-.14],[.14,-.14],[.27,-.02],[.27,.01],[.16,.03],[.17,.3],[0,.3]])],
  ['🎀','Bow',(x,y,z,c)=>{const s=c.hs,b=c.hz+.02*s;return Math.min(sdEll(x,y,z,-.11*s,0,b,.1*s,.05*s,.07*s),sdEll(x,y,z,.11*s,0,b,.1*s,.05*s,.07*s),sdSph(x,y,z,0,0,b,.05*s));}],
@@ -9108,13 +9067,32 @@ function buildStandIdx(o,cell){const f=standSDF(o),m=meshSDF(f,[-.82,-.56,-.04,.
  return{P,I:m.I,U,sdf:f};}
 function buildStand(o,cell){return unindex(buildStandIdx(o,cell));}
 
-function buildSolid(o,NX,wantN){const m=PMODELS[o.shape],half=o.W/2,rt=6/half,tabV=m.vmax+rt*.3,vTop=o.key?tabV+rt:m.vmax,vBot=m.vmin;
- const du=2.1/NX,NY=Math.ceil((vTop-vBot+.1)/du),u0=-1.05,v0=vBot-.05,T0=3,puff=o.puffy?7:1.2,holeR=2.3/half;
- const Hh=new Float32Array(NX*NY);
- for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){const u=u0+(i+.5)*du,v=v0+(j+.5)*du;let h=0;
-  if(m.inside(u,v)){h=T0+puff*m.relief(u,v);const fc=m.face(u,v,o.face,o.cut);if(fc===1)h=o.cut?0:Math.min(h,1.2);else if(fc===2)h=Math.max(T0,h-(o.puffy?1.6:.8));}
+/* flat pictures: look at the stand-up buddy from the front and turn what you see into a raised picture.
+   Same body, same face, so the flat and stand-up versions always match. */
+const FLAT_BOX={};
+function flatFrame(k){if(FLAT_BOX[k])return FLAT_BOX[k];const f=standSDF({char:k,face:0,hat:HATS.length-1,base:BASES.length-1,pop:false});let x0=1e9,x1=-1e9,z0=1e9,z1=-1e9;
+ for(let z=0;z<=1.2;z+=.02)for(let x=-.9;x<=.9;x+=.02){if(flatHit(f,x,z)!==null){x0=Math.min(x0,x);x1=Math.max(x1,x);z0=Math.min(z0,z);z1=Math.max(z1,z);}}
+ const s=Math.max(x1-x0,z1-z0)/2+.02;return FLAT_BOX[k]={cx:(x0+x1)/2,cz:(z0+z1)/2,s,vmin:(z0-(z0+z1)/2)/s-.03,vmax:(z1-(z0+z1)/2)/s+.03};}
+/* march from the front (-y) toward the back; returns the depth of the first surface or null if this spot is empty */
+function flatHit(f,x,z){let y=-.75;for(let n=0;n<90&&y<.75;n++){const d=f(x,y,z);if(d<.0008)return y;y+=Math.max(d*.85,.0015);}return null;}
+function buildSolid(o,NX,wantN){const C=PCHARS[o.shape],F=C.fx[o.face],fr=flatFrame(o.shape),half=o.W/2,rt=6/half,holeR=2.3/half;
+ const full=standSDF({char:o.shape,face:o.face,hat:HATS.length-1,base:BASES.length-1,pop:false}),bare=(x,y,z)=>C.body(x,y,z,false);
+ const toX=u=>fr.cx+u*fr.s,toZ=v=>fr.cz+v*fr.s,mmPerUnit=half/fr.s;
+ /* the keychain tab sits on the highest point of the middle column */
+ let topV=fr.vmin;if(o.key)for(let v=fr.vmax;v>fr.vmin;v-=.01){if(flatHit(full,toX(0),toZ(v))!==null){topV=v;break;}}
+ const tabV=topV+rt*.55,vTop=o.key?Math.max(fr.vmax,tabV+rt):fr.vmax,vBot=fr.vmin;
+ const du=2.1/NX,NY=Math.ceil((vTop-vBot+.1)/du),u0=-1.05,v0=vBot-.05,T0=3;
+ const Hh=new Float32Array(NX*NY),D0=new Float32Array(NX*NY).fill(NaN),D=new Float32Array(NX*NY).fill(NaN);let maxRel=1e-6;
+ for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){const x=toX(u0+(i+.5)*du),z=toZ(v0+(j+.5)*du);const yf=flatHit(full,x,z);if(yf===null)continue;
+  const y0=flatHit(bare,x,z);D[j*NX+i]=yf;D0[j*NX+i]=y0===null?yf:y0;maxRel=Math.max(maxRel,.08-D0[j*NX+i]);}
+ const puffK=6.5/maxRel,detK=mmPerUnit*.55;
+ for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){const u=u0+(i+.5)*du,v=v0+(j+.5)*du,k=j*NX+i;let h=0;
+  if(!isNaN(D[k])){const x=toX(u),z=toZ(v),detail=Math.max(-2.2,Math.min(1.6,(D0[k]-D[k])*detK));
+   h=(o.puffy?T0+Math.max(0,.08-D0[k])*puffK:T0+1.2)+detail;
+   if(o.cut){const inEye=F.e.length&&sdList(x,z,F.e)<0,inMouth=F.m.length&&sdList(x,z,F.m)<0&&!(F.r.length&&sdList(x,z,F.r)<0);if(inEye||inMouth)h=0;}
+   if(h>0)h=Math.max(1.2,h);}
   if(o.key){const d=Math.hypot(u,v-tabV);if(d<rt){if(d<holeR)h=0;else h=Math.max(h,T0);}}
-  Hh[j*NX+i]=h;}
+  Hh[k]=h;}
  const T=[],N=[];const cell=du*half,X=i=>(u0+i*du)*half,Y=j=>(v0+j*du)*half;
  const quad=(a,b,c,d,nn)=>{T.push(...a,...b,...c,...a,...c,...d);if(wantN){const q=nn||[0,0,0];N.push(...q,...q);}};
  const hv=(i,j,d)=>i<0||j<0||i>=NX||j>=NY?d:(Hh[j*NX+i]||d);
