@@ -1218,7 +1218,7 @@ const PLACES=[
  {id:'s_lib',slot:true,side:'R'},/* Haunted Library */
  {id:'s_boogie',slot:true,side:'L'},/* Boogie Hall */
  {id:'post',hot:'world',side:'R',sub:'Village Post',title:'Around the World',h:210,street:true},
- {id:'grave',hot:'dash',side:'L',sub:'Old Bones Graveyard',zone:'B',sign:'post',sx:60,yard:'bearcave'},
+ {id:'grave',hot:'dash',side:'L',sub:'Old Bones Graveyard',zone:'B',yard:'bearcave'},
  {id:'hut',hot:'spell',side:'R',sub:'The Cauldron Hut',h:150,yard:'pond'},
  {id:'tomb',hot:'wrap',side:'L',sub:'The Lost Tomb',h:180,street:true},
  {id:'treehouse',hot:'findpip',side:'R',sub:'Hide-and-Seek Tree',title:'Find Pip',h:250,yard:'crows'},
@@ -1283,9 +1283,15 @@ function drawRoad(ctx,top,bot,t,x0,x1){const pts=ROAD.pts;ctx.lineCap='round';ct
 
 /* hotspots: the hit area covers the building and the card that hangs under it */
 /* signs: 'hang' swings from a bracket on the building wall, out toward the street; 'post' stands on a wooden post in the yard */
-const HOT=[{id:'jam',x:694,y:670,w:200,h:200,sub:'Music Mansion',kind:'hang lft',k:.72}];
-for(const pl of PLACES){const o=pl.side==='L'?1:-1;if(pl.sign==='post')HOT.push({id:pl.hot,x:pl.x+o*(pl.sx!=null?pl.sx:40),y:pl.y+20,w:200,h:220,sub:pl.sub,title:pl.title,kind:'post'});
- else HOT.push({id:pl.hot,x:pl.x+o*218,y:pl.y-pl.h+200,w:200,h:200,sub:pl.sub,title:pl.title,kind:'hang'+(pl.side==='L'?' lft':' rgt')});}
+/* SIGN_AT: [dx,dy] from the place anchor. measured from each building's road-side wall, so the bracket plate sits on the wall
+   (hang: plate edge = wall edge, arm reaches toward the road). the graveyard sign hangs off the crypt. the town square has no
+   building, so its post stands on the grass just above the cross street, not in it. */
+const SIGN_AT={cottage:[192,65],bakery:[-202,40],inn:[-209,0],tower:[-163,0],theater:[229,60],school:[175,55],post:[-189,80],
+ grave:[45,47],hut:[-162,97],treehouse:[-101,72],barn:[208,55],shed:[-170,85],wagon:[195,85],print:[216,55],belfry:[137,0],tomb:[181,80],alley:[-212,97],
+ square:[-40,-86]};
+const HOT=[{id:'jam',x:684,y:670,w:200,h:200,sub:'Music Mansion',kind:'hang lft',k:.72}];
+for(const pl of PLACES){const o=pl.side==='L'?1:-1,sg=SIGN_AT[pl.id];if(pl.sign==='post')HOT.push({id:pl.hot,x:pl.x+(sg?sg[0]:o*(pl.sx!=null?pl.sx:40)),y:pl.y+(sg?sg[1]:20),w:200,h:220,sub:pl.sub,title:pl.title,kind:'post'});
+ else HOT.push({id:pl.hot,x:pl.x+(sg?sg[0]:o*218),y:pl.y+(sg?sg[1]:-pl.h+200),w:200,h:200,sub:pl.sub,title:pl.title,kind:'hang'+(pl.side==='L'?' lft':' rgt')});}
 HOT.push({id:'tracker',x:400,y:LAUNCH_Y-110,w:330,h:260,sub:'Launch field · Oct 31',title:'Witch Tracker',kind:'tracker post'});
 const GHOSTS=(()=>{const r=seeded(57),out=[[220,260],[620,420]];for(let i=0;out.length<13;i++){const y=900+(LAUNCH_Y-700)*((i+.5)/11)+(r()-.5)*200,x=r()<.5?WX0+120+r()*380:WX1-500+r()*380;out.push([x,y]);}return out;})();
 const HWALK=[{fn:drawMummy,s:.6,x:-100,v:20,dir:1,lane:3,id:'mummy5',say:'Which way is the tomb?',sfx:'groan'},{fn:drawDracula,s:.6,x:1200,v:26,dir:-1,lane:6,id:'drac4',say:'Lovely night for a stroll.',sfx:'cackle'},{fn:drawFrank,s:.6,x:900,v:24,dir:-1,lane:2,id:'frank3',say:'Fire bad. Candy good.',sfx:'zap'},{fn:drawDracula,s:.62,x:-150,v:28,dir:1,lane:0,id:'drac3',say:'I vant your candy!',sfx:'cackle'},{fn:drawMummy,s:.6,x:300,v:18,dir:1,lane:1,id:'mummy4',say:'Unravelled again.',sfx:'groan'}];
@@ -1357,7 +1363,8 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
   if(Math.hypot(x-(P.inn.x+135),y-(P.inn.y-30))<50){SFX.meow();this.catHiss=this.t;return;}
   if(Math.hypot(x-(P.grave.x+(P.grave.side==='L'?200:-200)),y-(P.grave.y-50))<80){SFX.boo();this.pipPeek=this.t;return;}
   if(Math.hypot(x-ROAD.xAt(MAIN_Y)-70,y-MAIN_Y-120)<60){SFX.boo();CRIT.speak('Look both ways!',ROAD.xAt(MAIN_Y)+70,MAIN_Y+10);return;}
-  for(const pl of PLACES){if(!pl.yard||pl.fx==null)continue;if(Math.hypot(x-pl.fx,y-pl.fy+20)<110){pl.at=this.t;({batcave:()=>SFX.flap(),bearcave:()=>{SFX.groan();CRIT.speak('Grrr. Who woke me?',pl.fx,pl.fy-90);},wolves:()=>SFX.howl(),pond:()=>SFX.tone(420,.12,'sine',.06,null,220),campfire:()=>SFX.flare(),crows:()=>{SFX.flap();SFX.tone(900,.08,'square',.04,null,700);}})[pl.yard]();return;}}},
+  for(const pl of PLACES){if(!pl.yard||pl.fx==null)continue;if(Math.hypot(x-pl.fx,y-pl.fy+20)<110){pl.at=this.t;({batcave:()=>SFX.flap(),bearcave:()=>{SFX.groan();CRIT.speak('Grrr. Who woke me?',pl.fx,pl.fy-90);},wolves:()=>SFX.howl(),pond:()=>SFX.tone(420,.12,'sine',.06,null,220),campfire:()=>SFX.flare(),crows:()=>{SFX.flap();SFX.tone(900,.08,'square',.04,null,700);}})[pl.yard]();return;}}
+  if(typeof BLDG!=='undefined')for(const b of BLDG){if(x>b.x0&&x<b.x1&&y>b.y0&&y<b.y1){openPeek(b.id);return;}}},
  pumpkins:PLACES.map((pl,i)=>({x:pl.side==='L'?40+(i%2)*30:760-(i%2)*30,y:pl.y+(i%3)*10,r:18+(i%4)*3})).concat([{x:250,y:LAUNCH_Y+60,r:22},{x:560,y:LAUNCH_Y+70,r:26}]),
  owlHoot:-9,catHiss:-9,pipPeek:-9,
  frame(ts){const dt=Math.min(.05,this.last?(ts-this.last)/1000:0);this.last=ts;this.t=ts/1000;const t=this.t;const ctx=this.ctx;
@@ -1447,13 +1454,13 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
      ctx.strokeStyle='rgba(200,180,230,.5)';ctx.lineWidth=1.2;ctx.beginPath();for(let i=0;i<5;i++){ctx.moveTo(x-110,y-170);ctx.lineTo(x-110+Math.cos(i*.3)*34,y-170+Math.sin(i*.3)*34);}for(let r=10;r<36;r+=8){ctx.moveTo(x-110+r,y-170);ctx.quadraticCurveTo(x-110+r*.7,y-170+r*.7,x-110,y-170+r);}ctx.stroke();break;
     case 'tower':big(ctx,x,y,1.3,()=>drawTower(ctx,0,0,t));drawScarecrow(ctx,x+120,y+10,t);drawTree(ctx,x-110,y+20,110,'#160A33');break;
     case 'theater':big(ctx,x,y,1.15,()=>drawTheater(ctx,0,0,t));drawPumpkin(ctx,x-150,y+6,16,.6);break;
-    case 'square':{drawCauldron(ctx,x-110,y-30,70,t);drawPumpkin(ctx,x+120,y+4,18,.6);drawLamp(ctx,x+90,y-80,t);drawLamp(ctx,x-90,y-80,t);drawStringLights(ctx,x-90,x+90,y-170,t);drawFence(ctx,x+60,x+150,y+6);
+    case 'square':{{const q=y-110;drawCauldron(ctx,x-170,q-10,70,t);drawPumpkin(ctx,x+110,q+4,18,.6);drawLamp(ctx,x+150,q-80,t);drawLamp(ctx,x-150,q-80,t);drawStringLights(ctx,x-150,x+150,q-200,t);drawFence(ctx,x+80,x+170,q+6);}
      drawCrossGuard(ctx,ROAD.xAt(MAIN_Y)+75,MAIN_Y+124,t);break;}
     case 'school':big(ctx,x,y,1.3,()=>drawSchool(ctx,0,0,t));ctx.fillStyle='#8A5A2B';ctx.fillRect(x+90,y-18,60,8);ctx.fillRect(x+94,y-10,6,20);ctx.fillRect(x+140,y-10,6,20);ctx.fillRect(x+90,y-30,60,6);drawPumpkin(ctx,x+130,y+8,14,.6);drawFence(ctx,x-150,x-60,y+10);break;
     case 'post':big(ctx,x,y,1.3,()=>drawPostOffice(ctx,0,0,t));drawFence(ctx,x-130,x+130,y+10);drawTree(ctx,x-o*125,y+10,120,'#160A33');break;
     case 'grave':for(let i=0;i<7;i++)drawPine(ctx,x-180+i*52,y-230+(i%2)*6,54+(i%3)*12,'#0F2A32','#133440');drawTree(ctx,x-o*130,y-110,100,'#0E2630');
      drawGate(ctx,x+o*200,y,t);big(ctx,x-o*105,y-50,.85,()=>drawCrypt(ctx,0,0,t));drawFence(ctx,x-140,x+140,y,'#2E3A5C');for(let i=0;i<7;i++)drawGrave(ctx,x-110+i*40,y-10+(i%2)*14,22+(i%3)*6,'#4A5A7A');drawGrave(ctx,x-o*140,y-20,46,'#6F7C9A');
-     {const ph=BAND.playing?beat*TAU:t*2;drawSkeleton(ctx,x-o*40,y-12-Math.abs(Math.sin(ph))*8,40,ph*2);}
+     {const ph=BAND.playing?beat*TAU:t*2;drawSkeleton(ctx,x+o*20,y+62-Math.abs(Math.sin(ph))*8,40,ph*2);}
      {const pk=t-this.pipPeek<1.5?1:(Math.sin(t*.7)>.6?1:0);drawGhost(ctx,x+o*200,y-50+(1-pk)*40,56,t,pk?1:.5);}
      for(let i=0;i<3;i++)drawGhost(ctx,x-60+i*70+Math.sin(t*1.3+i)*14,y-190+Math.sin(t*2+i*2)*16,26+i*4,t+i,.55);break;
     case 'hut':big(ctx,x,y,1.35,()=>drawHut(ctx,0,0,t));drawTree(ctx,x-130,y+10,140,'#0E2630');drawTree(ctx,x+140,y-10,100,'#0E2630');for(let i=0;i<4;i++)drawGrave(ctx,x-110+i*36,y+30+(i%2)*8,20,'#3E5A6A');break;
@@ -3779,7 +3786,7 @@ Object.assign(ICON,{boogie:'🕺'});
 Object.assign(SAYS,{boogie:'Pick a monster and code its dance with arrows, or copy the moves!'});
 TILES.splice(6,0,['boogie','#8A2E9A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);
 PREV.boogie=(x,t,W,H)=>BOOGIE_THUMB(x,t,W,H);
-HOT.push({id:'boogie',x:368,y:P.s_boogie.y-11,w:200,h:200,sub:'Boogie Hall',title:'Monster Boogie',kind:'hang lft'});
+HOT.push({id:'boogie',x:311,y:P.s_boogie.y+39,w:200,h:200,sub:'Boogie Hall',title:'Monster Boogie',kind:'hang lft'});
 {const BG_HALL={x:110,y:P.s_boogie.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(BG_HALL.y,top,bot,300))BOOGIE_HALL_DRAW(ctx,BG_HALL.x,BG_HALL.y,t);};}
 /* ==== MONSTER BOOGIE END ==== */
 
@@ -4412,7 +4419,7 @@ Object.assign(ICON,{typing:'⌨️'});
 Object.assign(SAYS,{typing:'Type the letters to catch the ghosts before they say boo!'});
 {const at=TILES.findIndex(t=>t[0]==='quiz');TILES.splice(at<0?TILES.length:at+1,0,['typing','#2F6EB0']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
 PREV.typing=(x,t,W,H)=>TYPE_THUMB(x,t,W,H);
-HOT.push({id:'typing',x:700,y:P.s_lib.y+190,w:200,h:220,sub:'Haunted Library',title:'Ghost Typer',kind:'post'});
+HOT.push({id:'typing',x:502,y:P.s_lib.y-16,w:200,h:200,sub:'Haunted Library',title:'Ghost Typer',kind:'hang rgt'});
 {const LIB={x:690,y:P.s_lib.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(LIB.y,top,bot,320))TYPE_LIB_DRAW(ctx,LIB.x,LIB.y,t);};}
 /* ==== GHOST TYPER END ==== */
 /* ==== SENSORY STATION START ==== */
@@ -5150,7 +5157,7 @@ Object.assign(SAYS,{sensory:'Pop bubbles, light up dots, tap for sounds. No rush
 PREV.sensory=(x,t,W,H)=>SENSE_THUMB(x,t,W,H);
 /* its own row in the village (slot s_sense, left side, between the Town Square and the Bakery), laid out like the other left-side buildings */
 const SENSE_AT=(typeof P!=='undefined'&&P.s_sense)?{x:P.s_sense.x||165,y:P.s_sense.y}:{x:108,y:P.tower.y-96};
-HOT.push({id:'sensory',x:SENSE_AT.x+218,y:SENSE_AT.y-60,w:200,h:200,sub:'Calm play',title:'Sensory Station',kind:'hang lft'});
+HOT.push({id:'sensory',x:SENSE_AT.x+183,y:SENSE_AT.y+90,w:200,h:200,sub:'Calm play',title:'Sensory Station',kind:'hang lft'});
 {const SH=SENSE_AT;const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SH.y,top,bot,340))SENSE_HOUSE_DRAW(ctx,SH.x,SH.y,t);};}
 /* ==== SENSORY STATION END ==== */
 /* ==== CANDY CHOMP START ==== */
@@ -5468,7 +5475,7 @@ Object.assign(ICON,{chomp:'🍬'});
 Object.assign(SAYS,{chomp:'Chompy is hungry! Feed him the right number!'});
 {const at=TILES.findIndex(t=>t[0]==='typing');const at2=at<0?TILES.findIndex(t=>t[0]==='quiz'):at;TILES.splice(at2<0?TILES.length:at2+1,0,['chomp','#C2457A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
 PREV.chomp=(x,t,W,H)=>CHOMP_THUMB(x,t,W,H);
-HOT.push({id:'chomp',x:700,y:P.s_chomp.y+190,w:200,h:220,sub:'Chomp Shop',title:'Candy Chomp',kind:'post'});
+HOT.push({id:'chomp',x:498,y:P.s_chomp.y-21,w:200,h:200,sub:'Chomp Shop',title:'Candy Chomp',kind:'hang rgt'});
 {const SHOP={x:690,y:P.s_chomp.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SHOP.y,top,bot,360))CHOMP_SHOP_DRAW(ctx,SHOP.x,SHOP.y,t);};}
 /* ==== CANDY CHOMP END ==== */
 /* ==== TOP TEN START ==== */
@@ -8727,7 +8734,7 @@ const DOORS=(()=>{
   ['grave','rattles',-105,-54,40,62,'drum'],['hut','bubbles',0,-4,46,74,'chime'],['tomb','mummy',0,-4,46,74,'groan'],
   ['treehouse','theo',0,-4,46,74,'good'],['barn','gourdon',0,-4,46,74,'jump'],['shed','iris',0,-4,46,74,'good'],
   ['wagon','lulu',0,-4,46,74,'chime'],['alley','kelsey',0,-4,46,74,'good'],
-  ['s_sense','bea',0,-4,46,74,'chime'],['s_chomp','benny',42,0,56,88,'good'],['s_lib','pip',0,-4,46,74,'boo'],['s_boogie','wolfie',0,-4,46,74,'howl']];
+  ['s_sense','bea',0,-4,46,74,'chime'],['s_avatar','marina',68,-2,44,74,'chime'],['s_chomp','benny',42,0,56,88,'good'],['s_lib','pip',0,-4,46,74,'boo'],['s_boogie','wolfie',0,-4,46,74,'howl']];
  const NAMES={mabel:'Mabel',nick:'Nick',zed:'Zed',dracula:'Count Dracula',flutter:'Flutter',frankie:'Frankie',paco:'Paco',june:'June',zoe:'Zoe',rattles:'Rattles',bubbles:'Bubbles',mummy:'Mummy Mo',theo:'Theo',gourdon:'Gourdon',iris:'Iris',lulu:'Lulu',kelsey:'Kelsey',bea:'Bea',benny:'Benny',pip:'Pip',wolfie:'Wolfie',
   leo:'Leo',max:'Max',wyatt:'Wyatt',kenji:'Kenji',rocco:'Rocco',sunny:'Sunny',gus:'Gus',hank:'Hank',dot:'Dot',finn:'Finn',marina:'Marina',snap:'Snap',ivy:'Ivy',midnight:'Midnight',jack:'Jack',ghost:'Boo'};
  const HOUSE_WHO=['leo','max','wyatt','kenji','rocco','sunny','gus','hank','dot','finn','marina','snap','ivy','midnight','jack','ghost'];
@@ -8775,7 +8782,7 @@ const DOORS=(()=>{
  let list=null;
  function build(){list=[];
   /* buildings added later are drawn from their own anchor, not the slot's x */
-  const BASE={s_sense:p=>[108,p.y-96],s_chomp:p=>[690,p.y-46],s_lib:p=>[690,p.y-46],s_boogie:p=>[110,p.y-46]};
+  const BASE={s_chomp:p=>[690,p.y-46],s_lib:p=>[690,p.y-46],s_boogie:p=>[110,p.y-46]};
   for(const[id,who,dx,dy,w,h,snd]of DEF){const p=P[id];if(!p)continue;let bx=p.x,by=p.y;if(BASE[id])[bx,by]=BASE[id](p);/* the graveyard crypt sits on the side away from the road */const ox=id==='grave'&&p.side!=='L'?-dx:dx;list.push({id,who,x:bx+ox,y:by+dy,w,h,snd,knock:-99,hi:sayFor(who)});}
   nhList().forEach((h,i)=>list.push({id:h.id,house:h,who:HOUSE_WHO[i%HOUSE_WHO.length],x:h.x,y:h.y-4*h.s,w:40*h.s,h:64*h.s,snd:'good',knock:-99,hi:'👋'}));
   list.forEach(d=>{d.hi=sayFor(d.who);});
@@ -9134,7 +9141,7 @@ Object.assign(SAYS,{avatar:'Make your own trick-or-treater and send them out on 
 PREV.avatar=(x,t,W,H)=>AV_THUMB(x,t,W,H);
 /* the sign picture is drawn once at boot, before the cast images finish loading: redraw it when they are ready */
 setTimeout(function avSignFix(n=0){if(NC.leo&&NC.finn&&NC.zoe){document.querySelectorAll('[data-id="avatar"] canvas').forEach(c=>{try{c.stop&&c.stop();}catch(e){}});}else if(n<40)setTimeout(()=>avSignFix(n+1),250);},300);
-HOT.push({id:'avatar',x:AV_AT.x-218,y:AV_AT.y-40,w:200,h:200,sub:'Make your own kid',title:'Character Creator',kind:'hang rgt'});
+HOT.push({id:'avatar',x:AV_AT.x-202,y:AV_AT.y+65,w:200,h:200,sub:'Make your own kid',title:'Character Creator',kind:'hang rgt'});
 /* drawn with the road layer (before the street life), so our kids walk out in front of the house, not behind it */
 {const _dr=drawRoad;drawRoad=function(ctx,top,bot,t,x0,x1){_dr(ctx,top,bot,t,x0,x1);if(AV_AT.y+40>top&&AV_AT.y-280<bot)AV_HOUSE_DRAW(ctx,AV_AT.x,AV_AT.y,t);};}
 
@@ -9318,6 +9325,23 @@ SCENES.avatar={title:'Character Creator',keepSong:true,mount(stage){
 /* test hook: window.__hvAvatar.svg(cfg) */
 try{window.__hvAvatar={kids:()=>KIDLIFE.kids.filter(k=>String(k.ty).startsWith('me_')).map(k=>[k.ty,k.x,k.y,k.st,KID_SAY[k.ty]]),say:()=>CRIT.say&&CRIT.say.txt,svg:avSVG,fix:avFix,load:avLoad,OUT:AV_OUTFITS,HATS:AV_HATS,FACES:AV_FACES,MOODS:AV_MOODS,CLOTH:AV_CLOTH,HELD:AV_HELD,HAIRS:AV_HAIRS};}catch(e){}
 /* ==== CHARACTER CREATOR END ==== */
+/* ==== HOUSE TAP START ==== */
+/* tapping a building opens its game (same as its sign). the door is checked first in world.tap, so a door tap still
+   knocks and the neighbor comes out. boxes are the drawn outline of each building, measured once. */
+const BLDG=(()=>{const L=[];const add=(id,ax,ay,x0,x1,y0,y1)=>L.push({id,x0:ax+x0,x1:ax+x1,y0:ay+y0,y1:ay+y1});
+ const B={cottage:[-119,118,-280,-5],bakery:[-118,117,-255,-5],inn:[-132,131,-300,-5],tower:[-88,87,-390,-5],theater:[-149,153,-185,-5],
+  school:[-95,94,-255,0],post:[-108,107,-195,-5],hut:[-104,110,-185,15],treehouse:[-87,76,-190,5],barn:[-131,130,-235,5],shed:[-83,82,-160,-5],
+  wagon:[-109,155,-160,20],print:[-145,144,-245,-5],belfry:[-54,60,-320,-5],tomb:[-97,96,-185,30],alley:[-128,127,-175,-5]};
+ for(const pl of PLACES){const b=B[pl.id];if(b)add(pl.hot,pl.x,pl.y,...b);}
+ if(P.grave)add('dash',P.grave.x-(P.grave.side==='L'?105:-105),P.grave.y-50,-69,68,-150,0);
+ add('jam',400,700,-225,225,-260,0);
+ add('avatar',AV_AT.x,AV_AT.y,-126,125,-245,5);
+ add('sensory',SENSE_AT.x,SENSE_AT.y,-115,103,-235,0);
+ if(P.s_boogie)add('boogie',110,P.s_boogie.y-46,-142,141,-180,0);
+ if(P.s_lib)add('typing',690,P.s_lib.y-46,-109,132,-255,0);
+ if(P.s_chomp)add('chomp',690,P.s_chomp.y-46,-188,137,-315,0);
+ return L;})();
+/* ==== HOUSE TAP END ==== */
 /* ---------- boot ---------- */
 document.body.classList.add('booting');world.init();LIFE.init();setWeather(LIFE.weather,false);['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(SFX.ctx&&SFX.ctx.state!=='running')SFX.ctx.resume();},{passive:true}));
 const hashSong=songFromHash();if(hashSong)store.set('hv-song',hashSong);
