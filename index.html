@@ -1203,7 +1203,7 @@ function big(ctx,x,y,s,fn){ctx.save();ctx.translate(x,y);ctx.scale(s,s);fn();ctx
 const GAP=560,LX=165,RX=635,LROAD=520,RROAD=280;
 /* h: how tall the building looks (the sign hangs near the top of its wall). street: a side street runs below this place. */
 const PLACES=[
- {id:'s_avatar',slot:true,side:'R'},/* Costume Closet */
+ {id:'s_avatar',slot:true,side:'R'},/* Character Creator */
  {id:'cottage',hot:'flight',side:'L',sub:'Crooked Cottage',h:240,yard:'batcave'},
  {id:'square',hot:'cast',side:'R',sub:'Town square',title:'Meet the Neighbors',main:true,sign:'post'},
  {id:'s_sense',slot:true,side:'L'},/* Sensory Station */
@@ -8771,10 +8771,10 @@ window.__hvDoorsAll=()=>DOORS.list().map(d=>({id:d.id,x:d.x,y:d.y-d.h*.45}));
 window.__hvKnockAll=()=>{for(const d of DOORS.list()){d.knock=world.t-1.6;}};
 window.__hvKnocked=id=>{const d=DOORS.list().find(q=>q.id===id);return !!d&&world.t-d.knock<3;};
 /* ==== DOOR KNOCK END ==== */
-/* ==== COSTUME CLOSET START ==== */
-/* Costume Closet: the first house on the street. Kids build a trick-or-treater from the parts the cast already wears
-   (skin, hair, hair color, costume, hat, face extra, thing to hold), pick 3 personality emojis, and their kid joins the
-   neighborhood: out the closet door, down the street, tap to hear 5 sayings. Parts are cut from the cast SVGs (NC_SVG)
+/* ==== CHARACTER CREATOR START ==== */
+/* Character Creator: the first house on the street. Kids build a trick-or-treater from the parts the cast already wears
+   (top, bottoms, back extra, skin, hair, hair color, hat, face extra, thing to hold), pick 3 personality emojis, name them,
+   and their kid joins the neighborhood (out the door, down the street, tap to hear 5 sayings) and the Meet the Neighbors cards. Parts are cut from the cast SVGs (NC_SVG)
    at runtime, so the art matches exactly. Saved on this device in localStorage (hv-mykids). */
 const AV_ST='hv-mykids',AV_MAX=12;
 function avToks(svg){const body=svg.slice(svg.indexOf('>')+1,svg.lastIndexOf('</svg>'));const out=[];let depth=0,start=0,m;const re=/<(\/?)(\w+)[^>]*?(\/?)>/g;
@@ -8810,14 +8810,14 @@ const AV_OUTFITS=[
  {id:'astro',k:'max',back:[1,2,3,4,5,6,7,8],body:[12,13,14,15,16,17,18,19,20,21,22],glove:['#C9CED8','#DCDFE6']},
  {id:'lion',k:'june',back:[1,2,3],body:[7,8,9]},
  {id:'robin',k:'theo',back:[1],body:[5,6,7,8,9,10,11]},
- {id:'cowboy',k:'wyatt',body:[4,5,6,7,8,9,10,11,12,13,14,15]},
+ {id:'cowboy',k:'wyatt',body:[4,5,6,7,8,9,10,11,12,13],legX:[14,15]},
  {id:'karate',k:'kenji',body:[4,5,6,7,8,9,10,11]},
  {id:'rainbow',k:'iris',body:[7,8,9,10,11,12,13,14,15,16,17]},
  {id:'prisoner',k:'rocco',body:[4,5,6,7]},
  {id:'hippie',k:'sunny',body:[7,8,9,10,11,12,13,14]},
  {id:'frankkid',k:'gus',body:[4,5,6,7,8]},
  {id:'lumber',k:'hank',body:[4,5,6,7,8,9]},
- {id:'hero',k:'zoe',back:[1,2,3],body:[10,11,12,13,14,15,16]},
+ {id:'hero',k:'zoe',back:[1,2,3],body:[10,11,12,13,14],legX:[15,16]},
  {id:'santa',k:'nick',body:[4,5,6,7,8,9,10,11,12,13,14]},
  {id:'fairy',k:'lulu',back:[1,2],body:[6,7,8,9,10,11,12,13,14,15,16]},
  {id:'ptero',k:'dot',back:[1,2],body:[6,7,8,9,10]},
@@ -8827,8 +8827,11 @@ const AV_OUTFITS=[
  {id:'pinata',k:'paco',body:[4,5,6]},
  {id:'cheer',k:'kelsey',body:[4,5,6,7,8,9,10,11]},
  {id:'alien',k:'zed',body:[4,5,6,7,8,9]},
- {id:'mermaid',k:'marina',legs:[4,5,6,7,8,9],body:[11,12,13,14,15]},
+ {id:'mermaid',k:'marina',legs:[4,5,6,7,8,9],body:[11,12,13,14,15],torso:1},
  {id:'croc',k:'snap',back:[1,2,3,4,5,6,7],body:[11,12,13,14,15,16,17,18]}];
+/* bottoms: every costume's legs and shoes (duplicates dropped), back extras: every costume's wings, capes and tails */
+let AV_BOTS=null;function avBots(){if(AV_BOTS)return AV_BOTS;const seen=new Set();AV_BOTS=AV_OUTFITS.filter(o=>{const k=o.legs?'L'+o.id:avSrc(o.k).legs.join('')+(o.legX||'');if(seen.has(k))return false;seen.add(k);return true;}).map(o=>o.id);return AV_BOTS;}
+const AV_BACKS=['none',...AV_OUTFITS.filter(o=>o.back).map(o=>o.id)];
 const AV_HATS=[
  {id:'none'},
  {id:'cowboy',k:'wyatt',front:[36,37,38,39,40,41,42]},
@@ -8881,30 +8884,35 @@ function avSleeve(g){if(!g)return{col:'#8E97AE',extra:''};const t=avToks('<svg>'
  t.forEach((e,i)=>{if(i===0&&e.startsWith('<rect')){col=(e.match(/fill="([^"]+)"/)||[])[1]||col;return;}
   if(e.startsWith('<g transform="translate(0,6')||e.startsWith('<g transform="translate(0,70)')||/^<circle cx="(0|-4\.5)" cy="(64|59\.5)"/.test(e)||(e.startsWith('<rect')&&e.includes('transform=')))return;extra+=e;});return{col,extra};}
 function avHeldInner(g){const i=g.indexOf('<g transform="translate(0,64)');if(i<0)return'';const t=avToks('<svg>'+g.slice(i)+'</svg>');return t[0]||'';}
-const AV_DEF={skin:3,hair:6,hairCol:3,outfit:'dino',hat:'none',face:'none',held:'none'};
+const AV_DEF={skin:3,hair:6,hairCol:3,outfit:'dino',bot:'same',back:'same',hat:'none',face:'none',held:'none'};
 function avFix(c){c=Object.assign({},AV_DEF,c||{});const ok=(L,v)=>L.some(x=>x.id===v);
  if(!(c.skin>=0&&c.skin<AV_SKINS.length))c.skin=AV_DEF.skin;if(!(c.hair>=-1&&c.hair<AV_HAIRS.length))c.hair=AV_DEF.hair;if(!(c.hairCol>=0&&c.hairCol<AV_HAIRC.length))c.hairCol=AV_DEF.hairCol;
- if(!ok(AV_OUTFITS,c.outfit))c.outfit=AV_DEF.outfit;if(!ok(AV_HATS,c.hat))c.hat='none';if(!ok(AV_FACES,c.face))c.face='none';if(!ok(AV_HELD,c.held))c.held='none';return c;}
+ if(!ok(AV_OUTFITS,c.outfit))c.outfit=AV_DEF.outfit;if(!ok(AV_HATS,c.hat))c.hat='none';if(!ok(AV_FACES,c.face))c.face='none';if(!ok(AV_HELD,c.held))c.held='none';
+ if(c.bot!=='same'&&!ok(AV_OUTFITS,c.bot))c.bot='same';if(c.back!=='same'&&!AV_BACKS.includes(c.back))c.back='same';return c;}
 let AV_UID=0;
 /* build the trick-or-treater as an SVG string in the cast frame (viewBox -40 0 380 420, feet on y=403) */
 function avSVG(cfg,opt={}){const c=avFix(cfg);const S=AV_SKINS[c.skin],HC=AV_HAIRC[c.hairCol];
  const O=AV_OUTFITS.find(x=>x.id===c.outfit),T=AV_HATS.find(x=>x.id===c.hat),F=AV_FACES.find(x=>x.id===c.face),I=AV_HELD.find(x=>x.id===c.held),H=c.hair>=0?AV_HAIRS[c.hair]:null;
  const used=new Set(),out=[];
+ const B=c.bot==='same'?O:AV_OUTFITS.find(x=>x.id===c.bot),BK=c.back==='same'?(O.back?O:null):c.back==='none'?null:AV_OUTFITS.find(x=>x.id===c.back);
  const get=(k,idx,extraMap)=>{if(!k||!idx)return'';used.add(k);const src=avSrc(k),map=Object.assign(avSkinMap(k,S),extraMap||{});return idx.map(i=>src.els[i]||'').filter(e=>e&&!e.startsWith('<clipPath')).map(e=>avRecolor(e,map)).join('');};
  const hairMap=H?(()=>{const m={};m[H.c[0].toUpperCase()]=HC[0];if(H.c[1]!==H.c[0])m[H.c[1].toUpperCase()]=HC[1];return m;})():{};
  const hand=(O.glove||[S[0],S[2]]),handSVG='<circle cx="0" cy="64" r="15" fill="'+hand[0]+'"/><circle cx="-4.5" cy="59.5" r="5.2" fill="'+hand[1]+'" opacity=".6"/>';
  out.push('<ellipse cx="150" cy="406" rx="70" ry="12" fill="#1a0b3a" opacity=".22"/>');
- if(O.covers){used.add(O.k);out.push(avSrc(O.k).legs.join(''));out.push(get(O.k,O.covers));
+ const legsSVG=()=>(B.legs?get(B.k,B.legs):(used.add(B.k),avSrc(B.k).legs.map(e=>avRecolor(e,avSkinMap(B.k,S))).join('')))+get(B.k,B.legX);
+ if(O.covers){if(BK)out.push(get(BK.k,BK.back));out.push(legsSVG());out.push(get(O.k,O.covers));
   /* a ghost can still wear a hat (not a hood): lift it to the top of the sheet */
   if(T.front&&!T.hideHair)out.push('<g transform="translate(0,-8)">'+get(T.k,T.front)+'</g>');}
  else{
   const so=avSrc(O.k),sm=avSkinMap(O.k,S);
-  out.push(get(O.k,O.back));
+  if(BK)out.push(get(BK.k,BK.back));
   if(H&&!T.hideHair)out.push(get(H.k,H.back,hairMap));
-  out.push(O.legs?get(O.k,O.legs):so.legs.map(e=>avRecolor(e,sm)).join(''));
+  out.push(legsSVG());
   const R=avSleeve(so.armR);out.push(avRecolor('<g transform="translate(190,268) rotate(-14)"><rect x="-13.0" y="-13.0" width="26" height="71.0" rx="13.0" fill="'+R.col+'"/>'+R.extra,sm)+AV_BUCKET+handSVG+'</g>');
   const L=avSleeve(so.armL),armL=(a,inner)=>avRecolor('<g transform="translate(110,268) rotate('+a+')"><rect x="-13.0" y="-13.0" width="26" height="71.0" rx="13.0" fill="'+L.col+'"/>'+L.extra,sm)+(inner||'')+handSVG+'</g>';
   const behind=O.armBehind&&I.id==='none';if(behind)out.push(armL(O.armBehind));
+  /* the mermaid top is just a shell top: give it a tummy when it is worn over legs */
+  if(O.torso&&!B.legs)out.push('<rect x="110" y="250" width="80" height="92" rx="24" fill="'+S[0]+'"/><path d="M176 252 Q190 254 190 274 V318 Q190 342 166 342 H160 Q182 334 182 316 V272 Q182 258 176 252Z" fill="'+S[1]+'"/>');
   out.push(get(O.k,O.body));
   out.push(get(T.k,T.back));
   if(T.head)out.push(get(T.k,T.head));
@@ -8946,81 +8954,111 @@ const AV_EMO=[
 function avSayings(emo,seed=0){const L=emo.map(e=>(AV_EMO.find(x=>x[0]===e)||AV_EMO[0])[1]);if(!L.length)return[];
  const pick=[[0,0],[1,0],[2,0],[0,1],[1,1]],out=[];for(const[a,b]of pick){const list=L[a%L.length];out.push([emo[a%L.length],list[(b+seed+a)%list.length]]);}return out;}
 
+/* what each emoji means on the neighbor card: [card line, best at, scared of, favorite thing, favorite candy, stat]
+   stats match the card pips: 0 spooky, 1 sweet tooth, 2 speed, 3 silly, 4 brave */
+const AV_TRAIT={
+ '😂':['Tells a joke at every door.','Knock-knock jokes','Nobody laughing','Joke books','Sour gummies',3],
+ '🤪':['Wears socks on their ears, just because.','Silly faces','Boring days','Wiggle dances','Gummy worms',3],
+ '🤩':['Gets excited about every porch light.','Happy dances','Bedtime','Glow sticks','Rainbow lollipops',2],
+ '😎':['Stays cool, even in a haunted house.','Looking cool','Wet socks','Sunglasses','Mint chocolate',4],
+ '🥰':['Gives hugs to every monster.','Making friends','Saying goodbye','Group hugs','Chocolate hearts',1],
+ '😇':['Always says please and thank you.','Helping friends','Broken crayons','Holding the flashlight','Marshmallows',4],
+ '🦸':['First one up the creaky steps.','Rescuing lost candy','Spiders (just a little)','Capes','Rock candy',4],
+ '🤓':['Knows a fact about every bat.','Counting candy','Missing a page','Spooky books','Candy corn',0],
+ '🎨':['Made their own costume with extra glitter.','Painting pumpkins','Running out of purple','Markers','Rainbow candy',3],
+ '⚽':['Races to every door.','Running fast','Untied shoes','Tag','Fruit chews',2],
+ '🎵':['Hums the Monster Band song all night.','Dancing','Quiet rooms','The Music Mansion','Bubble gum',3],
+ '🍬':['Has the heaviest candy bag on the street.','Finding full-size bars','Empty candy bowls','Candy trades','Chocolate bars',1],
+ '👻':['Spooks easily, then giggles about it.','Saying boo','Their own shadow','Creaky doors','Marshmallow ghosts',0],
+ '🐶':['Says hi to every cat and bat.','Petting Midnight','Thunder','Puppies','Animal crackers',1],
+ '😴':['Could nap anywhere, even in a graveyard.','Napping','Alarm clocks','Pillows','Hot cocoa',1],
+ '🤔':['Wonders what is behind every door.','Solving mysteries','Unanswered questions','Magnifying glasses','Mystery flavor lollipops',0],
+ '🚀':['Explores every street in the village.','Finding shortcuts','Getting lost','Maps','Popping candy',2],
+ '🌈':['Makes everybody smile.','Cheering people up','Rainy days','Rainbows','Rainbow lollipops',3]};
+const AV_FRIENDS=['Pip','Jack','Midnight','Leo','Lulu','Zoe','Finn','Bea','Gourdon','Flutter'];
+const AV_NAMES=['Ziggy','Pickles','Nova','Biscuit','Jojo','Waffles','Remy','Pepper','Sprout','Ollie','Luna','Rex','Pumpkin','Boo','Scout','Mochi','Twix','Ruby','Taco','Sunny','Moxie','Comet','Bean','Fizz'];
+function avHash(str){let h=7;for(const ch of String(str))h=(h*31+ch.charCodeAt(0))>>>0;return h;}
+function avCostumeName(cfg){const c=avFix(cfg),nm=id=>(typeof KID_INFO!=='undefined'&&KID_INFO[id]&&KID_INFO[id][1])||id;
+ if((c.bot!=='same'&&c.bot!==c.outfit)||(c.back!=='same'&&c.back!==c.outfit))return 'Mix-and-match costume';return nm(c.outfit);}
 /* ---------- saved kids ---------- */
 function avLoad(){const a=store.get(AV_ST,[]);return Array.isArray(a)?a.filter(k=>k&&k.id&&k.cfg&&Array.isArray(k.emo)).slice(-AV_MAX):[];}
 function avSave(a){store.set(AV_ST,a.slice(-AV_MAX));}
 /* rasterize a saved kid into the cast image cache so drawKid() can draw it like any other trick-or-treater */
-function avRegister(kid){const key='me_'+kid.id;if(NC_SVG[key]&&NC[key])return key;NC_SVG[key]=avSVG(kid.cfg,{uid:'r'+kid.id});NC_BB[key]=[2,24,378,406];NC_KID[key]=key;
+function avRegister(kid){const key='me_'+kid.id;if(NC_SVG[key])return key;NC_SVG[key]=avSVG(kid.cfg,{uid:'r'+kid.id});NC_BB[key]=[30,70,300,406];NC_KID[key]=key;
  const img=new Image();img.onload=()=>{const S=1.5,l=0,t=20,r=380,b=420;const cv=document.createElement('canvas');cv.width=Math.ceil((r-l)*S);cv.height=Math.ceil((b-t)*S);cv.getContext('2d').drawImage(img,-l*S,-t*S,380*S,420*S);NC[key]={cv,l,t,w:r-l,h:b-t};};
  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(NC_SVG[key]);
  const lines=avSayings(kid.emo,kid.seed||0);let n=0;
  try{Object.defineProperty(KID_SAY,key,{configurable:true,get(){const L=lines[n%lines.length];return L?L[0]+' '+L[1]:'Trick or treat!';}});}catch(e){}
  AV_NEXT[key]=()=>{n++;};return key;}
 const AV_NEXT={};
+/* put every saved kid on a Meet the Neighbors card (rebuilt whenever a kid is added or removed) */
+function avCastSync(){try{
+ for(let i=CAST.length-1;i>=0;i--)if(String(CAST[i][0]).startsWith('me_'))CAST.splice(i,1);
+ avLoad().slice().reverse().forEach((k,ki)=>{const key=avRegister(k),T=k.emo.map(e=>AV_TRAIT[e]||AV_TRAIT['😂']);const st=[2,2,2,2,2];T.forEach(x=>{st[x[5]]=Math.min(5,st[x[5]]+2);});
+  CAST.splice(ki,0,[key,k.name||'New Kid',avCostumeName(k.cfg),T.map(x=>x[0]).join(' '),T[0][4],'Character Creator',(c,t)=>{ncFit(c,key,52,112,100,104,-Math.abs(Math.sin((t||0)*3))*2);},()=>SFX.kid()]);
+  TC_DATA[key]=[st[0],st[1],st[2],st[3],st[4],T[0][1],T[1][2],3,'kid'];
+  TC_MORE[key]=[T[2][3],AV_FRIENDS[avHash(k.id)%AV_FRIENDS.length]];});
+}catch(e){console.warn('avatar cards',e);}}
 /* tapping one of our kids says the next of its 5 lines */
 {const _tap=CRIT.tap.bind(CRIT);CRIT.tap=function(x,y){let hit=null;for(const a of this.actors){if(Math.hypot(x-a.x,y-a.y)<a.r){hit=a;break;}}const r=_tap(x,y);if(r&&hit&&AV_NEXT[hit.id])AV_NEXT[hit.id]();return r;};}
 
 /* ---------- the house: first row on the street, right side ---------- */
 const AV_AT=(typeof P!=='undefined'&&P.s_avatar)?{x:P.s_avatar.x||635,y:P.s_avatar.y}:{x:635,y:900};
-const AV_K=1.2;
-function avDoor(){return{x:AV_AT.x+94*AV_K,y:AV_AT.y+5};}
-function AV_HOUSE_DRAW(ctx,x,y,t){const c=ctx;c.save();c.translate(x,y);c.scale(AV_K,AV_K);
- /* yard shadow */
- c.fillStyle='rgba(10,4,30,.35)';c.beginPath();c.ellipse(0,4,190,22,0,0,TAU);c.fill();
- /* walls */
- c.fillStyle='#A65BC9';c.fillRect(-150,-210,300,210);c.fillStyle='#8A45AE';c.fillRect(80,-210,70,210);
- /* candy-stripe trim along the bottom */
- for(let i=0;i<15;i++){c.fillStyle=i%2?'#FFF2DE':'#FF5FA8';c.fillRect(-150+i*20,-16,20,16);}
- /* roof */
- c.fillStyle='#3B1E6E';c.beginPath();c.moveTo(-176,-206);c.lineTo(0,-322);c.lineTo(176,-206);c.closePath();c.fill();
- c.fillStyle='#2A1458';c.beginPath();c.moveTo(0,-322);c.lineTo(176,-206);c.lineTo(110,-206);c.closePath();c.fill();
- c.fillStyle='#FFC34D';c.fillRect(-176,-212,352,10);
- /* round attic window with a spinning star */
- c.fillStyle='#24104E';c.beginPath();c.arc(0,-250,28,0,TAU);c.fill();c.fillStyle='#FFE29A';c.beginPath();c.arc(0,-250,22,0,TAU);c.fill();
- c.save();c.translate(0,-250);c.rotate(t*.6);drawStar(c,0,0,14,'#FF5FA8');c.restore();
- /* awning */
- for(let i=0;i<8;i++){c.fillStyle=i%2?'#FFF2DE':'#2FB8A8';c.beginPath();c.moveTo(-150+i*37.5,-176);c.lineTo(-150+(i+1)*37.5,-176);c.lineTo(-150+(i+1)*37.5,-146);c.quadraticCurveTo(-150+(i+.5)*37.5,-130,-150+i*37.5,-146);c.closePath();c.fill();}
- /* big shop window with three costumes on stands */
- c.fillStyle='#24104E';c.fillRect(-140,-140,170,112);const g=c.createLinearGradient(0,-140,0,-28);g.addColorStop(0,'#FFE7B0');g.addColorStop(1,'#FFC77A');c.fillStyle=g;c.fillRect(-134,-134,158,100);
- const kids=['leo','lulu','finn'];kids.forEach((k,i)=>{const bx=-108+i*52,bob=Math.sin(t*1.6+i*1.3)*2;c.fillStyle='#8A5A2B';c.fillRect(bx-2,-46,4,14);c.fillRect(bx-12,-36,24,4);if(!ncFit(c,k,bx,-46+bob,46,62))drawKid(c,bx,-46,'dino',0,.5);});
- c.fillStyle='rgba(255,255,255,.35)';c.beginPath();c.moveTo(-128,-134);c.lineTo(-104,-134);c.lineTo(-134,-96);c.lineTo(-134,-120);c.closePath();c.fill();
- c.strokeStyle='#FFC34D';c.lineWidth=6;c.strokeRect(-137,-137,164,106);
- /* door with a mirror heart */
- c.fillStyle='#FF5FA8';c.beginPath();c.moveTo(56,0);c.lineTo(56,-96);c.arc(94-38+38*0+38,-96,38,Math.PI,0);c.lineTo(132,0);c.closePath();c.fill();
- c.fillStyle='#D9468C';c.fillRect(94,-96,38,96);
- c.fillStyle='#CFE9FF';c.beginPath();c.ellipse(94,-82,16,22,0,0,TAU);c.fill();c.fillStyle='rgba(255,255,255,.7)';c.beginPath();c.ellipse(88,-90,4,8,-.4,0,TAU);c.fill();
- c.fillStyle='#FFC34D';c.beginPath();c.arc(120,-48,5,0,TAU);c.fill();
- /* step */
- c.fillStyle='#6F6490';c.fillRect(46,-6,96,10);
- /* clothes rack out front with hangers that sway */
- c.strokeStyle='#5A3A20';c.lineWidth=5;c.lineCap='round';c.beginPath();c.moveTo(-170,0);c.lineTo(-170,-92);c.moveTo(-170,-92);c.lineTo(-170,-92);c.stroke();
- const cols=['#FF7A1A','#8EE65B','#4FA3E0','#FF4FA3'];
- c.strokeStyle='#5A3A20';c.beginPath();c.moveTo(-196,-92);c.lineTo(-144,-92);c.stroke();
- cols.forEach((col,i)=>{const hx=-190+i*14,sw=Math.sin(t*2+i)*.12;c.save();c.translate(hx,-92);c.rotate(sw);c.fillStyle=col;c.beginPath();c.moveTo(-7,6);c.lineTo(7,6);c.lineTo(9,40);c.lineTo(-9,40);c.closePath();c.fill();c.restore();});
- /* pumpkins on the porch */
- drawPumpkin(c,-128,-4,13,.7);drawPumpkin(c,150,-4,11,.6);
+const AV_K=1.3;
+function avDoor(){return{x:AV_AT.x+52*AV_K,y:AV_AT.y+4};}
+/* a small dress-up shop in the village palette: plum walls, dark roof, warm windows, wooden door */
+function AV_HOUSE_DRAW(ctx,x,y,t){const c=ctx,w=170,h=118;c.save();c.translate(x,y);c.scale(AV_K,AV_K);
+ c.fillStyle='rgba(10,4,30,.3)';c.beginPath();c.ellipse(0,3,w*.62,10,0,0,TAU);c.fill();
+ /* walls, shade on the right */
+ c.fillStyle='#4E3070';c.fillRect(-w/2,-h,w,h);c.fillStyle='#3E2560';c.fillRect(w/2-34,-h,34,h);
+ c.fillStyle='#2A1548';c.fillRect(-w/2,-8,w,8);
+ /* roof and a little round attic window with a hanger in it */
+ c.fillStyle='#2A1548';c.beginPath();c.moveTo(-w/2-12,-h+2);c.lineTo(-6,-h-74);c.lineTo(w/2+12,-h+2);c.closePath();c.fill();
+ c.fillStyle='#1E0F3C';c.beginPath();c.moveTo(-6,-h-74);c.lineTo(w/2+12,-h+2);c.lineTo(w*.18,-h+2);c.closePath();c.fill();
+ c.fillStyle='#8F5428';c.fillRect(-w/2-12,-h-2,w+24,5);
+ c.fillStyle='rgba(255,195,77,'+(.7+.2*Math.sin(t*2))+')';c.beginPath();c.arc(-6,-h-30,13,0,TAU);c.fill();
+ c.strokeStyle='#2A1548';c.lineWidth=2.4;c.lineJoin='round';c.beginPath();c.moveTo(-6,-h-38);c.lineTo(-6,-h-34);c.moveTo(-15,-h-24);c.lineTo(-6,-h-34);c.lineTo(3,-h-24);c.closePath();c.stroke();
+ /* short striped awning in sign wood and plum */
+ for(let i=0;i<6;i++){c.fillStyle=i%2?'#6A3F8E':'#C98445';const x0=-w/2+4+i*18;c.beginPath();c.moveTo(x0,-h+18);c.lineTo(x0+18,-h+18);c.lineTo(x0+18,-h+32);c.quadraticCurveTo(x0+9,-h+40,x0,-h+32);c.closePath();c.fill();}
+ /* shop window: warm glow with costumes hanging on a rail */
+ const wx=-w/2+8,wy=-h+38,ww=100,wh=58;c.fillStyle='#24104E';c.fillRect(wx-3,wy-3,ww+6,wh+6);
+ c.fillStyle='rgba(255,195,77,'+(.78+.12*Math.sin(t*3))+')';c.fillRect(wx,wy,ww,wh);
+ c.fillStyle='#8F5428';c.fillRect(wx+4,wy+8,ww-8,3);
+ const cols=['#3B2466','#5B2E4E','#2E4A6A','#4A3A20'];
+ for(let i=0;i<4;i++){const hx=wx+16+i*23,sw=Math.sin(t*1.5+i*1.7)*.08;c.save();c.translate(hx,wy+10);c.rotate(sw);c.strokeStyle='#2A1548';c.lineWidth=1.6;c.beginPath();c.moveTo(0,0);c.lineTo(0,4);c.moveTo(-8,9);c.lineTo(0,4);c.lineTo(8,9);c.stroke();
+  c.fillStyle=cols[i];c.beginPath();if(i%2){c.moveTo(-8,9);c.lineTo(8,9);c.lineTo(11,38);c.lineTo(-11,38);}else{c.moveTo(-8,9);c.lineTo(8,9);c.lineTo(9,28);c.lineTo(4,28);c.lineTo(4,40);c.lineTo(-4,40);c.lineTo(-4,28);c.lineTo(-9,28);}c.closePath();c.fill();c.restore();}
+ c.fillStyle='#24104E';c.fillRect(wx+ww/2-1.5,wy,3,wh);
+ /* wooden door with a little oval mirror */
+ const dx=52,dw=34,dh=62;c.fillStyle='#24104E';c.beginPath();c.moveTo(dx-dw/2-3,0);c.lineTo(dx-dw/2-3,-dh+dw/2);c.arc(dx,-dh+dw/2,dw/2+3,Math.PI,0);c.lineTo(dx+dw/2+3,0);c.closePath();c.fill();
+ c.fillStyle='#6A4423';c.beginPath();c.moveTo(dx-dw/2,0);c.lineTo(dx-dw/2,-dh+dw/2);c.arc(dx,-dh+dw/2,dw/2,Math.PI,0);c.lineTo(dx+dw/2,0);c.closePath();c.fill();
+ c.fillStyle='#503227';c.fillRect(dx,-dh+dw/2,dw/2,dh-dw/2);
+ c.fillStyle='#8FA8C8';c.beginPath();c.ellipse(dx,-dh+20,6,9,0,0,TAU);c.fill();c.fillStyle='rgba(255,255,255,.45)';c.beginPath();c.ellipse(dx-2,-dh+17,1.6,3.6,-.4,0,TAU);c.fill();
+ c.fillStyle='#FFC34D';c.beginPath();c.arc(dx+10,-26,2.6,0,TAU);c.fill();
+ c.fillStyle='#4A3A70';c.fillRect(dx-dw/2-6,-3,dw+12,6);
+ drawPumpkin(c,dx+34,-2,9,.6);
  c.restore();}
 /* sign picture: a kid in front of a mirror, cycling costumes */
-function AV_THUMB(ctx,t,W,H){const c=ctx;c.save();const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#5B2DA8');g.addColorStop(1,'#A65BC9');c.fillStyle=g;c.fillRect(0,0,W,H);
+function AV_THUMB(ctx,t,W,H){const c=ctx;c.save();const g=c.createLinearGradient(0,0,0,H);g.addColorStop(0,'#24124E');g.addColorStop(1,'#4E3070');c.fillStyle=g;c.fillRect(0,0,W,H);
  c.fillStyle='rgba(255,255,255,.12)';for(let i=0;i<6;i++){c.beginPath();c.arc(W*(.1+i*.17),H*.2+Math.sin(t+i)*6,6,0,TAU);c.fill();}
  const ks=['leo','max','june','lulu','finn','zoe','snap','iris'],k=ks[Math.floor(t/1.2)%ks.length];
- c.fillStyle='#FFE29A';c.beginPath();c.ellipse(W*.66,H*.52,W*.16,H*.4,0,0,TAU);c.fill();c.strokeStyle='#C98445';c.lineWidth=Math.max(3,W*.015);c.stroke();
+ c.fillStyle='#8FA8C8';c.beginPath();c.ellipse(W*.66,H*.52,W*.16,H*.4,0,0,TAU);c.fill();c.strokeStyle='#C98445';c.lineWidth=Math.max(3,W*.015);c.stroke();
  ncFit(c,k,W*.66,H*.86,W*.26,H*.66,-Math.abs(Math.sin(t*3))*3);
  ncFit(c,ks[(Math.floor(t/1.2)+3)%ks.length],W*.3,H*.95,W*.3,H*.78,-Math.abs(Math.sin(t*3+1))*3);
  c.restore();}
 Object.assign(ICON,{avatar:'🪞'});
 Object.assign(SAYS,{avatar:'Make your own trick-or-treater and send them out on the street!'});
-{const at=TILES.findIndex(t=>t[0]==='cast');TILES.splice(at<0?0:at+1,0,['avatar','#A65BC9']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
+{const at=TILES.findIndex(t=>t[0]==='cast');TILES.splice(at<0?0:at+1,0,['avatar','#5B3A8E']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
 PREV.avatar=(x,t,W,H)=>AV_THUMB(x,t,W,H);
 /* the sign picture is drawn once at boot, before the cast images finish loading: redraw it when they are ready */
 setTimeout(function avSignFix(n=0){if(NC.leo&&NC.finn&&NC.zoe){document.querySelectorAll('[data-id="avatar"] canvas').forEach(c=>{try{c.stop&&c.stop();}catch(e){}});}else if(n<40)setTimeout(()=>avSignFix(n+1),250);},300);
-HOT.push({id:'avatar',x:AV_AT.x-218,y:AV_AT.y-90,w:200,h:200,sub:'Costume Closet',title:'Make a Kid',kind:'hang rgt'});
+HOT.push({id:'avatar',x:AV_AT.x-218,y:AV_AT.y-40,w:200,h:200,sub:'Make your own kid',title:'Character Creator',kind:'hang rgt'});
 /* drawn with the road layer (before the street life), so our kids walk out in front of the house, not behind it */
-{const _dr=drawRoad;drawRoad=function(ctx,top,bot,t,x0,x1){_dr(ctx,top,bot,t,x0,x1);if(AV_AT.y+60>top&&AV_AT.y-360<bot)AV_HOUSE_DRAW(ctx,AV_AT.x,AV_AT.y,t);};}
+{const _dr=drawRoad;drawRoad=function(ctx,top,bot,t,x0,x1){_dr(ctx,top,bot,t,x0,x1);if(AV_AT.y+40>top&&AV_AT.y-280<bot)AV_HOUSE_DRAW(ctx,AV_AT.x,AV_AT.y,t);};}
 
 /* ---------- our kids join the trick-or-treaters ---------- */
 function avMakeWalker(kid,i,t){const key=avRegister(kid),d=avDoor(),dEntry=ROAD.dAtY(AV_AT.y-30),entry=ROAD.at(dEntry);
  return{ty:key,pl:{side:'R',y:AV_AT.y},door:d,entry,dEntry,x:d.x,y:d.y,st:'in',until:t+1+i*2.2,d:0,dir:-1,v:34+(i%4)*5,k:0,face:-1,r:seeded(900+i*13+(kid.id.length*7))};}
+avCastSync();
 {const _init=KIDLIFE.init.bind(KIDLIFE);KIDLIFE.init=function(t){_init(t);avLoad().forEach((k,i)=>{try{this.kids.push(avMakeWalker(k,i,t));}catch(e){console.warn('avatar kid',e);}});};}
 function avJoin(kid){if(!KIDLIFE.ready)return;const t=world.t||0;const w=avMakeWalker(kid,0,t);w.until=t+.6;KIDLIFE.kids=KIDLIFE.kids.filter(k=>k.ty!==w.ty);KIDLIFE.kids.push(w);}
 function avLeave(id){const key='me_'+id;KIDLIFE.kids=KIDLIFE.kids.filter(k=>k.ty!==key);}
@@ -9042,8 +9080,8 @@ if(!document.getElementById('hvavcss')){const s=document.createElement('style');
 .av-bub.on{opacity:1;transform:translateX(-50%) translateY(-4px)}
 .av-bub::after{content:'';position:absolute;left:50%;bottom:-12px;margin-left:-12px;border:12px solid transparent;border-top-color:#FFF4E6;border-bottom:0}
 .av-right{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0;padding:12px 14px 12px 4px;gap:10px}
-.av-tabs{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
-.av-tab{width:clamp(54px,7.4vw,74px);height:clamp(54px,7.4vw,74px);border-radius:20px;border:none;background:rgba(255,255,255,.12);font-size:clamp(28px,3.8vw,38px);line-height:1;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.25);transition:transform .1s;display:grid;place-items:center;padding:0}
+.av-tabs{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+.av-tab{width:clamp(44px,5.4vw,64px);height:clamp(44px,5.4vw,64px);border-radius:18px;border:none;background:rgba(255,255,255,.12);font-size:clamp(24px,3.2vw,34px);line-height:1;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.25);transition:transform .1s;display:grid;place-items:center;padding:0}
 .av-tab.on{background:#FFC34D;box-shadow:0 5px 0 #B47A12}
 .av-tab:active{transform:translateY(3px)}
 .av-grid{flex:1;min-height:0;overflow:auto;-webkit-overflow-scrolling:touch;display:grid;grid-template-columns:repeat(auto-fill,minmax(clamp(84px,11vw,118px),1fr));gap:10px;grid-auto-rows:max-content;align-content:start;padding:8px 8px 12px;border-radius:22px;background:rgba(12,6,34,.35)}
@@ -9082,12 +9120,20 @@ if(!document.getElementById('hvavcss')){const s=document.createElement('style');
 .av-mini .del{position:absolute;top:-6px;right:-6px;width:34px;height:34px;border-radius:50%;border:none;background:#C2304A;color:#fff;font-size:18px;display:grid;place-items:center;box-shadow:0 3px 0 rgba(0,0,0,.3);cursor:pointer;padding:0}
 .av-mini .del i{position:absolute;inset:0;border-radius:50%;background:conic-gradient(#FFC34D var(--p,0%),transparent 0);opacity:.85;pointer-events:none}
 .av-mini .del span{position:relative}
+.av-plate{min-height:clamp(60px,9vw,84px);border-radius:22px;background:#F6E9D2;color:#2A1858;font:900 clamp(34px,5vw,52px)/1 "Baloo 2",sans-serif;display:grid;place-items:center;letter-spacing:.04em;box-shadow:inset 0 -6px 0 rgba(42,21,72,.15)}
+.av-plate.empty::after{content:'✏️';opacity:.4}
+.av-keys{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+.av-key{height:clamp(46px,6.4vw,62px);border:none;border-radius:14px;background:rgba(255,244,230,.16);color:#FFF4E6;font:900 clamp(22px,3vw,30px)/1 "Baloo 2",sans-serif;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.28)}
+.av-key:active{transform:translateY(3px)}
+.av-key.wide{grid-column:span 2;background:#C2304A}
+.av-card{flex:1;min-height:0;overflow:auto;border-radius:18px;background:rgba(12,6,34,.35);padding:10px 14px;display:flex;flex-direction:column;gap:4px;font:700 clamp(15px,1.9vw,19px)/1.3 "Baloo 2",sans-serif}
+.av-card b{font-size:1.5em}
 .av-step{display:flex;gap:6px;justify-content:center}
 .av-step i{width:14px;height:14px;border-radius:50%;background:rgba(255,255,255,.25)}
 .av-step i.on{background:#FFC34D}
 @media (max-aspect-ratio:1/1){.av-root{flex-direction:column}.av-left{flex:0 0 44%}.av-right{padding:6px 12px 12px}}
 `;document.head.append(s);}
-SCENES.avatar={title:'Costume Closet',keepSong:true,mount(stage){
+SCENES.avatar={title:'Character Creator',keepSong:true,mount(stage){
  const root=el('div',{class:'av-root'});stage.append(root);
  const left=el('div',{class:'av-left'});const right=el('div',{class:'av-right'});root.append(left,right);
  left.append(el('div',{class:'av-mirror'}),el('div',{class:'av-floor'}));
@@ -9097,31 +9143,33 @@ SCENES.avatar={title:'Costume Closet',keepSong:true,mount(stage){
  const draw=(pop)=>{kidBox.innerHTML=avSVG(cfg,{uid:'main',size:1,vb:'-40 10 380 410',attrs:' preserveAspectRatio="xMidYMax meet"'});if(pop){kidBox.classList.remove('pop');void kidBox.offsetWidth;kidBox.classList.add('pop');}};
  const say=(txt)=>{bub.textContent=txt;bub.classList.add('on');clearTimeout(bubT);bubT=setTimeout(()=>bub.classList.remove('on'),2600);};
  kidBox.onclick=()=>{SFX.kid();if(step==='lines'||step==='done'){const L=avSayings(emo,seed);if(L.length){const l=L[lineI%L.length];say(l[0]+' '+l[1]);markLine(lineI%L.length);lineI++;}}else{say(['Trick or treat!','Looking good!','Spooky!','Boo!'][Math.floor(Math.random()*4)]);}};
- const TABS=[['outfit','👕'],['skin','🖐️'],['hair','💇'],['hairCol','🎨'],['hat','🎩'],['face','😎'],['held','🪄']];
+ const TABS=[['outfit','👕'],['bot','👖'],['back','🦋'],['skin','🖐️'],['hair','💇'],['hairCol','🎨'],['hat','🎩'],['face','😎'],['held','🪄']];
  const head='40 66 220 220',full='-30 6 360 410';
  function thumb(over,vb,u){return avSVG(Object.assign({},cfg,over),{uid:'t'+u,size:1,vb,attrs:' preserveAspectRatio="xMidYMid meet"'});}
  function opts(){switch(tab){
-  case 'outfit':return AV_OUTFITS.map((o,i)=>({on:cfg.outfit===o.id,html:thumb({outfit:o.id,held:'none'},full,'o'+i),set:{outfit:o.id},tall:1}));
+  case 'outfit':return AV_OUTFITS.map((o,i)=>({on:cfg.outfit===o.id,html:thumb({outfit:o.id,bot:'same',back:'same',held:'none'},full,'o'+i),set:{outfit:o.id,bot:'same',back:'same'},tall:1}));
+  case 'bot':{const cur=cfg.bot==='same'?cfg.outfit:cfg.bot;return avBots().map((id,i)=>({on:cur===id||(cfg.bot==='same'&&avBots().indexOf(cfg.outfit)<0&&false),html:thumb({bot:id,held:'none'},'20 236 260 180','b'+i),set:{bot:id}}));}
+  case 'back':{const cur=cfg.back==='same'?(AV_OUTFITS.find(o=>o.id===cfg.outfit).back?cfg.outfit:'none'):cfg.back;return AV_BACKS.map((id,i)=>({on:cur===id,html:id==='none'?'<span class="av-x">✕</span>':thumb({back:id,held:'none'},full,'k'+i),set:{back:id},tall:1}));}
   case 'skin':return AV_SKINS.map((s,i)=>({on:cfg.skin===i,html:'<div class="av-sw" style="background:'+s[0]+'"></div>',set:{skin:i}}));
   case 'hair':return [{on:cfg.hair===-1,html:thumb({hair:-1,hat:'none',face:'none'},head,'hn'),set:{hair:-1}}].concat(AV_HAIRS.map((h,i)=>({on:cfg.hair===i,html:thumb({hair:i,hat:'none',outfit:'karate'},'20 56 260 260','h'+i),set:{hair:i}})));
   case 'hairCol':return AV_HAIRC.map((h,i)=>({on:cfg.hairCol===i,html:'<div class="av-sw" style="background:'+h[0]+'"></div>',set:{hairCol:i}}));
   case 'hat':return AV_HATS.map((h,i)=>({on:cfg.hat===h.id,html:h.id==='none'?'<span class="av-x">✕</span>':thumb({hat:h.id},'0 40 300 300','a'+i),set:{hat:h.id}}));
   case 'face':return AV_FACES.map((f,i)=>({on:cfg.face===f.id,html:f.id==='none'?'<span class="av-x">✕</span>':thumb({face:f.id,hat:'none',outfit:cfg.outfit==='ghost'?'karate':cfg.outfit},'60 120 180 180','f'+i),set:{face:f.id}}));
   case 'held':return AV_HELD.map((h,i)=>({on:cfg.held===h.id,html:h.id==='none'?'<span class="av-x">✕</span>':thumb({held:h.id,outfit:cfg.outfit==='ghost'?'karate':cfg.outfit},full,'i'+i),set:{held:h.id},tall:1}));}return[];}
- function dots(n){const d=el('div',{class:'av-step'});for(let i=0;i<3;i++)d.append(el('i',{class:i===n?'on':''}));return d;}
+ function dots(n){const d=el('div',{class:'av-step'});for(let i=0;i<4;i++)d.append(el('i',{class:i===n?'on':''}));return d;}
  function build(){right.innerHTML='';step='build';kidBox.classList.add('bob');
   const tabs=el('div',{class:'av-tabs'});TABS.forEach(([id,ic])=>{const b=el('button',{class:'av-tab'+(tab===id?' on':''),'aria-label':id},ic);b.onclick=()=>{SFX.click();tab=id;build();};tabs.append(b);});
   const grid=el('div',{class:'av-grid'});opts().forEach(o=>{const b=el('button',{class:'av-opt'+(o.on?' on':'')+(o.tall?' tall':'')});b.innerHTML=o.html;b.onclick=()=>{SFX.flip();Object.assign(cfg,o.set);cfg=avFix(cfg);draw(true);grid.querySelectorAll('.av-opt').forEach(x=>x.classList.remove('on'));b.classList.add('on');};grid.append(b);});
   const bar=el('div',{class:'av-bar'});
-  const dice=el('button',{class:'av-big dice','aria-label':'Surprise me'},'🎲');dice.onclick=()=>{SFX.jump();cfg=avFix({skin:Math.floor(r()*AV_SKINS.length),hair:Math.floor(r()*AV_HAIRS.length),hairCol:Math.floor(r()*AV_HAIRC.length),outfit:AV_OUTFITS[Math.floor(r()*AV_OUTFITS.length)].id,hat:r()<.5?'none':AV_HATS[Math.floor(r()*AV_HATS.length)].id,face:r()<.6?'none':AV_FACES[Math.floor(r()*AV_FACES.length)].id,held:r()<.6?'none':AV_HELD[Math.floor(r()*AV_HELD.length)].id});draw(true);build();};
+  const dice=el('button',{class:'av-big dice','aria-label':'Surprise me'},'🎲');dice.onclick=()=>{SFX.jump();cfg=avFix({skin:Math.floor(r()*AV_SKINS.length),hair:Math.floor(r()*AV_HAIRS.length),hairCol:Math.floor(r()*AV_HAIRC.length),outfit:AV_OUTFITS[Math.floor(r()*AV_OUTFITS.length)].id,bot:r()<.4?avBots()[Math.floor(r()*avBots().length)]:'same',back:r()<.3?AV_BACKS[Math.floor(r()*AV_BACKS.length)]:'same',hat:r()<.5?'none':AV_HATS[Math.floor(r()*AV_HATS.length)].id,face:r()<.6?'none':AV_FACES[Math.floor(r()*AV_FACES.length)].id,held:r()<.6?'none':AV_HELD[Math.floor(r()*AV_HELD.length)].id});draw(true);build();};
   const go=el('button',{class:'av-big go','aria-label':'Done'},'✔');go.onclick=()=>{SFX.good();emoPick();};
   bar.append(dice,dots(0),go);
   right.append(tabs,grid,bar);
   const mine=avLoad();if(mine.length)right.append(castRow(mine));}
- function castRow(mine){const row=el('div',{class:'av-cast'});mine.slice().reverse().forEach(k=>{const b=el('div',{class:'av-mini'});b.innerHTML=avSVG(k.cfg,{uid:'m'+k.id,size:1,vb:full});b.append(el('div',{class:'tag'},k.emo.join('')));
+ function castRow(mine){const row=el('div',{class:'av-cast'});mine.slice().reverse().forEach(k=>{const b=el('div',{class:'av-mini'});b.innerHTML=avSVG(k.cfg,{uid:'m'+k.id,size:1,vb:full});b.append(el('div',{class:'tag'},(k.name?k.name+' ':'')+k.emo.join('')));
    const del=el('button',{class:'del','aria-label':'Hold to remove'});del.innerHTML='<i></i><span>🗑️</span>';let hold=0,t0=0;
    const stop=()=>{cancelAnimationFrame(hold);hold=0;del.style.setProperty('--p','0%');};
-   del.onpointerdown=e=>{e.preventDefault();e.stopPropagation();t0=performance.now();const tick=()=>{const p=Math.min(1,(performance.now()-t0)/1200);del.style.setProperty('--p',(p*100)+'%');if(p>=1){stop();SFX.thud();avSave(avLoad().filter(x=>x.id!==k.id));avLeave(k.id);build();return;}hold=requestAnimationFrame(tick);};hold=requestAnimationFrame(tick);};
+   del.onpointerdown=e=>{e.preventDefault();e.stopPropagation();t0=performance.now();const tick=()=>{const p=Math.min(1,(performance.now()-t0)/1200);del.style.setProperty('--p',(p*100)+'%');if(p>=1){stop();SFX.thud();avSave(avLoad().filter(x=>x.id!==k.id));avLeave(k.id);avCastSync();build();return;}hold=requestAnimationFrame(tick);};hold=requestAnimationFrame(tick);};
    del.onpointerup=del.onpointerleave=del.onpointercancel=stop;del.onclick=e=>e.stopPropagation();
    b.append(del);row.append(b);});return row;}
  function emoPick(){right.innerHTML='';step='emo';
@@ -9132,7 +9180,22 @@ SCENES.avatar={title:'Costume Closet',keepSong:true,mount(stage){
    grid.querySelectorAll('.av-emo').forEach(b=>{const on=emo.includes(b.dataset.e);b.classList.toggle('on',on);b.disabled=!on&&emo.length>=3;});go.disabled=emo.length<3;};
   AV_EMO.forEach(([e,L])=>{const b=el('button',{class:'av-emo','data-e':e},e);b.onclick=()=>{const i=emo.indexOf(e);if(i>=0)emo.splice(i,1);else if(emo.length<3){emo.push(e);SFX.star();say(e+' '+L[0]);}paint();};grid.append(b);});
   bar.append(back,dots(1),go);right.append(slots,grid,bar);paint();}
- let markLine=()=>{};
+ let markLine=()=>{},name='',keyFn=null;
+ /* step 4: name the kid with big letter tiles (or the dice for an idea) */
+ function nameStep(){right.innerHTML='';step='name';
+  const plate=el('div',{class:'av-plate'});const keys=el('div',{class:'av-keys'});const bar=el('div',{class:'av-bar'});
+  const card=el('div',{class:'av-card'});
+  const T=emo.map(e=>AV_TRAIT[e]);card.append(el('b',{},emo.join(' ')),el('span',{},T.map(x=>x[0]).join(' ')));
+  const go=el('button',{class:'av-big home','aria-label':'Go trick-or-treating'},'🏘️');
+  const paint=()=>{plate.textContent=name||'';plate.classList.toggle('empty',!name);go.disabled=!name;};
+  const add=ch=>{if(name.length>=10)return;SFX.click();name=(name+ch);name=name.charAt(0).toUpperCase()+name.slice(1).toLowerCase();paint();};
+  'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(ch=>{const b=el('button',{class:'av-key'},ch);b.onclick=()=>add(ch);keys.append(b);});
+  const del=el('button',{class:'av-key wide','aria-label':'Erase'},'⌫');del.onclick=()=>{SFX.flip();name=name.slice(0,-1);paint();};keys.append(del);
+  const back=el('button',{class:'av-big back','aria-label':'Back'},'⬅');back.onclick=()=>{SFX.click();lines();};
+  const dice=el('button',{class:'av-big dice','aria-label':'Name idea'},'🎲');dice.onclick=()=>{SFX.jump();let n;do{n=AV_NAMES[Math.floor(Math.random()*AV_NAMES.length)];}while(n===name&&AV_NAMES.length>1);name=n;paint();say('Hi, I\'m '+name+'!');};
+  go.onclick=()=>{if(name)finish();};
+  bar.append(back,dice,dots(3),go);right.append(plate,keys,card,bar);paint();
+  if(keyFn)removeEventListener('keydown',keyFn,true);keyFn=e=>{if(step!=='name'||!alive)return;if(/^[a-zA-Z]$/.test(e.key)){e.preventDefault();add(e.key);}else if(e.key==='Backspace'){e.preventDefault();name=name.slice(0,-1);paint();}else if(e.key==='Enter'&&name){e.preventDefault();finish();}};addEventListener('keydown',keyFn,true);}
  function lines(){right.innerHTML='';step='lines';
   const slots=el('div',{class:'av-slots'});emo.forEach(e=>slots.append(el('div',{class:'av-slot full'},e)));
   const list=el('div',{class:'av-lines'});
@@ -9141,22 +9204,22 @@ SCENES.avatar={title:'Costume Closet',keepSong:true,mount(stage){
   const bar=el('div',{class:'av-bar'});
   const back=el('button',{class:'av-big back','aria-label':'Back'},'⬅');back.onclick=()=>{SFX.click();emoPick();};
   const dice=el('button',{class:'av-big dice','aria-label':'New sayings'},'🎲');dice.onclick=()=>{SFX.jump();seed=(seed+1)%5;lineI=0;paint();const L=avSayings(emo,seed);say(L[0][0]+' '+L[0][1]);markLine(0);lineI=1;};
-  const go=el('button',{class:'av-big home','aria-label':'Go trick-or-treating'},'🏘️');go.onclick=()=>finish();
+  const go=el('button',{class:'av-big go','aria-label':'Done'},'✔');go.onclick=()=>{SFX.good();nameStep();};
   bar.append(back,dice,dots(2),go);right.append(slots,list,bar);paint();
   const L=avSayings(emo,seed);setTimeout(()=>{if(alive&&step==='lines'){say(L[0][0]+' '+L[0][1]);markLine(0);lineI=1;}},300);}
- function finish(){const kid={id:Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36),cfg:Object.assign({},cfg),emo:emo.slice(),seed,t:Date.now()};
-  const all=avLoad();all.push(kid);while(all.length>AV_MAX){const old=all.shift();avLeave(old.id);}avSave(all);
+ function finish(){if(step==='done')return;const kid={id:Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36),name:name||'New Kid',cfg:Object.assign({},cfg),emo:emo.slice(),seed,t:Date.now()};
+  const all=avLoad();all.push(kid);while(all.length>AV_MAX){const old=all.shift();avLeave(old.id);}avSave(all);avCastSync();
   SFX.win();step='done';kidBox.classList.remove('bob');
   /* little walk-off: the kid hops and slides out of the mirror */
   const s=kidBox.querySelector('svg');if(s){s.style.transition='transform .9s ease-in, opacity .9s';s.style.transform='translateX(60%) translateY(-6%) scale(.85)';s.style.opacity='0';}
   setTimeout(()=>{if(!alive)return;closeScene();try{avJoin(kid);}catch(e){console.warn(e);}
    try{const k=world.scale||1;window.scrollTo({top:Math.max(0,AV_AT.y*k-innerHeight*.62),behavior:'smooth'});}catch(e){}
-   toast(kid.emo.join(' ')+'  Off to trick-or-treat!');},950);}
+   toast(kid.name+' '+kid.emo.join('')+' is off to trick-or-treat! Find them in Meet the Neighbors too.');},950);}
  draw(false);build();
- return()=>{alive=false;clearTimeout(bubT);};}};
+ return()=>{alive=false;clearTimeout(bubT);if(keyFn)removeEventListener('keydown',keyFn,true);};}};
 /* test hook: window.__hvAvatar.svg(cfg) */
 try{window.__hvAvatar={kids:()=>KIDLIFE.kids.filter(k=>String(k.ty).startsWith('me_')).map(k=>[k.ty,k.x,k.y,k.st,KID_SAY[k.ty]]),say:()=>CRIT.say&&CRIT.say.txt,svg:avSVG,fix:avFix,load:avLoad,OUT:AV_OUTFITS,HATS:AV_HATS,FACES:AV_FACES,HELD:AV_HELD,HAIRS:AV_HAIRS};}catch(e){}
-/* ==== COSTUME CLOSET END ==== */
+/* ==== CHARACTER CREATOR END ==== */
 /* ---------- boot ---------- */
 document.body.classList.add('booting');world.init();LIFE.init();setWeather(LIFE.weather,false);['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(SFX.ctx&&SFX.ctx.state!=='running')SFX.ctx.resume();},{passive:true}));
 const hashSong=songFromHash();if(hashSong)store.set('hv-song',hashSong);
