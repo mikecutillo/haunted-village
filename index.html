@@ -1734,7 +1734,7 @@ function tilePic(id,w,h,tint){const cv=miniCanvas(w,h);const c=cv.ctx,fn=PREV[id
  draw(1.7);return cv;}
 let menuTiles=[];
 function openMenu(){const m=$('#menu'),grid=$('#menuGrid'),foot=$('#menuFoot');closePeek();grid.innerHTML='';foot.innerHTML='';menuTiles=[];
- for(const[id,col,wide]of TILES){const g=GAMES.find(x=>x.id===id),st=g?unlockState(g):'open';const cv=tilePic(id,wide?480:300,wide?270:225,col);
+ for(const[id,col]of TILES){const wide=false;/* every tile the same size */const g=GAMES.find(x=>x.id===id),st=g?unlockState(g):'open';const cv=tilePic(id,wide?480:300,wide?270:225,col);
   const b=el('button',{class:'tile'+(wide?' wide':'')+(st==='locked'?' locked':st==='new'?' new':''),type:'button',style:'--c:'+col,'aria-label':titleOf(id)+(st==='locked'?', opens October '+g.day:'')},cv,el('b',{},titleOf(id)));
   if(st==='locked')b.append(el('span',{class:'lk'},'🔒 Oct '+g.day));else if(st==='new')b.append(el('span',{class:'lk'},'New today'));
   b.addEventListener('pointerenter',()=>cv.play());b.addEventListener('pointerleave',()=>cv.stop());
