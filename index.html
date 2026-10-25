@@ -1236,7 +1236,7 @@ const PLACES=[
  {id:'s_hayride',slot:true,side:'L'},/* Hayride stop */
  {id:'shed',hot:'coloring',side:'R',sub:'Art Shed',title:'Coloring Pages',h:150,street:true},
  {id:'wagon',hot:'dressup',side:'L',sub:"Mabel's Wardrobe",title:'Dress Up Mabel',zone:'C',h:180,yard:'campfire',street:true},
- {id:'alley',hot:'bowl3d',side:'R',sub:'Strike Lanes',h:160},
+ {id:'alley',hot:'bowl3d',side:'R',sub:'Strike Lanes',title:'Pumpkin Bowling',h:160},
 ];
 let ZB=0,ZC=0,MAIN_Y=0;const P={},MAINS=[];
 {let y=1100;for(const pl of PLACES){pl.y=y;pl.x=pl.side==='L'?LX:RX;pl.far=pl.side==='L'?LROAD:RROAD;P[pl.id]=pl;if(pl.zone==='B')ZB=y-250;if(pl.zone==='C')ZC=y-250;if(pl.main){MAIN_Y=y-20;MAINS.push(MAIN_Y);}y+=GAP;if(pl.street){MAINS.push(pl.y+226);y+=200;}}}
@@ -1728,12 +1728,16 @@ const PREV={
 /* ---------- the Play card ---------- */
 let peekEl=null,peekRaf=0;
 function closePeek(){if(!peekEl)return;cancelAnimationFrame(peekRaf);peekEl.remove();peekEl=null;VOICE.stop();}
+/* buildings that hold more than one version of a game: [game id, button label] */
+const PEEK_PICK={bowl3d:[['bowl','2D'],['bowl3d','3D']]};
 function openPeek(id){const g=GAMES.find(x=>x.id===id),h=HOT.find(x=>x.id===id),title=(h&&h.title)||(g&&g.title)||id,locked=g&&unlockState(g)==='locked'&&!store.get('hv-unlock-all',false);
  closePeek();SFX.click();
- const cv=miniCanvas(480,270);cv.className='peekcv';const line=locked?'This one opens on October '+g.day+'. Come back then!':SAYS[id]||title;
- const play=el('button',{class:'peekbtn go'+(locked?' lock':''),type:'button'},locked?'🔒 Opens Oct '+g.day:'▶  Play');play.onclick=()=>{if(locked){SFX.thud();return;}closePeek();openScene(id);};
+ const cv=miniCanvas(480,270);cv.className='peekcv';const line=PEEK_PICK[id]?'Pick flat 2D lanes or real 3D bowling!':locked?'This one opens on October '+g.day+'. Come back then!':SAYS[id]||title;
+ const pick=PEEK_PICK[id];let play;const acts=[];
+ if(pick){/* one building, two versions: a play button for each */pick.forEach(([gid,lab],i)=>{const gg=GAMES.find(q=>q.id===gid),lk=gg&&unlockState(gg)==='locked'&&!store.get('hv-unlock-all',false);const b=el('button',{class:'peekbtn go'+(lk?' lock':''),type:'button','aria-label':(gg?gg.title:gid)},lk?'🔒 '+lab:'▶ '+lab);b.onclick=()=>{if(lk){SFX.thud();return;}closePeek();openScene(gid);};acts.push(b);if(!play)play=b;});}
+ else{play=el('button',{class:'peekbtn go'+(locked?' lock':''),type:'button'},locked?'🔒 Opens Oct '+g.day:'▶  Play');play.onclick=()=>{if(locked){SFX.thud();return;}closePeek();openScene(id);};acts.push(play);}
  const x=el('button',{class:'peekx',type:'button','aria-label':'Close'},'✕');x.onclick=closePeek;
- const card=el('div',{class:'peekcard',role:'dialog','aria-label':title},x,cv,el('div',{class:'peekrow'},el('div',{class:'peekic'},ICON[id]||'🎃'),el('div',{class:'peekt'},el('b',{},title),el('small',{},line))),el('div',{class:'peekact'},play));
+ const card=el('div',{class:'peekcard',role:'dialog','aria-label':title},x,cv,el('div',{class:'peekrow'},el('div',{class:'peekic'},ICON[id]||'🎃'),el('div',{class:'peekt'},el('b',{},title),el('small',{},line))),el('div',{class:'peekact'},...acts));
  peekEl=el('div',{class:'peek'},card);peekEl.addEventListener('click',e=>{if(e.target===peekEl)closePeek();});document.body.append(peekEl);
  const c=cv.ctx,t0=performance.now();const fn=PREV[id];const anim=()=>{const t=(performance.now()-t0)/1000;c.clearRect(0,0,480,270);try{if(fn)fn(c,t,480,270);}catch(e){}c.save();c.translate(372,148);c.scale(.82,.82);drawHost(c,'jack',t);c.restore();peekRaf=requestAnimationFrame(anim);};anim();
  play.focus();}
@@ -4110,7 +4114,7 @@ if(typeof PREV!=='undefined')PREV.bowl3d=(x,t,W,H)=>{pvBg(x,W,H);
  const pins=[[0,0],[-1,1],[1,1],[-2,2],[0,2],[2,2],[-3,3],[-1,3],[1,3],[3,3]];const ph=((t*0.9)%3);
  for(const[px,py]of pins){const sx=cx+px*7,sy=ty+8+py*4,s=.6+py*.05;const fall=ph>1.6&&ph<2.6&&py<2&&Math.abs(px)<2;x.save();x.translate(sx,sy);if(fall)x.rotate((px||.6)*.9*(ph-1.6));x.fillStyle='#f4f0ff';x.beginPath();x.ellipse(0,-10*s,4*s,10*s,0,0,Math.PI*2);x.fill();x.fillStyle='#8a5cf5';x.fillRect(-3*s,-9*s,6*s,2*s);x.restore();}
  const bk=Math.min(1,ph/1.6);const by=fy-20-(fy-ty-30)*bk,bs=1-bk*.7;x.save();x.translate(cx+Math.sin(bk*3)*8*(1-bk),by);x.scale(bs,bs);x.rotate(t*6);drawPumpkin(x,0,0,26,.6);x.restore();
- x.fillStyle='rgba(255,210,63,.9)';x.font='900 18px Nunito,sans-serif';x.textAlign='left';x.fillText('3D · test',16,H-16);};
+ x.fillStyle='rgba(255,210,63,.9)';x.font='900 18px Nunito,sans-serif';x.textAlign='left';x.fillText('3D',16,H-16);};
 /* ==== PUMPKIN BOWLING 3D END ==== */
 
 /* ==== PATCH REG START ==== */
