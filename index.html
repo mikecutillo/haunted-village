@@ -7524,7 +7524,7 @@ const MW={"vb":"-60 -30 432 480","bg":{"Moon":"<defs><linearGradient id=\"mwsky\
 /* Mabel's Wardrobe: same play pattern as Monster Maker. Tap a part of Mabel to change it, or pick from picture tiles.
    No words needed. The camera opens a picture-only scene picker; tapping a scene makes a photo of Mabel standing in it. */
 if(!document.getElementById('hvmbcss')){const s=document.createElement('style');s.id='hvmbcss';s.textContent=`
-.mb-root .mm-tabs{grid-template-columns:repeat(6,1fr)}
+.mb-root .mm-tabs{grid-template-columns:repeat(7,1fr)}
 .mb-root .mm-tab{height:64px;background:#B9A8E6}
 .mb-root .mm-tab.on{background:#FFF1D6}
 .mb-root .mm-opts{grid-template-columns:repeat(auto-fill,minmax(104px,1fr))}
@@ -7565,7 +7565,13 @@ if(!document.getElementById('hvmbcss')){const s=document.createElement('style');
 `;document.head.append(s);}
 
 /* ----- options ----- */
-const MB_O={hat:['Classic','Star','Pumpkin','Bow','Crown'],cloak:[0,1,2,3,4,5],hair:[0,1,2,3,4],broom:['Birch','Candy','Bat','Rocket'],pet:['Midnight','Flutter','Gourdon','Pip','None'],extra:['None','Glasses','Wand','Lantern','Scarf']};
+/* hair: [main,shade]. First five match the original art so saved outfits keep their look */
+const MB_HAIR=[['#FF7A1A','#C15A20'],['#2A1548','#201044'],['#F2C14E','#B78F49'],['#8EE65B','#6BAA53'],['#4FD8FF','#3CA0D3'],['#7A4A2A','#56321A'],['#D8342E','#9A2220'],['#FF6FB5','#C94A8A'],['#9B5BE6','#6E3AB0'],['#ECE8F6','#B8B0CC'],['#3E2418','#28160E']];
+/* skin: [main,shadow,highlight,blush]. Real tones first, then two witchy ones */
+const MB_SKIN=[['#F2C09B','#B78E85','#F7D6BE','#F6A08F'],['#FFDCC4','#D2A898','#FFEADC','#FFA79A'],['#E3A97A','#B0805E','#F0C49E','#E8866E'],['#C68A5A','#966442','#DCA87C','#D07058'],['#9E6840','#74482C','#B88460','#B85A48'],['#76482A','#52301C','#906040','#9E4A3A'],['#53311E','#3A2014','#6E4630','#844032'],['#9BE07A','#6AAA54','#BDF0A2','#F08A9A'],['#C6A8F2','#9478C4','#DCC8FA','#F08AB8']];
+const mbHair=(arr,i)=>arr[0].split('#FF7A1A').join(MB_HAIR[i][0]).split('#C15A20').join(MB_HAIR[i][1]);
+const mbSkinize=(str,i)=>{const k=MB_SKIN[i];return str.split('#F2C09B').join(k[0]).split('#B78E85').join(k[1]).split('#F7D6BE').join(k[2]).split('#F6A08F').join(k[3]);};
+const MB_O={hat:['Classic','Star','Pumpkin','Bow','Crown'],cloak:[0,1,2,3,4,5],hair:MB_HAIR,skin:MB_SKIN,broom:['Birch','Candy','Bat','Rocket'],pet:['Midnight','Flutter','Gourdon','Pip','None'],extra:['None','Glasses','Wand','Lantern','Scarf']};
 const MB_KEYS=Object.keys(MB_O);
 let mbUid=0;
 /* every rendered copy gets its own clip-path / gradient ids so copies never fight over url(#id) */
@@ -7575,12 +7581,13 @@ function mbLayers(st,tag,pop,skip){skip=skip||{};const ex=MB_O.extra[st.extra];
  const W=(part,html)=>!tag?html:'<g data-part="'+part+'"'+(pop===part?' class="mb-pop"':'')+'>'+html+'</g>';
  let s='';
  if(!skip.broom)s+=W('broom',MW.broom[MB_O.broom[st.broom]]+(tag?'<rect x="200" y="60" width="90" height="350" fill="transparent"/>':''));
- if(!skip.body)s+=W('cloak',MW.legs+MW.backArm[st.cloak]+MW.dress[st.cloak]);
- s+=W('hair',MW.hairBack[st.hair]+MW.head);
+ if(!skip.body)s+=W('cloak',MW.legs+mbSkinize(MW.backArm[st.cloak],st.skin)+MW.dress[st.cloak]);
+ s+=W('hair',mbHair(MW.hairBack,st.hair));
+ s+=W('skin',mbSkinize(MW.head,st.skin));
  if(!skip.extra&&(ex==='Glasses'||ex==='Scarf'))s+=W('extra',MW.face[ex]);
- s+=W('hair',MW.bangs[st.hair]);
+ s+=W('hair',mbHair(MW.bangs,st.hair));
  if(!skip.hat)s+=W('hat',MW.hat[MB_O.hat[st.hat]]);
- if(!skip.body)s+=W('extra',MW.frontArm[st.cloak].replace('__HOLD__',skip.extra?'':(MW.hold[ex]||'')));
+ if(!skip.body)s+=W('extra',mbSkinize(MW.frontArm[st.cloak],st.skin).replace('__HOLD__',skip.extra?'':(MW.hold[ex]||'')));
  if(!skip.pet&&MW.pet[MB_O.pet[st.pet]])s+=W('pet',MW.pet[MB_O.pet[st.pet]]);
  return s;}
 function mbSvg(vb,inner,cls){return mbUniq('<svg xmlns="http://www.w3.org/2000/svg"'+(cls?' class="'+cls+'"':'')+' viewBox="'+vb+'" preserveAspectRatio="xMidYMid meet">'+inner+'</svg>');}
@@ -7589,6 +7596,7 @@ const MB_PETVB={Midnight:'262 286 124 150',Flutter:'238 168 156 156',Gourdon:'-6
 function mbThumb(k,st,i){const s2={...st,[k]:i};
  if(k==='hat')return mbSvg('40 -6 220 220',mbLayers(s2,false,null,{broom:1,body:1,pet:1,extra:1}));
  if(k==='hair')return mbSvg('52 56 196 196',mbLayers(s2,false,null,{broom:1,body:1,pet:1,extra:1,hat:1}));
+ if(k==='skin')return mbSvg('52 56 196 196',mbLayers(s2,false,null,{broom:1,body:1,pet:1,extra:1,hat:1}));
  if(k==='cloak')return mbSvg('-14 70 320 370',mbLayers(s2,false,null,{broom:1,pet:1,extra:1,hat:1}));
  if(k==='broom'){return mbSvg('110 100 270 270','<g transform="rotate(-38 245 236)">'+MW.broom[MB_O.broom[i]]+'</g>');}
  if(k==='pet'){const p=MB_O.pet[i];return MW.pet[p]?mbSvg(MB_PETVB[p],MW.pet[p]):MB_NONE;}
@@ -7603,6 +7611,7 @@ const MB_TAB={
  hat:'<svg viewBox="0 0 48 48"><path d="M4 38Q24 31 44 38Q46 42 42 43Q24 37 6 43Q2 42 4 38Z" fill="#2A1548"/><path d="M13 37Q19 22 22 10Q24 3 31 4Q38 5 40 11Q34 9 32 13Q29 25 35 37Z" fill="#6A3AB0"/><path d="M14 33Q24 29 34 33L35 37Q24 33 13 37Z" fill="#8EE65B"/></svg>',
  cloak:'<svg viewBox="0 0 48 48"><path d="M18 6H30L32 14L42 42H6L16 14Z" fill="#B26BFF"/><path d="M30 6L32 14L42 42H30Z" fill="#8A4AD8"/><rect x="13" y="20" width="22" height="5" rx="2.5" fill="#2A1548"/><rect x="21" y="19" width="6" height="7" rx="1.5" fill="#FFD23F"/></svg>',
  hair:'<svg viewBox="0 0 48 48"><path d="M8 26Q6 8 24 6Q42 8 40 26L42 42Q36 40 34 32H14Q12 40 6 42Z" fill="#FF7A1A"/><circle cx="24" cy="25" r="12" fill="#F2C09B"/><path d="M12 22Q16 10 24 11Q32 10 36 22Q30 16 24 18Q18 16 12 22Z" fill="#FF7A1A"/><circle cx="19.5" cy="26" r="2" fill="#2A1548"/><circle cx="28.5" cy="26" r="2" fill="#2A1548"/></svg>',
+ skin:'<svg viewBox="0 0 48 48"><circle cx="16" cy="18" r="11" fill="#FFDCC4"/><circle cx="32" cy="18" r="11" fill="#C68A5A"/><circle cx="16" cy="33" r="11" fill="#E3A97A"/><circle cx="32" cy="33" r="11" fill="#76482A"/><path d="M19 26Q24 30 29 26" stroke="#2A1548" stroke-width="3" fill="none" stroke-linecap="round"/></svg>',
  broom:'<svg viewBox="0 0 48 48"><path d="M40 4L22 28" stroke="#9A6A42" stroke-width="4" stroke-linecap="round"/><path d="M24 24L30 30L18 46Q10 46 4 40Q8 32 24 24Z" fill="#F2C14E"/><path d="M24 24L30 30L26 34Q22 30 20 27Z" fill="#C98A2A"/><path d="M10 40L18 32M14 43L21 35" stroke="#C98A2A" stroke-width="2"/></svg>',
  pet:'<svg viewBox="0 0 48 48"><path d="M8 20L10 6L20 14H28L38 6L40 20Q42 40 24 42Q6 40 8 20Z" fill="#2A1548"/><ellipse cx="17" cy="25" rx="4" ry="5" fill="#8EE65B"/><ellipse cx="31" cy="25" rx="4" ry="5" fill="#8EE65B"/><circle cx="17" cy="26" r="1.8" fill="#2A1548"/><circle cx="31" cy="26" r="1.8" fill="#2A1548"/><path d="M22 32L26 32L24 34Z" fill="#FF8FB1"/></svg>',
  extra:'<svg viewBox="0 0 48 48"><path d="M8 42L30 18" stroke="#2A1548" stroke-width="5" stroke-linecap="round"/><path d="M33 3L36 11L44 12L38 18L40 26L33 22L26 26L28 18L22 12L30 11Z" fill="#FFD23F"/></svg>',
@@ -7610,7 +7619,7 @@ const MB_TAB={
  ok:'<svg viewBox="0 0 48 48"><path d="M8 26L19 37L40 12" fill="none" stroke="#1E4A12" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
  back:'<svg viewBox="0 0 48 48"><path d="M30 8L14 24L30 40" fill="none" stroke="#2A1548" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
 };
-const MB_SOUND={hat:()=>SFX.tone(880,.1,'triangle',.06,null,1320),cloak:()=>SFX.noise(.18,.07,null,'bandpass',1800),hair:()=>SFX.tone(660,.12,'triangle',.06,null,990),broom:()=>SFX.swoosh(),extra:()=>SFX.tone(1046,.18,'sine',.07,null,1568),
+const MB_SOUND={hat:()=>SFX.tone(880,.1,'triangle',.06,null,1320),cloak:()=>SFX.noise(.18,.07,null,'bandpass',1800),hair:()=>SFX.tone(660,.12,'triangle',.06,null,990),skin:()=>SFX.tone(523,.16,'sine',.07,null,784),broom:()=>SFX.swoosh(),extra:()=>SFX.tone(1046,.18,'sine',.07,null,1568),
  pet:i=>{const p=MB_O.pet[i];if(p==='Midnight')SFX.meow();else if(p==='Flutter')SFX.flap();else if(p==='Pip')SFX.boo();else SFX.tone(392,.14,'triangle',.07,null,523);}};
 
 /* ----- photo scenes: wide frame, Mabel stands in the middle (her own coords, x 0..300, feet ~y 420) ----- */
@@ -7676,7 +7685,7 @@ function mbPhotoSvg(st,sc,w,h){return mbUniq('<svg xmlns="http://www.w3.org/2000
 SCENES.dressup={title:"Mabel's Wardrobe",mount(stage){
  const root=el('div',{class:'mm-root mb-root'});stage.append(root);
  const box=el('div',{class:'mm-stage mb-stage'},el('div',{class:'mm-floor'}));const panel=el('div',{class:'mm-panel'});root.append(box,panel);
- let st={hat:0,cloak:0,hair:0,broom:0,pet:0,extra:0},tab='hat',hist=[],pop=null,hinted=false,ov=null;
+ let st={hat:0,cloak:0,hair:0,skin:0,broom:0,pet:0,extra:0},tab='hat',hist=[],pop=null,hinted=false,ov=null;
  try{const sv=JSON.parse(localStorage.getItem('hv-mabel2')||'null');if(sv){for(const k of MB_KEYS)if(Number.isInteger(sv[k]))st[k]=clamp(sv[k],0,MB_O[k].length-1);hinted=true;}}catch(e){}
  const save=()=>{try{localStorage.setItem('hv-mabel2',JSON.stringify(st));}catch(e){}};
  const nameEl=el('div',{class:'mm-name'},'🧙‍♀️ Mabel');
