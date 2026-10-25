@@ -9092,7 +9092,7 @@ function flatFrame(k){if(FLAT_BOX[k])return FLAT_BOX[k];const f=standSDF({char:k
  const s=Math.max(x1-x0,z1-z0)/2+.02;return FLAT_BOX[k]={cx:(x0+x1)/2,cz:(z0+z1)/2,s,vmin:(z0-(z0+z1)/2)/s-.03,vmax:(z1-(z0+z1)/2)/s+.03};}
 /* march from the front (-y) toward the back; returns the depth of the first surface or null if this spot is empty */
 function flatHit(f,x,z){let y=-.75;for(let n=0;n<90&&y<.75;n++){const d=f(x,y,z);if(d<.0008)return y;y+=Math.max(d*.85,.0015);}return null;}
-function buildSolid(o,NX,wantN){const C=PCHARS[o.shape],F=C.fx[o.face],fr=flatFrame(o.shape),half=o.W/2,rt=6/half,holeR=2.3/half;
+function buildSolid(o,NX,wantN){/* returns an indexed mesh {P,I,U,sdf,aoS} in mm */const C=PCHARS[o.shape],F=C.fx[o.face],fr=flatFrame(o.shape),half=o.W/2,rt=6/half,holeR=2.3/half;
  const full=standSDF({char:o.shape,face:o.face,hat:HATS.length-1,base:BASES.length-1,pop:false}),bare=(x,y,z)=>C.body(x,y,z,false);
  const toX=u=>fr.cx+u*fr.s,toZ=v=>fr.cz+v*fr.s,mmPerUnit=half/fr.s;
  /* the keychain tab sits on the highest point of the middle column */
@@ -9103,25 +9103,28 @@ function buildSolid(o,NX,wantN){const C=PCHARS[o.shape],F=C.fx[o.face],fr=flatFr
  for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){const x=toX(u0+(i+.5)*du),z=toZ(v0+(j+.5)*du);const yf=flatHit(full,x,z);if(yf===null)continue;
   const y0=flatHit(bare,x,z);D[j*NX+i]=yf;D0[j*NX+i]=y0===null?yf:y0;maxRel=Math.max(maxRel,.08-D0[j*NX+i]);}
  const puffK=6.5/maxRel,detK=mmPerUnit*.55;
+ /* distance (mm) from each cell to the outline, so puffy edges round off everywhere, even where the body is cut flat */
+ const ED=new Float32Array(NX*NY),cellMM0=du*half;for(let k=0;k<NX*NY;k++)ED[k]=isNaN(D[k])?0:1e9;
+ const relax=(i,j,di,dj,w)=>{const ii=i+di,jj=j+dj,n=ii<0||jj<0||ii>=NX||jj>=NY?0:ED[jj*NX+ii];if(n+w<ED[j*NX+i])ED[j*NX+i]=n+w;};
+ for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){relax(i,j,-1,0,1);relax(i,j,0,-1,1);relax(i,j,-1,-1,1.414);relax(i,j,1,-1,1.414);}
+ for(let j=NY-1;j>=0;j--)for(let i=NX-1;i>=0;i--){relax(i,j,1,0,1);relax(i,j,0,1,1);relax(i,j,1,1,1.414);relax(i,j,-1,1,1.414);}
  for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){const u=u0+(i+.5)*du,v=v0+(j+.5)*du,k=j*NX+i;let h=0;
   if(!isNaN(D[k])){const x=toX(u),z=toZ(v),detail=Math.max(-2.2,Math.min(1.6,(D0[k]-D[k])*detK));
-   h=(o.puffy?T0+Math.max(0,.08-D0[k])*puffK:T0+1.2)+detail;
+   const edge=ED[k]*cellMM0,rel=Math.max(0,.08-D0[k])*puffK,round=edge>=4?rel:Math.min(rel,4.2*Math.sqrt(Math.max(0,1-(1-edge/4)**2)));h=(o.puffy?T0*Math.min(1,.55+edge*.25)+round:T0+1.2)+detail;
    if(o.cut){const inEye=F.e.length&&sdList(x,z,F.e)<0,inMouth=F.m.length&&sdList(x,z,F.m)<0&&!(F.r.length&&sdList(x,z,F.r)<0);if(inEye||inMouth)h=0;}
    if(h>0)h=Math.max(1.2,h);}
   if(o.key){const d=Math.hypot(u,v-tabV);if(d<rt){if(d<holeR)h=0;else h=Math.max(h,T0);}}
   Hh[k]=h;}
- const T=[],N=[];const cell=du*half,X=i=>(u0+i*du)*half,Y=j=>(v0+j*du)*half;
- const quad=(a,b,c,d,nn)=>{T.push(...a,...b,...c,...a,...c,...d);if(wantN){const q=nn||[0,0,0];N.push(...q,...q);}};
- const hv=(i,j,d)=>i<0||j<0||i>=NX||j>=NY?d:(Hh[j*NX+i]||d);
- for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){const h=Hh[j*NX+i];if(h<=0)continue;const x0=X(i),x1=X(i+1),y0=Y(j),y1=Y(j+1);
-  let tn=null;if(wantN){const gx=(hv(i+1,j,h)-hv(i-1,j,h))/(2*cell),gy=(hv(i,j+1,h)-hv(i,j-1,h))/(2*cell),l=Math.hypot(gx,gy,1);tn=[-gx/l,-gy/l,1/l];}
-  quad([x0,y0,h],[x1,y0,h],[x1,y1,h],[x0,y1,h],tn||[0,0,1]);quad([x0,y0,0],[x0,y1,0],[x1,y1,0],[x1,y0,0],[0,0,-1]);
-  const nb=(ii,jj)=>ii<0||jj<0||ii>=NX||jj>=NY?0:Hh[jj*NX+ii];let hn;
-  if(h>(hn=nb(i+1,j)))quad([x1,y0,hn],[x1,y1,hn],[x1,y1,h],[x1,y0,h],[1,0,0]);
-  if(h>(hn=nb(i-1,j)))quad([x0,y1,hn],[x0,y0,hn],[x0,y0,h],[x0,y1,h],[-1,0,0]);
-  if(h>(hn=nb(i,j+1)))quad([x1,y1,hn],[x0,y1,hn],[x0,y1,h],[x1,y1,h],[0,1,0]);
-  if(h>(hn=nb(i,j-1)))quad([x0,y0,hn],[x1,y0,hn],[x1,y0,h],[x0,y0,h],[0,-1,0]);}
- return wantN?{t:new Float32Array(T),n:new Float32Array(N)}:new Float32Array(T);}
+ /* the bottom row cuts through the rounded base edge and comes out ragged; give it the heights of the row above */
+ {let jb=-1;for(let j=0;j<NY&&jb<0;j++)for(let i=0;i<NX;i++)if(Hh[j*NX+i]>0){jb=j;break;}
+  if(jb>=0&&jb+1<NY)for(let i=0;i<NX;i++){const up=Hh[(jb+1)*NX+i];if(up>0&&!(o.key&&Math.hypot(u0+(i+.5)*du,v0+(jb+.5)*du-tabV)<rt))Hh[jb*NX+i]=up;}}
+ /* smooth the height grid into a solid with surface nets, so puffy shapes are round instead of stair-stepped */
+ const cellMM=du*half,hAt=(x,y)=>{const fi=(x/half-u0)/du-.5,fj=(y/half-v0)/du-.5,i=Math.floor(fi),j=Math.floor(fj),a=fi-i,b=fj-j;
+  const g=(ii,jj)=>ii<0||jj<0||ii>=NX||jj>=NY?0:Hh[jj*NX+ii];return(g(i,j)*(1-a)+g(i+1,j)*a)*(1-b)+(g(i,j+1)*(1-a)+g(i+1,j+1)*a)*b;};
+ let hMax=0;for(const h of Hh)hMax=Math.max(hMax,h);
+ const sdf=(x,y,z)=>{const h=hAt(x,y);return h<.6?Math.max(cellMM,-z):Math.max(z-h,-z);};
+ const m=meshSDF(sdf,[u0*half-cellMM,v0*half-cellMM,-cellMM*1.5,(u0+NX*du)*half+cellMM,(v0+NY*du)*half+cellMM,hMax+cellMM*1.5],cellMM*(wantN?1:.75));
+ return{P:m.P,I:m.I,U:m.P,sdf,aoS:cellMM/.016};}
 function stlBytes(tris){const n=tris.length/9,buf=new ArrayBuffer(84+n*50),dv=new DataView(buf);const hd='Haunted Village print';for(let i=0;i<hd.length;i++)dv.setUint8(i,hd.charCodeAt(i));dv.setUint32(80,n,true);let o=84;
  for(let t=0;t<n;t++){const b=t*9,ax=tris[b+3]-tris[b],ay=tris[b+4]-tris[b+1],az=tris[b+5]-tris[b+2],bx=tris[b+6]-tris[b],by=tris[b+7]-tris[b+1],bz=tris[b+8]-tris[b+2];let nx=ay*bz-az*by,ny=az*bx-ax*bz,nz=ax*by-ay*bx;const l=Math.hypot(nx,ny,nz)||1;nx/=l;ny/=l;nz/=l;
   dv.setFloat32(o,nx,true);dv.setFloat32(o+4,ny,true);dv.setFloat32(o+8,nz,true);o+=12;for(let k=0;k<9;k++){dv.setFloat32(o,tris[b+k],true);o+=4;}dv.setUint16(o,0,true);o+=2;}
@@ -9184,7 +9187,7 @@ SCENES.print={title:'Print Shop',mount(stage){
  const flatOpts=()=>({shape:o.shape,face:o.face,W:PSIZES[o.size][1],puffy:o.puffy,cut:o.cut,key:o.key});
  const standOpts=()=>({char:o.char,face:o.sface,hat:o.hat,base:o.base,pop:o.pop,size:o.size});
  let G=null,T3=null;
- function rebuild(){let t,n;if(o.kind==='stand'){const m=buildStandIdx(standOpts(),.022);G={stand:true,m};t=unindex(m);n=null;}else{const r=buildSolid(flatOpts(),72,true);G={stand:false,r};t=r.t;n=r.n;}
+ function rebuild(){let t,n;if(o.kind==='stand'){const m=buildStandIdx(standOpts(),.022);G={stand:true,m};t=unindex(m);n=null;}else{const m=buildSolid(flatOpts(),80,true);G={stand:false,m};t=unindex(m);n=null;}
   const cnt=t.length/9;P={t,n:cnt,cen:new Float32Array(cnt*3),nor:n||new Float32Array(cnt*3)};
   for(let k=0;k<cnt;k++){const b=k*9;P.cen[k*3]=(t[b]+t[b+3]+t[b+6])/3;P.cen[k*3+1]=(t[b+1]+t[b+4]+t[b+7])/3;P.cen[k*3+2]=(t[b+2]+t[b+5]+t[b+8])/3;
    if(!n){const ax=t[b+3]-t[b],ay=t[b+4]-t[b+1],az=t[b+5]-t[b+2],bx=t[b+6]-t[b],by=t[b+7]-t[b+1],bz=t[b+8]-t[b+2];let nx=ay*bz-az*by,ny=az*bx-ax*bz,nz=ax*by-ay*bx;const l=Math.hypot(nx,ny,nz)||1;P.nor[k*3]=nx/l;P.nor[k*3+1]=ny/l;P.nor[k*3+2]=nz/l;}}
@@ -9206,7 +9209,7 @@ SCENES.print={title:'Print Shop',mount(stage){
  let last=performance.now();function loop(){if(!alive)return;const now=performance.now();if(!drag)ang+=(now-last)/1000*.7;last=now;if(T3)T3.draw(ang,o);else draw();raf=requestAnimationFrame(loop);}
  const spin=c=>{c.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;c.setPointerCapture(e.pointerId);});c.addEventListener('pointermove',e=>{if(drag){ang+=(e.clientX-lastX)*.012;lastX=e.clientX;}});c.addEventListener('pointerup',()=>{drag=false;});c.addEventListener('pointercancel',()=>{drag=false;});};spin(cv);
  const fname=()=>(o.nick+'-halloween-'+(o.kind==='stand'?'buddy-'+o.char:o.shape)+'-'+PSIZES[o.size][0].toLowerCase()).replace(/[^\w\-]+/g,'-')+'.stl';
- const finalStl=()=>stlBytes(o.kind==='stand'?buildStand(standOpts(),.015):buildSolid(flatOpts(),96));
+ const finalStl=()=>stlBytes(o.kind==='stand'?buildStand(standOpts(),.015):unindex(buildSolid(flatOpts(),110)));
  save.onclick=async()=>{SFX.click();if(!tagOK(o.nick)){stat.textContent='Type your initials and grade first, like MM3.';nick.focus();SFX.bad();return;}const bytes=finalStl(),file=new File([bytes],fname(),{type:'model/stl'});const done=()=>{stat.textContent='Saved! Now send it the way your class shares work. 📤';help.classList.add('flash');setTimeout(()=>help.classList.remove('flash'),2400);SFX.good();};
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'My Halloween print'});done();return;}}catch(e){if(e&&e.name==='AbortError')return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'model/stl'}));a.download=fname();document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);done();};
@@ -9235,11 +9238,11 @@ function PRINT_VIEW3D(THREE,ref){const W=520,H=440,S=3.3;
  const base=new THREE.Color().setRGB(PLASTIC[0]/255,PLASTIC[1]/255,PLASTIC[2]/255,THREE.SRGBColorSpace),ink=new THREE.Color().setRGB(.34,.27,.5,THREE.SRGBColorSpace);
  let mesh=null,isStand=true;
  function set(G){if(!G)return;if(mesh){spinG.remove(mesh);mesh.geometry.dispose();}const geo=new THREE.BufferGeometry();
-  if(G.stand){const{P,I,U,sdf}=G.m,n=P.length/3,pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3),e=.004,c=new THREE.Color();
+  if(G.m){const{P,I,U,sdf}=G.m,aS=G.m.aoS||1,n=P.length/3,pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3),e=.004*aS,c=new THREE.Color();
    for(let v=0;v<n;v++){const x=U[v*3],y=U[v*3+1],z=U[v*3+2];
     let gx=sdf(x+e,y,z)-sdf(x-e,y,z),gy=sdf(x,y+e,z)-sdf(x,y-e,z),gz=sdf(x,y,z+e)-sdf(x,y,z-e);const l=Math.hypot(gx,gy,gz)||1;gx/=l;gy/=l;gz/=l;
     /* ambient occlusion from the distance field: hollows (eyes, mouths, creases) come out darker */
-    let occ=0;for(const[h,w]of[[.012,1],[.028,.6],[.05,.35]])occ+=w*Math.max(0,h-sdf(x+gx*h,y+gy*h,z+gz*h))/h;const ao=Math.max(0,Math.min(1,1-occ*.85));
+    let occ=0;for(const[h0,w]of[[.012,1],[.028,.6],[.05,.35]]){const h=h0*aS;occ+=w*Math.max(0,h-sdf(x+gx*h,y+gy*h,z+gz*h))/h;}const ao=Math.max(0,Math.min(1,1-occ*.85));
     c.copy(ink).lerp(base,ao);col[v*3]=c.r;col[v*3+1]=c.g;col[v*3+2]=c.b;
     pos[v*3]=P[v*3];pos[v*3+1]=P[v*3+2];pos[v*3+2]=-P[v*3+1];nor[v*3]=gx;nor[v*3+1]=gz;nor[v*3+2]=-gy;}
    geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));geo.setIndex(new THREE.BufferAttribute(I,1));}
