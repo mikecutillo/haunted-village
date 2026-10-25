@@ -1246,6 +1246,7 @@ const PLACES=[
  {id:'shed',hot:'coloring',side:'R',sub:'Art Shed',title:'Coloring Pages',h:150,street:true},
  {id:'wagon',hot:'dressup',side:'L',sub:"Mabel's Wardrobe",title:'Dress Up Mabel',zone:'C',h:180,yard:'campfire',street:true},
  {id:'alley',hot:'bowl3d',side:'R',sub:'Strike Lanes',title:'Pumpkin Bowling',h:160},
+ {id:'s_bee',slot:true,side:'L'},/* Boo Hive */
 ];
 let ZB=0,ZC=0,MAIN_Y=0;const P={},MAINS=[];
 {let y=1100;for(const pl of PLACES){pl.y=y;pl.x=pl.side==='L'?LX:RX;pl.far=pl.side==='L'?LROAD:RROAD;P[pl.id]=pl;if(pl.zone==='B')ZB=y-250;if(pl.zone==='C')ZC=y-250;if(pl.main){MAIN_Y=y-20;MAINS.push(MAIN_Y);}y+=GAP;if(pl.street){MAINS.push(pl.y+226);y+=200;}}}
@@ -5541,6 +5542,372 @@ PREV.chomp=(x,t,W,H)=>CHOMP_THUMB(x,t,W,H);
 HOT.push({id:'chomp',x:498,y:P.s_chomp.y-21,w:200,h:200,sub:'Chomp Shop',title:'Candy Chomp',kind:'hang rgt'});
 {const SHOP={x:690,y:P.s_chomp.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(SHOP.y,top,bot,360))CHOMP_SHOP_DRAW(ctx,SHOP.x,SHOP.y,t);};}
 /* ==== CANDY CHOMP END ==== */
+/* ==== BOO BEE START ==== */
+/* ---------- GAME: Boo Bee (word hive at the Boo Hive) ----------
+   Seven letters in a honeycomb. Make as many words as you can. Every word must use the pumpkin letter in the middle.
+   Letters can be used more than once. Little Bee: 3+ letters. Big Bee: 4+ letters.
+   Ranks climb by how many of the hive's words you find: Spark, Candy, Pumpkin, Bat, Ghost, Spider, Werewolf, Witch, Vampire, Queen Bee.
+   A new hive every day (same one for everybody that day), 🎲 for another one. Progress is kept per hive on this iPad. */
+if(!document.getElementById('hvbbcss')){const s=document.createElement('style');s.id='hvbbcss';s.textContent=`
+.bb-root{position:relative;height:100%;min-height:0;display:flex;flex-direction:column;color:#F6E9D2;user-select:none;-webkit-user-select:none;touch-action:manipulation;overflow:hidden;background:radial-gradient(120% 85% at 50% 0%,#6A36B0 0%,#43218A 45%,#26124F 100%)}
+.bb-root::before{content:'';position:absolute;inset:0;pointer-events:none;opacity:.12;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='98' viewBox='0 0 56 98'%3E%3Cpath d='M28 66L0 50L0 16L28 0L56 16L56 50L28 66L28 98' fill='none' stroke='%23FFC34D' stroke-width='2'/%3E%3C/svg%3E")}
+.bb-bar{position:relative;z-index:2;display:flex;align-items:center;gap:10px;padding:10px 12px 4px}
+.bb-chip{flex:none;border:none;background:rgba(12,6,34,.55);color:#F6E9D2;font:900 24px "Baloo 2",sans-serif;min-width:54px;height:54px;padding:0 12px;border-radius:999px;cursor:pointer;box-shadow:0 4px 0 rgba(0,0,0,.35);display:grid;place-items:center;line-height:1}
+.bb-chip:active{transform:translateY(3px);box-shadow:0 1px 0 rgba(0,0,0,.35)}
+.bb-rank{flex:1;min-width:0;display:flex;align-items:center;gap:10px;background:rgba(12,6,34,.45);border-radius:999px;padding:4px 16px 4px 5px;height:54px;box-sizing:border-box}
+.bb-rk-ic{font-size:30px;width:46px;height:46px;display:grid;place-items:center;background:#FFC34D;border-radius:50%;flex:none;box-shadow:0 0 0 3px rgba(255,195,77,.3);line-height:1}
+.bb-rk-ic.up{animation:bbPop .6s ease-out}
+.bb-rk-txt{font:400 21px "Luckiest Guy",sans-serif;letter-spacing:.04em;white-space:nowrap;color:#FFC34D;flex:none;padding-top:3px}
+.bb-track{position:relative;flex:1;min-width:90px;height:32px;display:flex;align-items:center;justify-content:space-between}
+.bb-track::before{content:'';position:absolute;left:7px;right:7px;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:rgba(255,255,255,.14)}
+.bb-fill{position:absolute;left:7px;top:50%;height:6px;margin-top:-3px;border-radius:3px;background:linear-gradient(90deg,#FF7F1F,#FFC34D);transition:width .5s}
+.bb-dot{position:relative;width:14px;height:14px;border-radius:50%;background:#4B2A96;box-shadow:0 0 0 2px #26124F;font-size:0;display:grid;place-items:center;transition:width .3s,height .3s,font-size .3s;line-height:1;flex:none}
+.bb-dot.on{background:#FFC34D}
+.bb-dot.cur{width:32px;height:32px;font-size:19px;background:#FFC34D}
+.bb-count{flex:none;font:900 22px "Baloo 2",sans-serif;white-space:nowrap;font-variant-numeric:tabular-nums;background:rgba(12,6,34,.45);border-radius:999px;height:54px;display:grid;place-items:center;padding:0 14px}
+@media (max-width:760px){.bb-rk-txt{display:none}}
+@media (max-width:520px){.bb-count{display:none}.bb-bar{gap:6px;padding:8px 8px 2px}.bb-chip{min-width:48px;height:48px;font-size:21px}.bb-rank{height:48px}.bb-rk-ic{width:40px;height:40px;font-size:26px}}
+.bb-main{position:relative;z-index:1;flex:1;min-height:0;display:grid;grid-template-columns:minmax(0,1.35fr) minmax(220px,1fr);gap:14px;padding:6px 14px 14px}
+@media (max-aspect-ratio:1/1),(max-width:700px){.bb-main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;gap:8px;padding:4px 10px 10px}}
+.bb-play{position:relative;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(4px,1.3vh,14px)}
+.bb-say{display:flex;align-items:center;gap:10px;min-height:clamp(64px,10vh,90px);width:100%;max-width:560px;justify-content:center}
+.bb-say canvas{flex:none}
+.bb-bub{position:relative;background:#F6E9D2;color:#2A1548;border-radius:18px;padding:8px 16px;font:800 clamp(17px,2.6vh,22px) "Baloo 2",sans-serif;line-height:1.15;box-shadow:0 5px 0 rgba(0,0,0,.3);max-width:calc(100% - 100px)}
+.bb-bub::before{content:'';position:absolute;left:-9px;top:50%;margin-top:-9px;border:9px solid transparent;border-right-color:inherit;border-left:0}
+.bb-bub{border-color:#F6E9D2}
+.bb-bub.gold{background:#FFC34D;border-color:#FFC34D}
+.bb-bub.bad{background:#FFB3C9;border-color:#FFB3C9}
+.bb-bub.bb-pp{animation:bbPop .35s ease-out}
+.bb-bub .bb-hw{font-family:"Luckiest Guy",sans-serif;font-weight:400;letter-spacing:.2em;font-size:clamp(22px,3.4vh,28px);white-space:nowrap}
+.bb-bub .bb-em{font-size:1.5em;vertical-align:-.12em}
+.bb-word{position:relative;height:clamp(44px,8vh,72px);display:flex;align-items:center;justify-content:center;font:400 clamp(34px,6.6vh,60px) "Luckiest Guy",sans-serif;letter-spacing:.06em;color:#F6E9D2;text-shadow:0 4px 0 rgba(0,0,0,.35);max-width:100%;white-space:nowrap;padding-top:.12em}
+.bb-word .c{color:#FF9A3D}
+.bb-word .x{color:rgba(246,233,210,.35)}
+.bb-word .cur{display:inline-block;width:5px;height:.85em;background:#FFC34D;margin-left:5px;animation:bbBlink 1s steps(2) infinite;border-radius:3px;vertical-align:-.02em;box-shadow:none}
+.bb-word.shake{animation:bbShake .45s}
+.bb-word.good{animation:bbGood .5s ease-in forwards}
+.bb-hive{width:min(88vw,49vh,450px);height:auto;aspect-ratio:320/330;display:block;overflow:visible;-webkit-tap-highlight-color:transparent}
+@media (max-aspect-ratio:1/1){.bb-hive{width:min(86vw,42vh,500px)}}
+.bb-hex{cursor:pointer;transition:transform .14s,opacity .16s;transform-box:fill-box;transform-origin:center}
+.bb-hex.pr{transform:scale(.86)}
+.bb-hex.sh{opacity:0;transform:scale(.4) rotate(40deg)}
+.bb-hex.nudge{animation:bbNudge .7s}
+.bb-hex text{font-family:"Luckiest Guy",sans-serif;font-size:58px;fill:#2A1548;pointer-events:none;text-transform:uppercase}
+.bb-btns{display:flex;gap:clamp(14px,3vw,28px);align-items:center}
+.bb-b{width:clamp(58px,9vh,78px);height:clamp(58px,9vh,78px);border-radius:50%;border:none;cursor:pointer;font-size:clamp(26px,4.2vh,36px);display:grid;place-items:center;background:#5B2DB0;color:#F6E9D2;box-shadow:0 6px 0 #2A1548;line-height:1;padding:0;font-family:"Baloo 2",sans-serif;font-weight:900}
+.bb-b:active{transform:translateY(4px);box-shadow:0 2px 0 #2A1548}
+.bb-b.go{background:#8EE65B;box-shadow:0 6px 0 #4E8A2E;color:#1E3A10;width:clamp(72px,11vh,98px);height:clamp(72px,11vh,98px);font-size:clamp(32px,5.2vh,46px)}
+.bb-b.go:active{box-shadow:0 2px 0 #4E8A2E}
+.bb-b.del{background:#C2457A;box-shadow:0 6px 0 #7A2E5A}
+.bb-b.del:active{box-shadow:0 2px 0 #7A2E5A}
+.bb-list{min-height:0;display:flex;flex-direction:column;background:rgba(12,6,34,.45);border-radius:22px;padding:10px 12px;box-shadow:inset 0 0 0 2px rgba(255,195,77,.16)}
+@media (max-aspect-ratio:1/1),(max-width:700px){.bb-list{max-height:23vh;padding:8px 10px}}
+.bb-lh{display:flex;align-items:center;gap:8px;font:900 22px "Baloo 2",sans-serif;margin-bottom:6px}
+.bb-lh .sp{flex:1}
+.bb-peek{border:none;background:rgba(255,255,255,.1);color:#F6E9D2;border-radius:999px;height:42px;min-width:52px;font-size:22px;cursor:pointer;line-height:1}
+.bb-peek.on{background:#FFC34D}
+.bb-pills{flex:1;min-height:0;overflow:auto;display:flex;flex-wrap:wrap;align-content:flex-start;gap:7px;-webkit-overflow-scrolling:touch;padding:2px}
+.bb-pill{background:#F6E9D2;color:#2A1548;border-radius:999px;padding:1px 13px;font:800 20px "Baloo 2",sans-serif;line-height:1.5}
+.bb-pill.pan{background:#FF7F1F;color:#fff}
+.bb-pill.bonus{background:#B26BFF;color:#fff}
+.bb-pill.new{animation:bbPop .45s ease-out}
+.bb-pill.flash{animation:bbFlash .9s}
+.bb-pill.miss{background:transparent;color:rgba(246,233,210,.6);box-shadow:inset 0 0 0 2px rgba(246,233,210,.25)}
+.bb-empty{opacity:.6;font-weight:800;font-size:20px;padding:2px 4px}
+.bb-float{position:absolute;left:50%;top:22%;font:400 40px "Luckiest Guy",sans-serif;color:#FFC34D;text-shadow:0 3px 0 rgba(42,21,72,.6);pointer-events:none;animation:bbFloat 1.1s ease-out forwards;white-space:nowrap;z-index:4}
+.bb-fx{position:absolute;inset:0;pointer-events:none;z-index:5;width:100%;height:100%}
+.bb-pick{position:absolute;inset:0;background:rgba(12,6,34,.8);display:grid;place-items:center;z-index:6;overflow:auto}
+.bb-cards{display:flex;gap:18px;flex-wrap:wrap;justify-content:center;padding:16px;max-width:900px}
+.bb-card{width:clamp(170px,30vw,260px);border-radius:26px;background:var(--c);color:#fff;border:none;padding:16px 12px 16px;box-shadow:0 8px 0 rgba(0,0,0,.35),0 16px 40px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:10px;align-items:center;cursor:pointer;font:inherit;transition:transform .12s}
+.bb-card:active{transform:translateY(4px)}
+.bb-card.last{box-shadow:0 0 0 4px #FFC34D,0 8px 0 rgba(0,0,0,.35)}
+.bb-card .ic{font-size:clamp(36px,6vw,52px);line-height:1;height:1.1em}
+.bb-card .tiles{display:flex;gap:4px}
+.bb-card .tl{width:clamp(36px,5.4vw,50px);aspect-ratio:1/.88;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%);display:grid;place-items:center;font:400 clamp(20px,3.2vw,28px) "Luckiest Guy",sans-serif;color:#2A1548;background:#F6E9D2;padding-top:.12em}
+.bb-card .tl.c{background:#FF7F1F;color:#fff}
+.bb-card .gr{font:400 clamp(26px,4vw,36px) "Luckiest Guy",sans-serif;background:rgba(0,0,0,.2);border-radius:14px;padding:4px 14px 0}
+.bb-card .rk{font-size:30px;line-height:1;background:rgba(255,255,255,.18);border-radius:999px;padding:4px 14px}
+@keyframes bbPop{0%{transform:scale(.6)}60%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes bbBlink{50%{opacity:0}}
+@keyframes bbShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-14px)}40%{transform:translateX(12px)}60%{transform:translateX(-8px)}80%{transform:translateX(5px)}}
+@keyframes bbGood{0%{transform:scale(1)}40%{transform:scale(1.15)}100%{transform:scale(.6) translateY(-30px);opacity:0}}
+@keyframes bbNudge{0%,100%{transform:scale(1)}30%{transform:scale(1.18)}60%{transform:scale(.95)}}
+@keyframes bbFlash{0%,100%{box-shadow:0 0 0 0 #FFC34D}30%{box-shadow:0 0 0 5px #FFC34D;transform:scale(1.15)}}
+@keyframes bbFloat{0%{transform:translate(-50%,0) scale(.6);opacity:0}20%{transform:translate(-50%,-10px) scale(1.15);opacity:1}100%{transform:translate(-50%,-70px) scale(1);opacity:0}}
+`;document.head.append(s);}
+
+const BB_RANKS=[[0,'🕯️','Spark'],[.03,'🍬','Candy'],[.08,'🎃','Pumpkin'],[.15,'🦇','Bat'],[.25,'👻','Ghost'],[.36,'🕷️','Spider'],[.5,'🐺','Werewolf'],[.65,'🧙','Witch'],[.8,'🧛','Vampire'],[1,'👑','Queen Bee']];
+const BB_MODES={little:{min:3,name:'Little Bee',ic:'🐝',col:'#2E8A6A',ex:'cat',grade:'3+'},big:{min:4,name:'Big Bee',ic:'🐝🐝',col:'#8A2E9A',ex:'boo',grade:'4+'}};
+const BB_ORDER=['little','big'];
+const BB_TILE=['#FF8FC7','#7FD6FF','#A9F27D','#C69BFF','#FFE066','#6FE3D2'];
+const BB_GOOD=['Nice!','Buzzin\'!','Sweet!','Spooky good!','Yes!','Bee-utiful!','Wow!'];
+/* each hive: [center letter + 6 outer letters, hive words (3+ letters), extra words that also count] */
+const BB_PUZ=[["ibdegnr","begging begin beginning being bid big bigger bin binding bird breeding bride bridge bring bringing denied did dig digging dining dinner dried ending engine engineer engineering gig ginger grid grind grinding indeed indie inn inner needing nine reign rid ride rider ridge riding rig ring","bedding beginner beige bending benign bib bidder bidding biggie bind binder binge birdie bribe bribed bribing bridged bridging brig brine denier derided digger din dine dined diner ding dire dredging drier edging eerie engineered genie greening grin grinder grinned grinning inning ire nib reigned reigning rein reindeer rendering rib ribbed ridden rigged rigging rigid rind ringed ringer ringing"],["acegoru","ace acre age ago agree arc are area argue cage car care career cargo courage eager ear era garage gauge gear grace race rare rear","accrue acreage aero agar auger aura aurora cacao carer coca cocoa cougar eau gag gaga gar goa oar orca racer rag rarer reggae roar urea"],["ubelort","blue bout bubble bull but butler butter our out outer outlet route rub rubber rule tour trouble true tub tube turtle","blur blurb brute bub bulb bur burr butte lull lure lute roulette rout router rubble rue ruler rut tout trout truer turbo turret tut tutor tutu utter"],["nagimrt","again aging aiming ant gain gaining gaming giant grain grant imaging immigrant inn main maintain maintaining man managing manga manning margin mini mining mint naming rain ran ranging rating ring tan timing tin train training","agrarian airing airman angina anima animating arming arranging attain attaining gagging gran granting grating grin grinning igniting imagining imitating initiating inning irritating mana mania manna manta mantra marina martian martini mating migrant migrating mitigating nag nagging narrating nit raging raining ramming rang rant ranting rigging ringing tagging taint taming tang tanning tartan ting tint tiring titan trimming"],["tacehmn","accent act ant anthem ate attachment cant cat catch cement cent chat cheat eat eaten hat heat match mate math meant meat meet met neat net tan tea teach team tech teen teeth ten tent tenth than that the thee them theme then","acetate anathema ante antenna antennae attach canteen catchment chant cheetah enact enactment enchantment enhancement eta etch hatch hatchet hath heath machete mahatma manatee manta mat matte meta methane neath tact tam tame tat teammate tee tenant tenement tenet thence"],["raefgil","aerial affair agree air are area eager ear earl earlier era fair far fare fear fire fragile free garage gear girl grief large larger liar rail rare real rear refer referee relief rig","afar agar airfare aria eerie ere err fairer feral filler fir flair flare flier frail freer friar galleria gar giraffe glare grail grill grille ire lair raff raffle rag rarer reef reel referral refill reg regal reggae rife riff"],["acgilmn","again aging aim aiming all animal call calling calm cam can claim claiming clan clinical gain gaining gaming imaging magic magical mail main mall mama man managing manga manning minimal nail naming","acacia acclaim ailing align aligning almanac amalgam angina angling anima calming canning clam clinician gag gaga gagging gal gala gall gallic gamma glacial glam glancing imagining lag lagging lain lam lama lilac llama mag magi magician magma mailing mailman mamma mammal mammalian mana mania maniac manic manna mica nag nagging nailing"],["rabeilv","aerial air are area arrival arrive bare barrel barrier bear brave ear earl earlier era ever liar liberal liver rail rare real rear rebel reliable reveal revival rival river variable verbal viral","arable aria barb barber barre bearable bearer beaver believer braille braver bribe brill eerie ere err ire lair larva larvae larval lever libra rabble rarer rave reel reeve relieve reliever relive revel reverb revere revive rib veer verb verve"],["meiortv","item meet meme mere merit met meter metro mirror mom more moreover motive motor move movie overtime remote remove rim room term time trim","emit emitter emotive memo memoir meteor meteorite mime mire mite mitt moo moor moot motto mover omit remit remover termite timer tome totem tremor trimmer"],["iacdelm","academic acid aid aim aimed allied amid claim claimed decide decided dial did email ice idea ideal ill laid lie lied lime maid mail media medical mice mid middle mild mile mill","acacia academia acclaim acclaimed acidic aide aided celiac decimal deli dialed dice diced dilemma dill dim dime dimmed emailed iced idle lice lid lilac mailed maimed malice medial medic mic mica midi milled mime mimic"],["almnory","alarm all ally any arm armor army array lay loan loyal mall mama man many marry may mayor moral normal normally rally ram ran ray roman royal","alloy annoy anomaly armory aroma arroyo lam lama layman llama mamma mammal mana manly manna manor mara maroon mayo mayoral moan molar morally moray nanny nay oar rayon roam roar yam yarn"],["aehltwy","all alley ally ate athlete away eat hall halt hat hay heal health healthy heat late lately law lay tale tall tea that wall wallet way wealth wealthy whale what wheat","aah aha allele alleyway awe eta halal hale hallway hath haw heath lathe latte leeway tally tat teal telltale thaw watt"],["adginrt","add adding again aging aid air and ant art dad data drag drain gain gaining giant grain grand grant radar raid rain ran ranging rat rating tag tan trading train training","agar agrarian aiding airing angina aria arid arranging attain attaining dada daring dart dragging draining gag gaga gagging gait gar grad grading gran granting grating indignant initiating irritating nadir nag nagging narrating rad radiant radiating rag raging raiding raining rand rang rant ranting tad tagging taint tang tanning tar tart tartan tartar tat tiara titan trad trait triad"],["oacemnr","armor cannon canon come commerce common concern core corn corner error mom moon more none noon nor norm ocean once one ore roman romance room","acorn aero aroma cacao cameo canoe coca coco cocoa cocoon coerce coma comer comma commence commoner cone coo cornea corona coroner crore encore macro macron manor maroon memo moan mono moo moor morn neon nom oar omen orca raccoon recon roam roar roe"],["oeinrtv","error intention interior intervention into invention ion iron none noon nor not note notion one onion onto ore oven over root toe ton tone too torn trio vote voter","intro introvert inventor neon nitro orient otter overt retention retort retro roe rot rote rotor rotten rove rover tenor toner tonne toot tor tore tori torrent tort tot tote triton trot trotter trove veto"],["reintvw","enter entire ever inner internet interview nerve never newer rent retire review river tier tire tree were winner winter wire write writer written","eerie entree ere err inert intern intervene interviewer invert inverter ire irreverent reeve rein reinvent renew renter retiree retrieve retriever revere revert reviewer revive rewrite rewritten rite terrier trier trite veer veneer vert verve viewer weir wetter wren writ"],["dceinot","cited cod code coincidence condition connected decent decide decided den denied detect detected detection did diet don done dot edit edited edition end ended incident indeed indie intend intended need needed node noted noticed odd tend tide tied","cede ceded coded coed coincide coincided coined concede conceded conceited concocted conditioned condo condone conned contend contended contented deceit deco decode decoded deed denote denoted dent dented dice diced din dine dined diode ditto dodo doe donned dotted edict encode encoded enticed iced incidence incited indict indicted intentioned iodine netted nod nodded ode tended tendon tinted tod toed toned"],["ailprty","air all ally apart apply array art lap lay liar pair pal papa par part partial partially partly party pat pay play rail rally rat ray tail tall tap trail trap trial","airplay airy alp altar apt aptly aria arty atrial lair pail pall paltry pap papaya parity parr parry patty pillar pita plat playa rarity tally tar tarp tart tartar tat tiara trait tray"],["eafnort","after afternoon are area arena ate ear earn eat eaten effort enter era error fare fate fear feat fee feet free near neat net none note offer often one ore rare rate rear refer referee rent retreat tea tear teen ten tent toe tone treat tree","aero ante antenna antennae atone earner eater eff entrant entree ere err errant eta fanfare fatter fen fern ferret feta foe footer footnote fore forefront forte freer fret narrate nearer neon ornate otter rarer reef renter retort retro roe rotate rote rotten tanner tee tenant tenet tenor terra toffee toner tonne tore torrent tote trotter"],["cdeiprt","cited credit credited cried critic decide decided detect detected direct directed epic erected ice piece pierce predict predicted price priced receipt recipe rice","cede ceded cert cider cite creed creep creeper crepe crept critter deceit decider decree decreed decrepit depict depicted dice diced edict iced pieced pierced precede preceded precipice receded recite recited redirect redirected tic"],["nacgilp","again aging calling can clan clinic clinical gain gaining inn lining nail pain pan panic pin placing plain plan planning","ailing align aligning angina angling appalling canning capping clapping cling clinging clinician clipping gagging gaping giggling glancing icing inning lagging lain lapping ling nag nagging nailing nap napping nil nip pacing paging pang panning picnic piling ping pining pinning piping pippin planing"],["lbginow","bill billion blog blow blowing blown bowl bowling glow ill lining lion log logo long low oil owl will willing wool","billing bling blob blogging boggling boil boiling giggling gill glowing goblin googling lib ling lingo lob lobo logging login longing loon nil oblong willow"],["eairtvy","are area arrive ate ear eat era eve ever every eye rare rate rear retire retreat river tea tear tie tier tire treat treaty tree variety very vet year yet","artery attire avert eater eatery eerie ere err eta irate ire irritate iterative rarer rave reeve reiterate retiree retrieve retriever revere revert revive rite rye teary tee terra terrier tertiary trier trite veer verity vert verve vie vitae yeti"],["haegint","eight eighth hat heat heating height high hint hit hitting night ninth teeth tenth than that the thee then thin thing tight","aah aha eighteen eighteenth hag hath heath heighten hen henna hinge hinting neath nigh nineteenth teething thigh thine thinning tighten tightening"],["gadinru","adding again aging arguing dig digging dining drag dug during gain gaining gig grain grand grid grind grinding guard guardian ranging riding rig ring running","agar agrarian aiding airing angina arranging daring ding dragging draining dunning gag gaga gagging gar grad grading gran grin grinning guarding guiding gunning guru iguana inning nag nagging rag raging raiding raining rang rigging rigid ringing rug ruining rung urging"],["taeilmu","ate eat elite item late let limit lit little mate meat meet melt met metal mutual tail tale tall tea team tell tie till time title ultimate","amulet emit emulate eta imitate latte lute mallet malt mat matte meta millet mite mitt mullet mute mutt tam tame tat taut teal teammate tee telltale tile tilt tut tutu ultima ultimatum"],["eaginot","age agent ate attention eat eaten eating egg ego engage engaging engine gate gene get getting gone gotten intent intention neat negotiate net nine none note one tea teen teenage ten tent tie toe tone","agate ante antenna antennae antigen atone eta gee genie gent ignite initiate innate negate negation negotiating negotiation neon netting nineteen tangent tee tenant tenet tinge tonnage tonne tote"],["maceilt","aim calm cam came claim climate email item lime limit mail male mall mama mate meal meat meet melt meme met metal mice mile mill team time","acclaim acme camel clam climactic climatic elm emit imitate lam lama lemma llama mace malice mallet malt mamma mammal mat matte melee meta metallic mic mica millet mime mimic mite mitt tam tame teammate"],["odegnru","dodge dog don done donor door drone duo ego error gone good ground node none noon nor odd one order ordered ore our rod rode rogue round rounded underground","dodged dodo doe dogged donned dungeon ergo erode eroded gong goo goon gorge gourd grounded neon neuron nod nodded noun ode odor ogre redo redone rodeo roe rondo rouge rounder underdog undergo undergone undo undone"],["tabcelp","accept acceptable act ate ballet bat battle beat belt cat cattle eat elect late let pat pet plate tab table tablet tale tall tap tape tea tell","acetate appellate apt bate beet beetle betta eta latte leapt pact palatable palate palette pallet pate peat pellet pelt petal placate plat platelet tact tat teal tee telltale"],["iacenrt","air ancient arctic carrier certain criteria critic entire ice inn inner intact intent interact internet nice nine rain retain retire rice terrain tie tier tin tire train trainer","acacia actin antarctic aria attain attic attire cacti cairn canine centric circa cite citrate creatine critter eccentric eerie entertain entertainer entice erratic incarnate incite inert inertia initiate innate intern intricate irate ire irritate itinerant nicer niece nineteen nit nitrate nitric rainier recite rein reiterate retainer retina retiree rite tacit tactic taint terrier tiara tic tint titan titanic trainee trait trier trite"],["iaelnpr","aerial air airline airplane alien earlier ill inn inner liar lie line linear lip nail nine pain pair pie pile pill pin pine pipe pipeline plain rail rain repair rip","airliner alpine aria eerie inline ire lain lair lien linen liner nil nip pail perennial peri peril pier pillar pineapple pip piper pippin prairie rainier rein riparian ripe ripper ripple"],["cefinot","cent coffee coin connect connection content continent cotton effect efficient fence fiction ice icon iconic infection innocent nice notice office once","cite coco cocoon coefficient coffin conceit concoction cone confetti confine contention coo cot cote entice incite inefficient infect innocence ionic niece nonfiction tectonic tic tonic"],["deilnov","den denied did dive divide divided divine doll don done end ended evolved idol indeed indie involved led lend lied lined lived loved need needed needle node odd old video void","deed deli delve devoid devolve devolved dill din dine dined diode dived dividend dodo doe dole donned doodle dove idle iodine leveled levied lid linden livid nod nodded noodle ode oiled olden veiled vivid voodoo"],["cdeopru","cod code cop cope copper cord core crop crude cup cure occur occurred procedure proceed proceeded produce produced producer record recorded reduce reduced","cede ceded coco coded coed coerce coerced coo coop copped coupe credo creed creep creeper crepe cropped crore cue cur curd cured deco decode decoded decoder decor decree decreed deduce deduced deuce precede preceded procure procured receded recorder recoup reproduce reproduced"],["gadepru","age aged agree agreed argue argued degree drag dragged dug eager edge egg gap garage gauge gear grade guard page regard regarded upgrade upgraded urge urged","adage agar auger dagger degrade degraded dredge edged gag gaga gagged gar geared gee grad graded grader greed grudge guarded guru peerage peg pegged pug purge purged rag raged ragged reg reggae rug rugged"],["edghilt","delete deleted delight delighted diet edge edit edited egg eight eighth elite get height held hide highlighted led leg let lie lied little teeth tell the thee tide tie tied title titled","deed deli edged eel ell gee gel giggle giggled gilded glee glide hedge heed heel heeled idle ledge legged liege lighted tee tile tiled tilted"],["oabhmrt","armor bathroom boat boo boom boot booth both bottom bro harbor horror hot mob mom motor oath rob robot room root tattoo throat tomato tomb too tooth","abbot aorta arbor aroma atom bamboo boa boar bora bot broom broth hobo hoo hoot mambo mammoth moat moo moor moot mortar moth motto oar oat ohm ooh orator orb roam roar rot rotor taboo tabor taro tarot toot tor tort tot trot"],["laefiru","aerial all earl earlier fail failure fall feel fell file fill flu fuel fulfill full ill leaf liar lie life rail real relief rule rural","alfalfa allele allure aural eel elf ell fearful fella feral filler flair flare flea flee flier flue fluff frail fuller lair laurel lieu lull lure raffle reel referral refill refuel ruffle ruler"],["eabcint","accent ace ancient ate bean beat beaten bee been bent bite cabinet cent eat eaten ice intent neat net nice nine tea teen ten tent tie","acetate acne ante antenna antennae bane bate batten beanie beet betta bitten cane canine canteen cite ebb enact entice eta incite initiate innate niece nineteen tee tenant tenet"],["tcegino","cent citing connect connecting connection content continent cotton genetic get getting got gotten innocent intent intention into net not note notice noting notion onto teen ten tent tie tin toe ton tone too","cite cognition conceit concoction contention contingent cot cote entice enticing gent ignite igniting ignition incite inciting incognito netting nineteen nit noticing tectonic tee tenet tic ting tinge tint tong tonic toning tonne toot tot tote"],["cdeirtv","cited civic credit credited cried critic decide decided detect detected detective device direct directed erected ice receive received receiver rice verdict vice","cede ceded cert cider cite creed critter deceit deceive deceived decider decree decreed dice diced directive edict evict evicted iced receded recite recited redirect redirected tic"],["gceinor","concerning egg ego engine engineer engineering gene generic genre gig ginger going gone green ignore ignoring ongoing origin region reign rig ring","cog concierge corgi corning cringe cringing ergo gee genie giro gong goo goon gorge greener greening grin grinning grocer icing inning ironing ogre reg reigning rigging rigor ringer ringing"],["tacdelu","act acted actual acute adult ate calculate calculated cat cattle cut cute data date dated dealt delete deleted delta detect detected eat educate educated elect elected late let tale tall tea tell","acetate cadet deduct deducted duct duet elated eta latte lettuce lute tact tad tat taut teal tee telltale tut tutu"],["rabceit","acre air arc arctic are area art attract bacteria bare barrier bear better bitter car care career carrier cart create criteria critic ear era rabbit race rare rat rate react rear retire retreat rice tear terrace tier tire trace treat tree tribe","arbiter aria attire barb barbaric barber barre barter batter bearer beater beret brace brat bribe cabaret carat carer carte cataract cater cert circa citrate crab crate crater crib critter eater eerie ere err erratic irate ire irritate racer rarer rebate recite recreate reiterate retiree retract rib rite tar tart tartar terra terrier tiara tracer tract trait trier trite"],["eaiprtv","appear appetite are area arrive ate ear eat era eve ever paper peer pepper per pet pie pipe pirate prep prepare private rare rate rear repair repeat retire retreat river tape tea tear tie tier tire treat tree vet","ape attire avert eater eerie ere err eta irate ire irritate iterative pare pate patter pave pea pear peat peep peeve pep peri petit petite pier piper prairie prettier rarer rave reap reaper reappear reeve reiterate repeater repetitive reprieve retiree retrieve retriever revere revert revive ripe ripper rite taper tee terra terrier trapper trier tripartite trite veer vert verve vie viper vitae"],["tacdekr","act acted art ate attack attacked attract attracted cart cat create created data date dated detect detected eat erected rat rate rated react retreat take tea tear terrace trace track tracked trade traded treat treated tree trek","acetate attacker cadet carat caretaker carte cataract cater catered cert crate crater dart deter deterred detract eater eta karate kart racetrack racket reacted recreate recreated redacted retake retract retracted retreated tack tacked tact tad taker tar tart tartar tat tattered teak tee terra terraced traced tracer tracker tract trad trader tread"],["mabelru","alarm album amber arm beam blame lamb male mall mama marble meal member meme mere ram realm remember umbrella","alum balm bumble bumblebee bummer elm ember emblem emu lam lama lemma llama lumbar lumber malleable mamma mammal mara mare maul melee mule mull mumble mural murmur ramble rumble"],["naehlpt","ant eaten elephant happen lane lean neat net pan panel patent pen plan plane planet plant talent tan teen ten tent tenth than then","ante antenna antennae apnea appellant elan hen henna latent lent nap natal neath pane pant penal pennant pent tenant tenet"],["dcefino","cod code coincidence confidence decide decided defend defended define defined den denied did don done end ended fed feed find fond food indeed indie need needed node odd offended","cede ceded coded codified coed coincide coincided coined concede conceded condo condone confide confided confined conned deco decode decoded deed defied dice diced diff din dine dined diode dodo doe donned edifice encode encoded fenced fend fiend fined foodie iced incidence iodine nod nodded ode offend"],["udehnrt","dude due hundred hunt hunter hurt nut return returned rude run runner tenure thunder true truth tune tuned turn turned turner under","dud duet dun dune endure endured hue hundredth hunted hut neuter neutered nurture nurtured rerun rudder rue rune rut tenured thru thud truer tuner turret tut tutu undue untrue urn utter uttered"],["iabegnr","again aging air bargain barrier bearing begging begin beginning being big bigger bin brain bring bringing earning engaging engine engineer engineering gain gaining gig ginger grain inn inner nine rain ranging reign rig ring","agrarian agreeing airbag airing angina angrier aria arranging bagging banging banning barbarian bargaining baring barring beanie beginner beige benign bib biggie binge bragging bribe bribing brig brine earring eerie gagging garnering gearing genie grabbing greening grin grinning inning ire nagging nearing nib raging rainier raining rearing rearranging regain regaining reigning rein rib rigging ringer ringing"],["celnort","cell cent center collect collector colonel color concern concert concrete connect content control controller cool cooler core corn corner correct cotton elect once recent","cello cert clone clot coco cocoon coerce colon colt concerto cone connector coo cornet coroner cot cote cotter creole crore elector electro electron encore loco recon reconnect rector"],["iadgnov","adding again aging aid avoid avoiding did dig digging dining diving doing gain gaining gig giving going inn ion ongoing onion via void","aiding angina avian avid din ding diva dividing dodging donning gagging indigo inning invading nagging nodding vain viva vivid"],["gaelrty","age aggregate agree eager eagle egg gallery garage gate gear get gray great greater greatly large largely larger leg legal legally regret tag target","agar agate algae allege allergy argyle eagerly gag gaga gal gala gale gall galley gar garret garter gee gel getter glare glee grate greet lag rag reg regal regatta reggae"],["ndeprtv","den depend dependent end ended enter entered even event need needed nerve net never pen pretend prevent prevented rendered rent rented teen ten tend tender tent trend","deepen deepened dent dented depended deterrent entree nerd netted penned pent pretended pretender render renter repent tended tendered tenet veneer vent vented"],["dehinrt","deer den denied did diet dinner dirt dried edit edited end ended entered hidden hide hired indeed indie inherited intend intended need needed red reed rendered rented retired rid ride rider tend tender third tide tied tired trend tried","deed denier dent dented derided deter deterred deterrent dieter din dine dined diner dire drier erred heed herd hid hind hinder hindered hinted interned interred nerd netted reindeer render ridden rind tended tendered tethered tiered tinder tinted trident"],["lcdefrt","cell delete deleted elder elect elected feel fell felt fled fleet led left let letter reflect reflected tell","cleft deflect deflected eel elf ell felled flee fleece reel reelected teller"],["nabgiot","again aging ant ban banana bang bin gain gaining giant going inn into ion nation noon not noting notion obtain obtaining ongoing onion onto tan tin ton","agitation angina annotation anointing attain attaining bagging baiting banging banning baton batting bingo biting boating bobbing bongo booing boon booting gagging gibbon gong goon igniting ignition initiating initiation inning intonation nab nag nagging nib nit notation tagging taint tang tango tanning tattooing ting tint titan tong toning"]];
+
+function bbDay(){const d=new Date();return Math.floor((d.getTime()-d.getTimezoneOffset()*60000)/86400000);}
+function bbLoad(){let s=null;try{s=store.get('hv-bee',null);}catch(e){}if(!s||typeof s!=='object')s={};if(!s.prog||typeof s.prog!=='object')s.prog={};if(!s.idx||typeof s.idx!=='object')s.idx={};
+ const d=bbDay(),N=BB_PUZ.length;if(s.day!==d){s.day=d;s.idx={little:(d*7+11)%N,big:(d*5)%N};}
+ for(const k of BB_ORDER)if(!Number.isInteger(s.idx[k])||s.idx[k]<0||s.idx[k]>=N)s.idx[k]=0;return s;}
+function bbSave(s){try{store.set('hv-bee',s);}catch(e){}}
+function bbPuzzle(i,mode){const[L,core,extra]=BB_PUZ[i],min=BB_MODES[mode].min;
+ const words=core.split(' ').filter(w=>w.length>=min),bonus=new Set(extra?extra.split(' ').filter(w=>w.length>=min):[]);
+ const outer=L.slice(1).split('');for(let k=outer.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[outer[k],outer[j]]=[outer[j],outer[k]];}
+ return{i,mode,min,center:L[0],outer,letters:new Set(L.split('')),words,set:new Set(words),bonus,key:mode+':'+i};}
+function bbPan(w){return new Set(w).size===7;}
+/* rank from how many words are found. bonus words count too, but only finding every hive word makes Queen Bee */
+function bbRankOf(pz,found){const total=pz.words.length;if(!total)return 0;const core=found.filter(w=>pz.set.has(w)).length;if(core>=total)return BB_RANKS.length-1;
+ const fr=Math.min(found.length,total-1)/total;let r=0;for(let i=0;i<BB_RANKS.length-1;i++)if(fr>=BB_RANKS[i][0])r=i;return r;}
+
+/* hex path, flat top. r = corner radius */
+function bbHex(c,x,y,r,round){c.beginPath();const pts=[];for(let k=0;k<6;k++){const a=k*Math.PI/3;pts.push([x+Math.cos(a)*r,y+Math.sin(a)*r]);}
+ if(!round){pts.forEach((p,k)=>k?c.lineTo(p[0],p[1]):c.moveTo(p[0],p[1]));c.closePath();return;}
+ for(let k=0;k<6;k++){const a=pts[k],b=pts[(k+1)%6];const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;if(!k)c.moveTo(mx,my);const n=pts[(k+2)%6];c.arcTo(b[0],b[1],(b[0]+n[0])/2,(b[1]+n[1])/2,round);}c.closePath();}
+
+/* Buzz the Boo Bee: chubby purple-and-gold bee in a little witch hat. o = {t, happy, sad, look} ; x,y = middle of the body */
+function drawBooBee(c,x,y,s,o){o=o||{};const t=o.t||0,happy=o.happy||0,sad=o.sad||0;
+ c.save();c.translate(x,y);c.scale(s,s);if(o.flip)c.scale(-1,1);if(o.tilt)c.rotate(o.tilt);
+ const fl=.55+.45*Math.abs(Math.sin(t*26));
+ c.fillStyle='rgba(225,236,255,.9)';
+ for(const[wx,wr,rr]of[[-4,-.55,1],[16,.35,.9]]){c.save();c.translate(wx,-28);c.rotate(wr);c.scale(1,fl);c.beginPath();c.ellipse(0,-22,15*rr,25*rr,0,0,TAU);c.fill();c.restore();}
+ c.fillStyle='#2A1548';c.beginPath();c.moveTo(46,2);c.lineTo(66,9);c.lineTo(45,17);c.closePath();c.fill();
+ /* body, one shadow tone on the right, purple stripes on the back half */
+ c.save();c.beginPath();c.ellipse(0,6,50,40,0,0,TAU);c.clip();
+ c.fillStyle='#E0A21B';c.fillRect(-60,-40,120,100);c.fillStyle='#FFC34D';c.beginPath();c.ellipse(-8,3,46,40,0,0,TAU);c.fill();
+ c.fillStyle='#3B2A7A';c.fillRect(8,-40,13,100);c.fillRect(31,-40,12,100);c.fillStyle='#2E2063';c.fillRect(42,-40,8,100);c.restore();
+ /* antennae with candy-corn tips */
+ c.strokeStyle='#2A1548';c.lineWidth=4;c.lineCap='round';
+ for(const[ax,bx]of[[-30,-44],[-14,-6]]){c.beginPath();c.moveTo(ax,-28);c.quadraticCurveTo(ax-4,-44,bx,-52);c.stroke();c.fillStyle='#FFE27A';c.beginPath();c.arc(bx,-54,5.5,0,TAU);c.fill();c.fillStyle='#FF7F1F';c.beginPath();c.arc(bx,-52,3.5,0,Math.PI);c.fill();}
+ /* little witch hat */
+ c.save();c.translate(-6,-30);c.rotate(.18);c.fillStyle='#5B2DB0';c.beginPath();c.ellipse(0,0,24,6,0,0,TAU);c.fill();
+ c.beginPath();c.moveTo(-13,-2);c.quadraticCurveTo(-4,-22,6,-40);c.quadraticCurveTo(8,-22,13,-2);c.closePath();c.fill();c.fillStyle='#4A2290';c.beginPath();c.moveTo(4,-30);c.quadraticCurveTo(8,-20,13,-2);c.lineTo(6,-2);c.closePath();c.fill();
+ c.fillStyle='#FF7F1F';c.fillRect(-12,-8,25,5);c.restore();
+ /* face on the front (left) */
+ c.fillStyle='#F6A08F';c.beginPath();c.ellipse(-36,14,8,5.5,0,0,TAU);c.fill();c.beginPath();c.ellipse(-6,14,7,5,0,0,TAU);c.fill();
+ const lk=o.look||0;
+ for(const ex of[-30,-10]){
+  if(happy>.3){c.strokeStyle='#2A1548';c.lineWidth=4.5;c.beginPath();c.arc(ex,2,7,Math.PI*1.15,Math.PI*1.85);c.stroke();continue;}
+  c.fillStyle='#fff';c.beginPath();c.ellipse(ex,0,8.5,9.5,0,0,TAU);c.fill();c.fillStyle='#2A1548';c.beginPath();c.arc(ex-2+lk*3,1,5,0,TAU);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(ex-3.5+lk*3,-1.5,1.8,0,TAU);c.fill();
+  if(sad>.3){c.strokeStyle='#2A1548';c.lineWidth=3.5;c.beginPath();c.moveTo(ex-8,-13+(ex<-20?4:0));c.lineTo(ex+7,-13+(ex<-20?0:4));c.stroke();}}
+ c.fillStyle='#3A0F2A';
+ if(happy>.3){c.beginPath();c.moveTo(-30,14);c.quadraticCurveTo(-20,30,-10,14);c.closePath();c.fill();c.fillStyle='#FF8FB0';c.beginPath();c.ellipse(-20,21,5,3,0,0,TAU);c.fill();}
+ else if(sad>.3){c.strokeStyle='#3A0F2A';c.lineWidth=3.5;c.beginPath();c.moveTo(-27,21);c.quadraticCurveTo(-20,14,-13,21);c.stroke();}
+ else{c.strokeStyle='#3A0F2A';c.lineWidth=3.5;c.beginPath();c.moveTo(-26,15);c.quadraticCurveTo(-20,21,-14,15);c.stroke();}
+ c.restore();}
+
+/* card thumbnail and sign preview: the hive with GOBLIN being spelled and Buzz flying by */
+function BEE_THUMB(x,t,W,H){
+ const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#6A36B0');g.addColorStop(1,'#26124F');x.fillStyle=g;x.fillRect(0,0,W,H);
+ x.strokeStyle='rgba(255,195,77,.12)';x.lineWidth=2;for(let r=0;r<6;r++)for(let k=0;k<12;k++){bbHex(x,k*48+(r%2)*24-10,r*42-10,26);x.stroke();}
+ const cx=W*.56,cy=H*.6,r=H*.12,d=r*Math.sqrt(3)+4,L='OGBLINT';
+ const pos=[[0,0]];for(let k=0;k<6;k++){const a=Math.PI/6+k*Math.PI/3;pos.push([Math.cos(a)*d,Math.sin(a)*d]);}
+ const word='GOBLIN',u=(t%4)/4,shown=Math.min(6,Math.floor(u*9));
+ pos.forEach(([px,py],k)=>{const hit=shown>0&&L[k]===word[shown-1]&&(u*9)%1<.5;x.save();x.translate(cx+px,cy+py);if(hit)x.scale(.88,.88);x.fillStyle='rgba(0,0,0,.25)';bbHex(x,0,4,r,6);x.fill();x.fillStyle=k?BB_TILE[k-1]:'#FF7F1F';bbHex(x,0,0,r,6);x.fill();
+  x.fillStyle='#2A1548';x.font=Math.round(r*1.05)+'px "Luckiest Guy",sans-serif';x.textAlign='center';x.textBaseline='middle';x.fillText(L[k],0,r*.12);x.restore();});
+ x.font=Math.round(H*.13)+'px "Luckiest Guy",sans-serif';x.textAlign='center';x.textBaseline='middle';
+ const typed=word.slice(0,shown);let tx=cx-x.measureText(typed).width/2;
+ for(const ch of typed){const w=x.measureText(ch).width;x.fillStyle='rgba(0,0,0,.35)';x.fillText(ch,tx+w/2,H*.15+4);x.fillStyle=ch==='O'?'#FF9A3D':'#F6E9D2';x.fillText(ch,tx+w/2,H*.15);tx+=w;}
+ if(u>.75){x.fillStyle='#FFC34D';x.font=Math.round(H*.1)+'px "Luckiest Guy",sans-serif';x.fillText('+1',cx+W*.24,H*.15-(u-.75)*60);}
+ drawBooBee(x,W*.2+Math.sin(t*1.3)*W*.05,H*.5+Math.sin(t*2.6)*H*.06,H/300,{t,happy:u>.75?1:0,look:1});}
+
+/* the Boo Hive in the village: a big straw skep that is also a jack-o'-lantern, with bees buzzing around it.
+   x,y = bottom middle. door at (0,-6), 50 wide, 76 tall */
+function BEE_HIVE_DRAW(c,x,y,t){
+ c.save();c.translate(x,y);
+ const gl=c.createRadialGradient(0,-130,10,0,-130,230);gl.addColorStop(0,'rgba(255,195,77,.2)');gl.addColorStop(1,'rgba(255,195,77,0)');c.fillStyle=gl;c.fillRect(-240,-370,480,380);
+ c.fillStyle='rgba(0,0,0,.28)';c.beginPath();c.ellipse(0,4,132,14,0,0,TAU);c.fill();
+ /* stump it sits on */
+ c.fillStyle='#6B3F1F';c.beginPath();c.ellipse(0,-6,112,14,0,0,TAU);c.fill();c.fillStyle='#5A3418';c.fillRect(-112,-8,224,10);c.beginPath();c.ellipse(0,2,112,10,0,0,Math.PI);c.fill();
+ /* straw rings, bottom one widest, rounded dome on top */
+ const RW=[122,124,118,104,84,56];
+ for(let k=RW.length-1;k>=0;k--){const w=RW[k],yc=-36-k*32;
+  c.save();ccRR(c,-w,yc-21,w*2,42,21);c.clip();c.fillStyle='#E8A33A';c.fillRect(-w,yc-21,w*2,42);c.fillStyle='#C98A2A';c.fillRect(w*.5,yc-21,w,42);
+  c.fillStyle='#FFC86A';c.fillRect(-w,yc-21,w*1.5,5);c.strokeStyle='rgba(122,74,34,.35)';c.lineWidth=2;for(let sx=-w+10;sx<w;sx+=16){c.beginPath();c.moveTo(sx,yc-14);c.lineTo(sx+6,yc+14);c.stroke();}c.restore();}
+ /* pumpkin stem and leaf on top */
+ c.fillStyle='#5E8A2E';c.beginPath();c.moveTo(-9,-214);c.quadraticCurveTo(-12,-240,2,-252);c.lineTo(12,-246);c.quadraticCurveTo(4,-232,10,-214);c.closePath();c.fill();
+ c.fillStyle='#8EE65B';c.save();c.translate(12,-226);c.rotate(-.5+Math.sin(t*1.4)*.08);c.beginPath();c.ellipse(18,0,18,8,0,0,TAU);c.fill();c.restore();
+ /* carved face, glowing */
+ const fk=.75+.25*Math.sin(t*9)*Math.sin(t*3.7);const glow='rgba(255,226,122,'+fk+')';
+ c.fillStyle='#5A2A0A';for(const sd of[-1,1]){c.beginPath();c.moveTo(sd*52,-152);c.lineTo(sd*22,-152);c.lineTo(sd*37,-178);c.closePath();c.fill();}
+ c.fillStyle=glow;for(const sd of[-1,1]){c.beginPath();c.moveTo(sd*48,-155);c.lineTo(sd*26,-155);c.lineTo(sd*37,-173);c.closePath();c.fill();}
+ c.fillStyle='#5A2A0A';c.beginPath();c.moveTo(-60,-118);c.quadraticCurveTo(0,-88,60,-118);c.lineTo(48,-112);c.lineTo(36,-122);c.lineTo(22,-108);c.lineTo(8,-118);c.lineTo(-8,-108);c.lineTo(-22,-120);c.lineTo(-36,-108);c.lineTo(-48,-120);c.closePath();c.fill();
+ c.fillStyle=glow;c.beginPath();c.moveTo(-54,-116);c.quadraticCurveTo(0,-92,54,-116);c.lineTo(46,-114);c.lineTo(36,-118);c.lineTo(22,-111);c.lineTo(8,-114);c.lineTo(-8,-111);c.lineTo(-22,-116);c.lineTo(-36,-111);c.lineTo(-46,-115);c.closePath();c.fill();
+ /* door */
+ c.fillStyle='#7A4A22';c.beginPath();c.moveTo(-29,-4);c.lineTo(-29,-58);c.arc(0,-58,29,Math.PI,0);c.lineTo(29,-4);c.closePath();c.fill();
+ c.fillStyle='#5B2DB0';c.beginPath();c.moveTo(-24,-4);c.lineTo(-24,-56);c.arc(0,-56,24,Math.PI,0);c.lineTo(24,-4);c.closePath();c.fill();
+ c.fillStyle='#4A2290';c.fillRect(8,-56,16,52);c.fillStyle='#FFC34D';c.beginPath();c.arc(14,-32,4,0,TAU);c.fill();
+ c.strokeStyle='#FFC34D';c.lineWidth=2;bbHex(c,0,-60,8);c.stroke();
+ /* honey drips */
+ c.fillStyle='#FFC34D';for(const[dx,dy,ph]of[[-98,-90,0],[86,-122,1.7],[-70,-154,3.1],[100,-60,4.4]]){const len=8+6*Math.sin(t*1.2+ph);c.beginPath();c.moveTo(dx-5,dy);c.lineTo(dx+5,dy);c.lineTo(dx+3,dy+len);c.arc(dx,dy+len,3.5,0,Math.PI);c.closePath();c.fill();}
+ /* bees buzzing around */
+ for(let i=0;i<4;i++){const a=t*(1.1+i*.17)+i*1.6,bx=Math.sin(a)*(120+i*14),by=-150+Math.sin(a*2+i)*(70+i*10)-i*16,dir=Math.cos(a)>0;drawBooBee(c,bx,by,.24,{t:t+i,flip:!dir,happy:i===2?1:0});}
+ c.restore();}
+
+SCENES.boobee={title:'Boo Bee',card:{tag:'Game',desc:'Make words from the hive letters. Every word needs the pumpkin letter in the middle!',thumb(ctx,t){BEE_THUMB(ctx,t,480,270);}},mount(stage){
+ const S=bbLoad();
+ let mode=BB_MODES[S.mode]?S.mode:'little',pz=null,word='',found=[],peek=false,hint=null,hintN=0,rank=0,alive=true,raf=0,sayT=0,clock=0,lastT=0;
+ const mood={happy:0,sad:0,tilt:0};const parts=[];
+ const root=el('div',{class:'bb-root'});stage.append(root);
+
+ /* top bar: size picker, rank track, word count, hint, new hive */
+ const bar=el('div',{class:'bb-bar'});
+ const modeChip=el('button',{class:'bb-chip',type:'button','aria-label':'Pick hive size'},'🐝');modeChip.onclick=()=>{SFX.click();showPick();};
+ const rkIc=el('div',{class:'bb-rk-ic'}),rkTxt=el('div',{class:'bb-rk-txt'}),track=el('div',{class:'bb-track'}),fill=el('div',{class:'bb-fill'});track.append(fill);
+ const dots=BB_RANKS.map(r=>{const d=el('div',{class:'bb-dot','aria-hidden':'true'},r[1]);track.append(d);return d;});
+ const count=el('div',{class:'bb-count'});
+ const hintChip=el('button',{class:'bb-chip',type:'button','aria-label':'Hint'},'💡');hintChip.onclick=()=>{SFX.click();giveHint();};
+ const diceChip=el('button',{class:'bb-chip',type:'button','aria-label':'New hive'},'🎲');diceChip.onclick=()=>{SFX.flip();newHive();};
+ bar.append(modeChip,el('div',{class:'bb-rank'},rkIc,rkTxt,track),count,hintChip,diceChip);root.append(bar);
+
+ /* play area: Buzz with a speech bubble, the word being typed, the hive, three buttons */
+ const main=el('div',{class:'bb-main'});root.append(main);
+ const play=el('div',{class:'bb-play'});main.append(play);
+ const buzz=miniCanvas(96,96);buzz.className='';const bub=el('div',{class:'bb-bub'});
+ play.append(el('div',{class:'bb-say'},buzz,bub));
+ const wordEl=el('div',{class:'bb-word','aria-live':'polite'});play.append(wordEl);
+ const NS='http://www.w3.org/2000/svg',svg=document.createElementNS(NS,'svg');svg.setAttribute('viewBox','-160 -168 320 330');svg.setAttribute('class','bb-hive');svg.setAttribute('role','group');svg.setAttribute('aria-label','Letter hive');play.append(svg);
+ const R=60,D=R*Math.sqrt(3)+7;
+ const hexPts=(r)=>{const p=[];for(let k=0;k<6;k++){const a=k*Math.PI/3;p.push((Math.cos(a)*r).toFixed(1)+','+(Math.sin(a)*r).toFixed(1));}return p.join(' ');};
+ const tiles=[];
+ for(let k=0;k<7;k++){const a=Math.PI/6+(k-1)*Math.PI/3,x=k?Math.cos(a)*D:0,y=k?Math.sin(a)*D:0;
+  const wrapG=document.createElementNS(NS,'g');wrapG.setAttribute('transform','translate('+x.toFixed(1)+','+y.toFixed(1)+')');
+  const g=document.createElementNS(NS,'g');g.setAttribute('class','bb-hex');g.setAttribute('role','button');
+  const sh=document.createElementNS(NS,'polygon');sh.setAttribute('points',hexPts(R));sh.setAttribute('transform','translate(0,6)');sh.setAttribute('fill','rgba(0,0,0,.28)');
+  const poly=document.createElementNS(NS,'polygon');poly.setAttribute('points',hexPts(R));poly.setAttribute('fill',k?BB_TILE[k-1]:'#FF7F1F');poly.setAttribute('stroke',k?'rgba(255,255,255,.35)':'#FFB066');poly.setAttribute('stroke-width','4');poly.setAttribute('stroke-linejoin','round');
+  g.append(sh,poly);
+  if(!k){/* the middle tile is a pumpkin: ribs, a stem and a leaf */
+   for(const rx of[-22,22]){const rib=document.createElementNS(NS,'path');rib.setAttribute('d','M'+rx+' -44 Q'+(rx*1.7)+' 0 '+rx+' 44');rib.setAttribute('fill','none');rib.setAttribute('stroke','rgba(160,60,0,.35)');rib.setAttribute('stroke-width','5');rib.setAttribute('stroke-linecap','round');g.append(rib);}
+   const stem=document.createElementNS(NS,'path');stem.setAttribute('d','M-7 -50 Q-9 -66 2 -76 L11 -71 Q4 -62 8 -50 Z');stem.setAttribute('fill','#5E8A2E');
+   const leaf=document.createElementNS(NS,'ellipse');leaf.setAttribute('cx','22');leaf.setAttribute('cy','-62');leaf.setAttribute('rx','15');leaf.setAttribute('ry','7');leaf.setAttribute('transform','rotate(-25 22 -62)');leaf.setAttribute('fill','#8EE65B');g.append(stem,leaf);}
+  const tx=document.createElementNS(NS,'text');tx.setAttribute('text-anchor','middle');tx.setAttribute('dominant-baseline','central');tx.setAttribute('y','5');if(!k)tx.setAttribute('fill','#fff');g.append(tx);
+  wrapG.append(g);svg.append(wrapG);
+  const T={g,tx,k,ch:''};tiles.push(T);
+  g.addEventListener('pointerdown',e=>{e.preventDefault();typeCh(T.ch);});}
+ svg.append(tiles[0].g.parentNode);/* the pumpkin goes on top so its stem shows */
+ const btns=el('div',{class:'bb-btns'});
+ const bDel=el('button',{class:'bb-b del',type:'button','aria-label':'Erase'},'⌫'),bMix=el('button',{class:'bb-b',type:'button','aria-label':'Shuffle'},'🔀'),bGo=el('button',{class:'bb-b go',type:'button','aria-label':'Enter'},'✔');
+ bDel.addEventListener('pointerdown',e=>{e.preventDefault();erase();});bMix.addEventListener('pointerdown',e=>{e.preventDefault();shuffle();});bGo.addEventListener('pointerdown',e=>{e.preventDefault();submit();});
+ btns.append(bDel,bMix,bGo);play.append(btns);
+
+ /* found words */
+ const list=el('div',{class:'bb-list'});main.append(list);
+ const lCount=el('span',{}),peekBtn=el('button',{class:'bb-peek',type:'button','aria-label':'Show the words I missed'},'👀');peekBtn.onclick=()=>{SFX.click();peek=!peek;peekBtn.classList.toggle('on',peek);drawList();};
+ list.append(el('div',{class:'bb-lh'},el('span',{},'📝'),lCount,el('span',{class:'sp'}),peekBtn));
+ const pills=el('div',{class:'bb-pills'});list.append(pills);
+
+ const fx=el('canvas',{class:'bb-fx'});root.append(fx);const fc=fx.getContext('2d');let fdpr=1;
+ const ro=new ResizeObserver(()=>{const r=root.getBoundingClientRect();fdpr=Math.min(2,window.devicePixelRatio||1);fx.width=Math.max(1,Math.round(r.width*fdpr));fx.height=Math.max(1,Math.round(r.height*fdpr));});ro.observe(root);
+
+ function say(html,cls,hold){bub.className='bb-bub'+(cls?' '+cls:'');bub.innerHTML=html;void bub.offsetWidth;bub.classList.add('bb-pp');sayT=hold||0;}
+ function idleSay(){if(!pz)return;const left=pz.words.length-found.filter(w=>pz.set.has(w)).length;
+  if(!found.length)say('Make words! Use the <span class="bb-em">🎃</span> letter every time.');
+  else if(!left)say('<span class="bb-em">👑</span> You found them all!','gold');
+  else say(BB_RANKS[rank][1]+' '+left+' more to find!');}
+
+ function load(i){pz=bbPuzzle(i,mode);let saved=[];try{saved=S.prog[pz.key]||[];}catch(e){}
+  found=Array.isArray(saved)?saved.filter(w=>typeof w==='string'&&(pz.set.has(w)||pz.bonus.has(w))):[];
+  word='';hint=null;hintN=0;peek=false;peekBtn.classList.remove('on');rank=bbRankOf(pz,found);
+  paintTiles();drawWord();drawList();drawRank(false);modeChip.textContent=BB_MODES[mode].ic;idleSay();}
+ function save(){S.prog[pz.key]=found.slice();S.mode=mode;bbSave(S);}
+ function paintTiles(){tiles.forEach(T=>{T.ch=T.k?pz.outer[T.k-1]:pz.center;T.tx.textContent=T.ch.toUpperCase();T.g.setAttribute('aria-label',T.ch);});}
+ function drawWord(){wordEl.innerHTML='';for(const ch of word){wordEl.append(el('span',{class:ch===pz.center?'c':pz.letters.has(ch)?'':'x'},ch.toUpperCase()));}wordEl.append(el('span',{class:'cur'}));}
+ function drawRank(anim){const n=BB_RANKS.length,core=found.filter(w=>pz.set.has(w)).length,total=pz.words.length;
+  rkIc.textContent=BB_RANKS[rank][1];rkTxt.textContent=BB_RANKS[rank][2];count.textContent='📝 '+core+' / '+total;lCount.textContent=found.length+(found.length===1?' word':' words');
+  dots.forEach((d,i)=>{d.classList.toggle('on',i<=rank);d.classList.toggle('cur',i===rank);});
+  let part=0;if(rank<n-1){const lo=BB_RANKS[rank][0],hi=BB_RANKS[rank+1][0],fr=Math.min(found.length,total-1)/Math.max(1,total);part=Math.max(0,Math.min(1,(fr-lo)/Math.max(.001,hi-lo)));}
+  fill.style.width='calc((100% - 14px) * '+((rank+part)/(n-1)).toFixed(3)+')';
+  if(anim){rkIc.classList.remove('up');void rkIc.offsetWidth;rkIc.classList.add('up');}}
+ function drawList(fresh){pills.innerHTML='';const sorted=found.slice().sort();
+  if(!sorted.length&&!peek)pills.append(el('div',{class:'bb-empty'},'🐝 ...'));
+  for(const w of sorted){const p=el('span',{class:'bb-pill'+(bbPan(w)?' pan':pz.bonus.has(w)?' bonus':'')+(w===fresh?' new':''),'data-w':w},(bbPan(w)?'🎃 ':'')+w);pills.append(p);}
+  if(peek)for(const w of pz.words)if(!found.includes(w))pills.append(el('span',{class:'bb-pill miss'},w));
+  if(fresh){const p=pills.querySelector('.new');if(p)p.scrollIntoView({block:'nearest'});}}
+
+ function press(ch){const T=tiles.find(x=>x.ch===ch);if(!T)return;T.g.classList.add('pr');setTimeout(()=>T.g.classList.remove('pr'),110);}
+ const NOTES=[523,587,659,784,880,988,1047];
+ function typeCh(ch){if(!pz||pickEl||!ch)return;if(word.length>=19)return;wordEl.classList.remove('shake','good');word+=ch;press(ch);
+  const k=tiles.findIndex(x=>x.ch===ch);SFX.tone(NOTES[Math.max(0,k)]||660,.07,'triangle',.05);drawWord();}
+ function erase(){if(!word||pickEl)return;word=word.slice(0,-1);SFX.tone(300,.06,'triangle',.04);drawWord();}
+ function shuffle(){if(!pz||pickEl)return;SFX.swoosh();const outerT=tiles.slice(1);outerT.forEach(T=>T.g.classList.add('sh'));
+  setTimeout(()=>{if(!alive)return;const o=pz.outer;for(let k=o.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[o[k],o[j]]=[o[j],o[k]];}paintTiles();outerT.forEach(T=>T.g.classList.remove('sh'));},170);}
+ function fail(msg,nudgeCenter){wordEl.classList.remove('good');void wordEl.offsetWidth;wordEl.classList.add('shake');SFX.tone(220,.25,'square',.035,null,140);mood.sad=1.1;say(msg,'bad',1.6);
+  if(nudgeCenter){const g=tiles[0].g;g.classList.remove('nudge');void g.getBBox();g.classList.add('nudge');}
+  word='';setTimeout(()=>{if(alive&&!word&&wordEl.classList.contains('shake')){wordEl.classList.remove('shake');drawWord();}},520);}
+ function submit(){if(!pz||pickEl||!word)return;const w=word;
+  if(w.length<pz.min)return fail('📏 Too short! '+pz.min+'+ letters');
+  if(!w.includes(pz.center))return fail('<span class="bb-em">🎃</span> Use the pumpkin letter!',true);
+  if(found.includes(w)){say('👍 Got that one already!','',1.4);SFX.tone(440,.12,'sine',.04);const p=pills.querySelector('[data-w="'+w+'"]');if(p){p.classList.remove('flash');void p.offsetWidth;p.classList.add('flash');p.scrollIntoView({block:'nearest'});}word='';drawWord();return;}
+  if(!pz.set.has(w)&&!pz.bonus.has(w))return fail('🤔 Not in my word hive!');
+  /* a real word */
+  found.push(w);save();const pan=bbPan(w),was=rank;rank=bbRankOf(pz,found);
+  wordEl.classList.remove('shake');void wordEl.offsetWidth;wordEl.classList.add('good');
+  word='';setTimeout(()=>{if(alive&&!word&&wordEl.classList.contains('good')){wordEl.classList.remove('good');drawWord();}},480);
+  if(hint===w){hint=null;hintN=0;}
+  drawList(w);drawRank(rank!==was);mood.happy=1.4;
+  const rr=root.getBoundingClientRect(),wr=wordEl.getBoundingClientRect();
+  const fl=el('div',{class:'bb-float'},pan?'🎃 +1':pz.bonus.has(w)?'+1 ✨':'+1');play.append(fl);setTimeout(()=>fl.remove(),1200);
+  const allDone=pz.words.every(x=>found.includes(x));
+  if(allDone&&rank===BB_RANKS.length-1&&was!==rank){burst(rr.width/2,rr.height*.4,140);SFX.win();say('<span class="bb-em">👑</span> QUEEN BEE! You found every word!','gold',4);}
+  else if(pan){burst(wr.left-rr.left+wr.width/2,wr.top-rr.top+wr.height/2,70);SFX.win();say('<span class="bb-em">🎃</span> PUMPKIN WORD! All 7 letters!','gold',2.6);}
+  else if(rank>was){const ir=rkIc.getBoundingClientRect();burst(ir.left-rr.left+ir.width/2,ir.top-rr.top+ir.height/2,40);SFX.chime();say('<span class="bb-em">'+BB_RANKS[rank][1]+'</span> You\'re a '+BB_RANKS[rank][2]+'!','gold',2.4);}
+  else{SFX.good();say('✨ '+BB_GOOD[Math.floor(Math.random()*BB_GOOD.length)]+(w.length>=6?' Big word!':''),'',1.4);}}
+ function giveHint(){if(!pz||pickEl)return;const left=pz.words.filter(w=>!found.includes(w));
+  if(!left.length){say('<span class="bb-em">👑</span> You found them all!','gold',2);return;}
+  if(!hint||found.includes(hint)){const byLen=left.slice().sort((a,b)=>a.length-b.length);const pool=byLen.slice(0,Math.max(3,Math.ceil(byLen.length/3)));hint=pool[Math.floor(Math.random()*pool.length)];hintN=1;}
+  else hintN=Math.min(hint.length-1,hintN+1);
+  const shown=hint.split('').map((ch,i)=>i<hintN?ch.toUpperCase():'_').join(' ');
+  say('💡 <span class="bb-hw">'+shown+'</span>','',4);mood.happy=.6;}
+ function newHive(){if(!pz)return;const N=BB_PUZ.length;let i=pz.i;if(N>1)while(i===pz.i)i=Math.floor(Math.random()*N);S.idx[mode]=i;bbSave(S);load(i);
+  tiles.forEach(T=>{T.g.classList.add('sh');});setTimeout(()=>tiles.forEach(T=>T.g.classList.remove('sh')),60);}
+
+ /* size picker: Little Bee (3+ letters) and Big Bee (4+), with your rank on today's hive */
+ let pickEl=null;
+ function showPick(){closePick();const cards=el('div',{class:'bb-cards'});
+  BB_ORDER.forEach(k=>{const M=BB_MODES[k],p=bbPuzzle(S.idx[k],k),f=(S.prog[p.key]||[]).filter(w=>p.set.has(w)||p.bonus.has(w)),r=bbRankOf(p,f);
+   const tl=el('div',{class:'tiles'});for(const ch of M.ex)tl.append(el('div',{class:'tl'+(ch===M.ex[M.ex.length-1]?' c':'')},ch.toUpperCase()));
+   const card=el('button',{class:'bb-card'+(k===mode?' last':''),type:'button','aria-label':M.name+', '+M.grade+' letters',style:'--c:'+M.col},el('div',{class:'ic'},M.ic),tl,el('div',{class:'gr'},M.grade),el('div',{class:'rk'},BB_RANKS[r][1]));
+   card.onclick=()=>{SFX.get();SFX.click();mode=k;S.mode=k;bbSave(S);closePick();load(S.idx[k]);};cards.append(card);});
+  pickEl=el('div',{class:'bb-pick'},cards);root.append(pickEl);}
+ function closePick(){if(pickEl){pickEl.remove();pickEl=null;}}
+
+ function onKey(e){if(e.metaKey||e.ctrlKey||e.altKey)return;const k=e.key;
+  if(pickEl){if(k==='1'||k==='2'){e.preventDefault();pickEl.querySelectorAll('.bb-card')[+k-1].click();}return;}
+  if(/^[a-zA-Z]$/.test(k)){e.preventDefault();const ch=k.toLowerCase();if(pz&&pz.letters.has(ch))typeCh(ch);else if(pz){SFX.tone(180,.08,'square',.03);}return;}
+  if(k==='Backspace'){e.preventDefault();erase();}else if(k==='Enter'){e.preventDefault();submit();}else if(k===' '){e.preventDefault();shuffle();}}
+ addEventListener('keydown',onKey);
+
+ /* confetti in honey and candy colors */
+ const PCOL=['#FFC34D','#FF7F1F','#FF8FC7','#7FD6FF','#A9F27D','#C69BFF'];
+ function burst(x,y,n){for(let i=0;i<n;i++){const a=Math.random()*TAU,s=150+Math.random()*320;parts.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s-220,t:0,life:1.1+Math.random()*.8,col:PCOL[i%PCOL.length],r:4+Math.random()*5,hex:i%3===0});}}
+
+ function frame(ts){if(!alive)return;const dt=Math.min(.05,lastT?(ts-lastT)/1000:0);lastT=ts;clock+=dt;
+  mood.happy=Math.max(0,mood.happy-dt);mood.sad=Math.max(0,mood.sad-dt);
+  if(sayT>0){sayT-=dt;if(sayT<=0)idleSay();}
+  /* Buzz */
+  const b=buzz.ctx;b.clearRect(0,0,96,96);const hop=mood.happy>0?-Math.abs(Math.sin(clock*12))*6:0,shk=mood.sad>0?Math.sin(clock*40)*3*mood.sad:0;
+  drawBooBee(b,50+shk,62+Math.sin(clock*3)*3+hop,.62,{t:clock,happy:mood.happy>0?1:0,sad:mood.sad>0?1:0,tilt:mood.happy>0?Math.sin(clock*10)*.12:0});
+  /* confetti */
+  fc.setTransform(fdpr,0,0,fdpr,0,0);fc.clearRect(0,0,fx.width,fx.height);
+  for(const p of parts){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=520*dt;p.vx*=.99;fc.globalAlpha=Math.max(0,1-p.t/p.life);fc.fillStyle=p.col;fc.save();fc.translate(p.x,p.y);fc.rotate(p.t*7);if(p.hex){bbHex(fc,0,0,p.r*1.2);fc.fill();}else fc.fillRect(-p.r,-p.r*.45,p.r*2,p.r*.9);fc.restore();}
+  fc.globalAlpha=1;for(let i=parts.length-1;i>=0;i--)if(parts[i].t>parts[i].life)parts.splice(i,1);
+  raf=requestAnimationFrame(frame);}
+ raf=requestAnimationFrame(frame);
+
+ load(S.idx[mode]);showPick();
+ /* test hooks */
+ window.__bbState=()=>({mode,i:pz&&pz.i,center:pz&&pz.center,outer:pz&&pz.outer.slice(),words:pz&&pz.words.slice(),found:found.slice(),rank,word,pick:!!pickEl});
+ window.__bbType=w=>{for(const ch of w)typeCh(ch);submit();};
+ return()=>{alive=false;cancelAnimationFrame(raf);ro.disconnect();removeEventListener('keydown',onKey);closePick();};
+}};
+
+/* ---------- Boo Bee: registration (card, menu tile, preview, village hive) ---------- */
+GAMES.push({id:'boobee',title:'Boo Bee',sub:'Game',day:1,host:'pip'});
+Object.assign(ICON,{boobee:'🐝'});
+Object.assign(SAYS,{boobee:'Make words from the hive letters. Use the pumpkin letter every time!'});
+{const at=TILES.findIndex(t=>t[0]==='chomp');TILES.splice(at<0?TILES.length:at+1,0,['boobee','#C98A2A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c);}
+PREV.boobee=(x,t,W,H)=>BEE_THUMB(x,t,W,H);
+if(P.s_bee){HOT.push({id:'boobee',x:311,y:P.s_bee.y+39,w:200,h:200,sub:'Boo Hive',title:'Boo Bee',kind:'hang lft'});
+ const HIVE={x:120,y:P.s_bee.y-46};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(HIVE.y,top,bot,330))BEE_HIVE_DRAW(ctx,HIVE.x,HIVE.y,t);};}
+/* ==== BOO BEE END ==== */
 /* ==== TOP TEN START ==== */
 /* ---------- Top Ten: high-score boards shown when a game ends (two initials + a Halloween sticker) ----------
    HVBOARD.show(wrap,{game,score,stars,stats,host,tag,onAgain,onMenu})
@@ -8836,7 +9203,7 @@ const DOORS=(()=>{
   ['grave','rattles',-105,-54,40,62,'drum'],['hut','bubbles',0,-4,46,74,'chime'],['tomb','mummy',0,-4,46,74,'groan'],
   ['treehouse','theo',0,-4,46,74,'good'],['barn','gourdon',0,-4,46,74,'jump'],['shed','iris',0,-4,46,74,'good'],
   ['wagon','lulu',0,-4,46,74,'chime'],['alley','kelsey',0,-4,46,74,'good'],
-  ['s_sense','bea',0,-4,46,74,'chime'],['s_avatar','marina',68,-2,44,74,'chime'],['s_chomp','benny',42,0,56,88,'good'],['s_lib','pip',0,-4,46,74,'boo'],['s_boogie','wolfie',0,-4,46,74,'howl']];
+  ['s_sense','bea',0,-4,46,74,'chime'],['s_avatar','marina',68,-2,44,74,'chime'],['s_chomp','benny',42,0,56,88,'good'],['s_lib','pip',0,-4,46,74,'boo'],['s_boogie','wolfie',0,-4,46,74,'howl'],['s_bee','bea',0,-6,48,74,'chime']];
  const NAMES={mabel:'Mabel',nick:'Nick',zed:'Zed',dracula:'Count Dracula',flutter:'Flutter',frankie:'Frankie',paco:'Paco',june:'June',zoe:'Zoe',rattles:'Rattles',bubbles:'Bubbles',mummy:'Mummy Mo',theo:'Theo',gourdon:'Gourdon',iris:'Iris',lulu:'Lulu',kelsey:'Kelsey',bea:'Bea',benny:'Benny',pip:'Pip',wolfie:'Wolfie',
   leo:'Leo',max:'Max',wyatt:'Wyatt',kenji:'Kenji',rocco:'Rocco',sunny:'Sunny',gus:'Gus',hank:'Hank',dot:'Dot',finn:'Finn',marina:'Marina',snap:'Snap',ivy:'Ivy',midnight:'Midnight',jack:'Jack',ghost:'Boo'};
  const HOUSE_WHO=['leo','max','wyatt','kenji','rocco','sunny','gus','hank','dot','finn','marina','snap','ivy','midnight','jack','ghost'];
@@ -8884,7 +9251,7 @@ const DOORS=(()=>{
  let list=null;
  function build(){list=[];
   /* buildings added later are drawn from their own anchor, not the slot's x */
-  const BASE={s_chomp:p=>[690,p.y-46],s_lib:p=>[690,p.y-46],s_boogie:p=>[110,p.y-46]};
+  const BASE={s_chomp:p=>[690,p.y-46],s_lib:p=>[690,p.y-46],s_boogie:p=>[110,p.y-46],s_bee:p=>[120,p.y-46]};
   for(const[id,who,dx,dy,w,h,snd]of DEF){const p=P[id];if(!p)continue;let bx=p.x,by=p.y;if(BASE[id])[bx,by]=BASE[id](p);/* the graveyard crypt sits on the side away from the road */const ox=id==='grave'&&p.side!=='L'?-dx:dx;list.push({id,who,x:bx+ox,y:by+dy,w,h,snd,knock:-99,hi:sayFor(who)});}
   nhList().forEach((h,i)=>list.push({id:h.id,house:h,who:HOUSE_WHO[i%HOUSE_WHO.length],x:h.x,y:h.y-4*h.s,w:40*h.s,h:64*h.s,snd:'good',knock:-99,hi:'👋'}));
   list.forEach(d=>{d.hi=sayFor(d.who);});
@@ -9446,6 +9813,7 @@ const BLDG=(()=>{const L=[];const add=(id,ax,ay,x0,x1,y0,y1)=>L.push({id,x0:ax+x
  if(P.s_boogie)add('boogie',110,P.s_boogie.y-46,-142,141,-180,0);
  if(P.s_lib)add('typing',690,P.s_lib.y-46,-109,132,-255,0);
  if(P.s_chomp)add('chomp',690,P.s_chomp.y-46,-188,137,-315,0);
+ if(P.s_bee)add('boobee',120,P.s_bee.y-46,-130,130,-262,0);
  return L;})();
 /* ==== HOUSE TAP END ==== */
 /* ---------- boot ---------- */
