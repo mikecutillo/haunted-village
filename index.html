@@ -1349,7 +1349,7 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
  resetGhosts(){this.found={};store.del('hv-ghosts');this.buildHots();},
  updateGhostPill(){const n=Object.keys(this.found).length;$('#ghostCount').textContent=n+' / 13';$('#ghostPill').classList.toggle('ok',n>=13);},
  tap(e){const x=e.clientX/this.scale+this.camX,y=e.clientY/this.scale+this.camY;
-  if(CRIT.tap(x,y))return;if(LIFE.tap(x,y,this.t))return;
+  if(typeof DOORS!=='undefined'&&DOORS.tap(x,y,this.t))return;if(CRIT.tap(x,y))return;if(LIFE.tap(x,y,this.t))return;
   if(Math.hypot(x-620,y-150)<90){this.witchT=0;SFX.swoosh();return;}
   if(Math.hypot(x-60,y-540)<40){SFX.hoot();this.owlHoot=this.t;return;}
   for(const p of this.pumpkins){if(Math.hypot(x-p.x,y-p.y)<p.r*1.3){p.hop=this.t;SFX.tone(300,.12,'square',.05,null,600);return;}}
@@ -8303,11 +8303,6 @@ const LIFE={
   /* candies */
   this.candies.forEach((c,i)=>{if(this.candy[i])return;if(Math.hypot(x-c.x,y-c.y)<30){this.candy[i]=true;store.set('hv-candy',this.candy);const n=this.candyCount();if(n>=20){SFX.win();toast('All twenty candies found! Your candy bag is full. Happy Halloween!');this.confetti=t;}else{SFX.good();toast('Candy '+n+' of 20. Keep looking behind the trees.');}c.hit=true;}});
   if(this.candies.some(c=>c.hit)){this.candies.forEach(c=>c.hit=false);return true;}
-  /* neighborhood houses: tap to search the house */
-  for(const h of nhList()){if(Math.abs(x-h.x)<78*h.s&&y>h.y-(96+84)*h.s&&y<h.y+14){SFX.knock();setTimeout(()=>openScene(h.id),380);return true;}}
-  /* doors: knock and a monster answers */
-  for(let i=0;i<PLACES.length;i++){const pl=PLACES[i];if(pl.sign==='post'||pl.id==='treehouse')continue;const dx=pl.id==='print'?70:0;if(Math.hypot(x-(pl.x+dx),y-(pl.y-45))<52){pl.knock=t;SFX.knock();const who=(DAYKEY+i)%5;setTimeout(()=>{if(SFX.ctx)SFX.door();CRIT.speak(JOKES[(DAYKEY*7+i)%JOKES.length],pl.x+dx,pl.y-150,4);},550);pl.who=who;
-    setTimeout(()=>this.letOut(who,pl.y,'walk'+i+'_'+Math.floor(t)),2600);return true;}}
   /* the mansion: tap the big door and the band comes out for a stroll */
   if(Math.abs(x-400)<60&&y>620&&y<710){SFX.door();CRIT.speak('The band is going for a walk!',400,560,2.5);[[1,0],[2,.9],[3,1.8],[4,2.7]].forEach(([who,dl])=>setTimeout(()=>this.letOut(who,700,'band'+who+'_'+Math.floor(t)),400+dl*900));return true;}
   /* the cat */
@@ -8352,8 +8347,6 @@ const LIFE={
   /* ----- candies hidden by trees ----- */
   this.candies.forEach((c,i)=>{if(this.candy[i]||!V(c.y,40))return;ctx.save();ctx.translate(c.x,c.y);ctx.scale(.75,.75);drawCandy(ctx,0,0,c.type,Math.sin(t+i)*.2);ctx.restore();if(Math.sin(t*3+i)>.85){ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(c.x+12,c.y-12,2.5,0,TAU);ctx.fill();}});
   if(this.confetti&&t-this.confetti<4){for(let i=0;i<60;i++){const k=((t-this.confetti)*.5+i*.017)%1;ctx.fillStyle=['#FF7A1A','#FFC34D','#8EE65B','#B26BFF','#4FD8FF'][i%5];ctx.fillRect(w.vx0+(i*53)%(w.vx1-w.vx0),top+k*(bot-top),6,10);}}
-  /* ----- doors answered ----- */
-  for(let i=0;i<PLACES.length;i++){const pl=PLACES[i];if(pl.knock==null||t-pl.knock>4.2)continue;const dx=pl.id==='print'?70:0,x=pl.x+dx,y=pl.y;const k=Math.min(1,(t-pl.knock-.5)*3);if(k<=0)continue;ctx.fillStyle='rgba(255,210,120,'+(.85*k)+')';ctx.fillRect(x-20,y-78,40,78);const who=pl.who||0;ctx.save();ctx.translate(x,y);ctx.scale(k,k);if(who===0)drawGhost(ctx,0,-40,44,t,1);else if(who===1)drawFrank(ctx,0,0,.42,t);else if(who===2)drawDracula(ctx,0,0,.4,t);else if(who===3)drawMummy(ctx,0,0,.42,t);else drawWitch(ctx,0,-42,34,0,t);ctx.restore();}
   /* ----- hayride on the square street ----- */
   {const my=MAINS[0];if(my!=null&&V(my,200)){const r=this.ride;drawSkelHorse(ctx,r.x+150,my+38,.72,t*(r.boost>0?1.5:1));ctx.strokeStyle='#6A4423';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(r.x+70,my-6);ctx.lineTo(r.x+110,my-8);ctx.stroke();drawWagon2(ctx,r.x,my+38,.72,t*(r.boost>0?1.5:1),['lion','ghost','dino','astro']);}}
   /* ----- the train along the left edge ----- */
@@ -8370,6 +8363,67 @@ const LIFE={
   /* ----- fireworks over the launch field ----- */
   for(const f of this.fw){if(f.age<f.fuse){ctx.fillStyle='#FFF1A8';ctx.beginPath();ctx.arc(f.x,f.y,3,0,TAU);ctx.fill();}else{ctx.fillStyle=f.col;for(const k of f.kids){ctx.globalAlpha=Math.max(0,1-k.age/2);ctx.beginPath();ctx.arc(k.x,k.y,2.6,0,TAU);ctx.fill();}ctx.globalAlpha=1;}}
  }};
+/* ==== DOOR KNOCK START ==== */
+/* every building has its own neighbor behind the door. tap the door: knock knock, the door lights up,
+   that character pops out, waves and says hi with their sound, then goes back in.
+   door positions are in world units at the bottom of each door. */
+const DOORS=(()=>{
+ /* [place id, character art key, door dx, door dy (from the building anchor), door width, door height, sound] */
+ const DEF=[
+  ['cottage','mabel',0,-4,46,74,'cackle'],['bakery','nick',0,-4,46,74,'star'],['print','zed',70,-4,46,74,'chime'],
+  ['inn','dracula',0,-4,46,74,'cackle'],['belfry','flutter',0,-4,46,74,'flap'],['tower','frankie',0,-4,46,74,'groan'],
+  ['theater','paco',0,-4,46,74,'good'],['school','june',0,-4,46,74,'good'],['post','zoe',0,-4,46,74,'good'],
+  ['grave','rattles',-105,-54,40,62,'drum'],['hut','bubbles',0,-4,46,74,'chime'],['tomb','mummy',0,-4,46,74,'groan'],
+  ['treehouse','theo',0,-4,46,74,'good'],['barn','gourdon',0,-4,46,74,'jump'],['shed','iris',0,-4,46,74,'good'],
+  ['wagon','lulu',0,-4,46,74,'chime'],['alley','kelsey',0,-4,46,74,'good'],
+  ['s_sense','bea',0,-4,46,74,'chime'],['s_chomp','benny',0,-4,46,74,'good'],['s_lib','pip',0,-4,46,74,'boo'],['s_boogie','wolfie',0,-4,46,74,'howl']];
+ const NAMES={mabel:'Mabel',nick:'Nick',zed:'Zed',dracula:'Count Dracula',flutter:'Flutter',frankie:'Frankie',paco:'Paco',june:'June',zoe:'Zoe',rattles:'Rattles',bubbles:'Bubbles',mummy:'Mummy Mo',theo:'Theo',gourdon:'Gourdon',iris:'Iris',lulu:'Lulu',kelsey:'Kelsey',bea:'Bea',benny:'Benny',pip:'Pip',wolfie:'Wolfie',
+  leo:'Leo',max:'Max',wyatt:'Wyatt',kenji:'Kenji',rocco:'Rocco',sunny:'Sunny',gus:'Gus',hank:'Hank',dot:'Dot',finn:'Finn',marina:'Marina',snap:'Snap',ivy:'Ivy',midnight:'Midnight',jack:'Jack',ghost:'Boo'};
+ const HOUSE_WHO=['leo','max','wyatt','kenji','rocco','sunny','gus','hank','dot','finn','marina','snap','ivy','midnight','jack','ghost'];
+ const HI=['👋','Hi!','Boo!','🍬','Trick or treat!','Hello!','🎃','Hee hee!'];
+ const SPOT={cottage:[0,-4],bakery:[0,-4],print:[70,-4]};
+ let list=null;
+ function build(){list=[];
+  /* buildings added later are drawn from their own anchor, not the slot's x */
+  const BASE={s_sense:p=>[108,p.y-96],s_chomp:p=>[690,p.y-46],s_lib:p=>[690,p.y-46],s_boogie:p=>[110,p.y-46]};
+  for(const[id,who,dx,dy,w,h,snd]of DEF){const p=P[id];if(!p)continue;let bx=p.x,by=p.y;if(BASE[id])[bx,by]=BASE[id](p);/* the graveyard crypt sits on the side away from the road */const ox=id==='grave'&&p.side!=='L'?-dx:dx;list.push({id,who,x:bx+ox,y:by+dy,w,h,snd,knock:-99,hi:'👋'});}
+  nhList().forEach((h,i)=>list.push({id:h.id,house:h,who:HOUSE_WHO[i%HOUSE_WHO.length],x:h.x,y:h.y-4*h.s,w:40*h.s,h:64*h.s,snd:'good',knock:-99,hi:'👋'}));
+  return list;}
+ const all=()=>list||build();
+ function hitDoor(x,y){let best=null,bd=1e9;for(const d of all()){const pad=Math.max(18,d.w*.35);if(x>d.x-d.w/2-pad&&x<d.x+d.w/2+pad&&y>d.y-d.h-pad&&y<d.y+pad){const dd=Math.hypot(x-d.x,y-(d.y-d.h/2));if(dd<bd){bd=dd;best=d;}}}return best;}
+ function knock(d,t){d.knock=t;d.hi=pick(HI);SFX.knock();
+  setTimeout(()=>{try{SFX.door();}catch(e){}},420);
+  setTimeout(()=>{try{const f=SFX[d.snd];if(typeof f==='function')f.call(SFX);}catch(e){}},760);}
+ return{
+  list:all,
+  tap(x,y,t){const d=hitDoor(x,y);if(!d)return false;
+   if(d.house){/* neighborhood houses: the neighbor comes out first, then the house search opens */
+    if(t-d.knock<1.6)return true;knock(d,t);setTimeout(()=>openScene(d.id),1500);return true;}
+   if(t-d.knock<.6)return true;knock(d,t);return true;},
+  /* door glow and the character, drawn on top of the buildings */
+  draw(ctx,t,top,bot){for(const d of all()){const u=t-d.knock;if(u<0||u>4.6)continue;if(d.y<top-200||d.y>bot+200)continue;
+    const open=Math.min(1,Math.max(0,(u-.35)*4))*Math.min(1,Math.max(0,(4.6-u)*3));if(open<=0)continue;
+    /* warm light spilling out of the doorway */
+    ctx.save();ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(d.x,d.y-d.h*.5,4,d.x,d.y-d.h*.5,d.h*1.1);g.addColorStop(0,'rgba(255,200,110,'+(.5*open)+')');g.addColorStop(1,'rgba(255,200,110,0)');ctx.fillStyle=g;ctx.fillRect(d.x-d.h*1.2,d.y-d.h*1.6,d.h*2.4,d.h*2);ctx.restore();
+    ctx.fillStyle='rgba(255,214,140,'+(.92*open)+')';ctx.beginPath();ctx.moveTo(d.x-d.w/2,d.y);ctx.lineTo(d.x-d.w/2,d.y-d.h+d.w/2);ctx.arc(d.x,d.y-d.h+d.w/2,d.w/2,Math.PI,0);ctx.lineTo(d.x+d.w/2,d.y);ctx.closePath();ctx.fill();
+    /* the neighbor steps out: grows from the doorway, hops, waves, then backs in */
+    const out=Math.min(1,Math.max(0,(u-.55)*3.2))*Math.min(1,Math.max(0,(4.4-u)*3.2));if(out<=0)continue;
+    const e=out*out*(3-2*out),H=d.h*1.55*(.55+.45*e),hop=u<1.2?Math.abs(Math.sin((u-.55)*9))*d.h*.18*(1-(u-.55)/.65):Math.abs(Math.sin(u*5))*d.h*.03;
+    const fx=d.x,fy=d.y+d.h*.12*e;ctx.save();ctx.translate(fx,fy-hop);ctx.rotate(Math.sin(u*6)*.07*e);
+    ctx.fillStyle='rgba(10,4,26,.3)';ctx.beginPath();ctx.ellipse(0,hop,H*.22,H*.05,0,0,TAU);ctx.fill();
+    if(!ncFit(ctx,d.who,0,0,H*.85,H))drawGhost(ctx,0,-H*.5,H*.4,t);ctx.restore();
+    /* hello bubble with their name */
+    if(u>1&&u<4.1){const k=Math.min(1,(u-1)*5)*Math.min(1,(4.1-u)*4),bx=fx,by=fy-H-26;ctx.save();ctx.globalAlpha=k;ctx.translate(bx,by);ctx.scale(.7+.3*k,.7+.3*k);
+     const txt=d.hi+'  '+(NAMES[d.who]||'');ctx.font='900 18px "Baloo 2",system-ui,"Apple Color Emoji","Segoe UI Emoji"';const w=ctx.measureText(txt).width+28;
+     ctx.fillStyle='#FFF4E6';ctx.beginPath();if(ctx.roundRect)ctx.roundRect(-w/2,-20,w,40,20);else ctx.rect(-w/2,-20,w,40);ctx.fill();ctx.beginPath();ctx.moveTo(-8,18);ctx.lineTo(0,32);ctx.lineTo(8,18);ctx.fill();
+     ctx.fillStyle='#2A1548';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,0,1);ctx.restore();}}}};})();
+{const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);DOORS.draw(ctx,t,top,bot);if(window.__hvDoorDebug){ctx.save();ctx.strokeStyle='#0F0';ctx.lineWidth=3;for(const d of DOORS.list()){if(d.y<top-100||d.y>bot+100)continue;ctx.strokeRect(d.x-d.w/2,d.y-d.h,d.w,d.h);}ctx.restore();}};}
+window.__hvDoors=()=>DOORS.list().filter(d=>!d.house||d.house.i<2).map(d=>({id:d.id,x:d.x,y:d.y-d.h*.45}));
+window.__hvScreen=(x,y)=>[world.sx(x),world.sy(y),world.scale];
+window.__hvDoorsAll=()=>DOORS.list().map(d=>({id:d.id,x:d.x,y:d.y-d.h*.45}));
+window.__hvKnockAll=()=>{for(const d of DOORS.list()){d.knock=world.t-1.6;}};
+window.__hvKnocked=id=>{const d=DOORS.list().find(q=>q.id===id);return !!d&&world.t-d.knock<3;};
+/* ==== DOOR KNOCK END ==== */
 /* ---------- boot ---------- */
 document.body.classList.add('booting');world.init();LIFE.init();setWeather(LIFE.weather,false);['pointerdown','touchend','click'].forEach(ev=>addEventListener(ev,()=>{if(SFX.ctx&&SFX.ctx.state!=='running')SFX.ctx.resume();},{passive:true}));
 const hashSong=songFromHash();if(hashSong)store.set('hv-song',hashSong);
