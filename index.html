@@ -9201,7 +9201,7 @@ const HALL_MOUNT=function(stage,opts={}){
   if(Math.hypot(p.x-727,p.y-250)<120){SFX.tone(1320,.5,'sine',.05);SFX.tone(1980,.4,'sine',.03);}});
  cv.addEventListener('pointermove',e=>{if(!drag)return;const p=toW(e);drag.x=p.x;drag.y=p.y;});
  const up=e=>{if(!drag)return;const d=drag;drag=null;const moved=Math.hypot(d.x-d.sx,d.y-d.sy)>10;const want=moved?onDance(d):d.from==='carpet';const has=onFloor.includes(d.id);
-  if(want&&!has){onFloor.push(d.id);BAND.toggle(d.id);SFX.good();bump[d.id]=now();if(d.from==='carpet'&&moved)hintDone=true;}else if(!want&&has){onFloor.splice(onFloor.indexOf(d.id),1);BAND.toggle(d.id);SFX.click();}else if(!moved&&has){onFloor.splice(onFloor.indexOf(d.id),1);BAND.toggle(d.id);SFX.click();}
+  if(want&&!has){onFloor.push(d.id);BAND.toggle(d.id);/* soft little chime, not a beep */SFX.tone(660,.22,'sine',.022);SFX.tone(990,.28,'sine',.014,SFX.now()+.07);bump[d.id]=now();if(d.from==='carpet'&&moved)hintDone=true;}else if(!want&&has){onFloor.splice(onFloor.indexOf(d.id),1);BAND.toggle(d.id);SFX.click();}else if(!moved&&has){onFloor.splice(onFloor.indexOf(d.id),1);BAND.toggle(d.id);SFX.click();}
   say();};
  cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
  BAND.onHit=id=>{if(!alive)return;bump[id]=now();hands=Math.max(hands,.35);beatGlow=1;const q=floorPos(id);if(q){const s=SS(q[1]);for(let k=0;k<2;k++)notes.push({x:q[0]+(Math.random()-.5)*40,y:q[1]-130*s,vx:(Math.random()-.5)*30,vy:-(50+Math.random()*50),age:0,ch:Math.random()<.5?'♪':'♫',col:pick(['#FFC34D','#FF7A1A','#B26BFF','#4FD8FF','#8EF26A','#FF4FA3'])});}};
