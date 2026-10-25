@@ -1973,6 +1973,47 @@ const JAM_MOUNT=function(stage,opts={}){
  sync();const t0=performance.now();let tp=0;function anim(){if(!alive)return;const t=(performance.now()-t0)/1000;const dt=Math.min(.05,t-tp);tp=t;drawBack(t,dt);{const hx=hostCv.ctx;hx.clearRect(0,0,84,95);hx.save();hx.scale(.7,.7);drawHost(hx,'jack',t);hx.restore();}for(const id of BAND.members){const s=slots[id];if(!s)continue;const x=s.cv.ctx;x.clearRect(0,0,100,130);s.m.draw(x,t);}raf=requestAnimationFrame(anim);}anim();
  return()=>{alive=false;clearTimeout(tipT);cancelAnimationFrame(raf);ro.disconnect();BAND.onHit=null;if(H)H.destroy();};};
 
+/* ==== RANDOM DANCE START ==== */
+/* HV_DANCE(box,{body,origin,arms:[[el,ox,oy,lo,hi]],hops:[el]}): a different little dance every tap.
+   Strings 4-7 random moves into one Web Animation on the body, waves the arms, bounces hats/pets, plays a matching tune
+   and floats music notes up the stage. Returns the run time in ms. */
+const HV_DANCE=(()=>{let live=[],tmr=0;
+ const T=(x,y,r,sx,sy)=>({transform:'translate('+x+'px,'+y+'px) rotate('+r+'deg) scale('+sx+','+sy+')'});
+ const MOVES={
+  hop:(d)=>[[0,0,0,0,1,1],[.2,0,0,0,1.1,.88],[.5,0,-42,0,.94,1.08],[.82,0,0,0,1.1,.9],[1,0,0,0,1,1]],
+  wiggle:(d)=>[[0,0,0,0,1,1],[.25,0,0,-12*d,1,1],[.5,0,0,12*d,1,1],[.75,0,0,-12*d,1,1],[1,0,0,0,1,1]],
+  flip:(d)=>[[0,0,0,0,1,1],[.25,0,-20,0,-1,1],[.5,0,0,0,-1,1],[.75,0,-20,0,1,1],[1,0,0,0,1,1]],
+  shuffle:(d)=>[[0,0,0,0,1,1],[.25,-26*d,0,-8*d,1,1],[.5,0,-8,0,1,1],[.75,26*d,0,8*d,1,1],[1,0,0,0,1,1]],
+  spin:(d)=>[[0,0,0,0,1,1],[.2,0,6,0,1.1,.9],[.6,0,-66,180*d,1,1],[.9,0,0,360*d,1.1,.9],[.999,0,0,360*d,1,1],[1,0,0,0,1,1]],
+  squish:(d)=>[[0,0,0,0,1,1],[.25,0,8,0,1.18,.8],[.5,0,-12,0,.86,1.16],[.75,0,8,0,1.18,.8],[1,0,0,0,1,1]],
+  sway:(d)=>[[0,0,0,0,1,1],[.3,-14*d,0,-16*d,1,1],[.7,14*d,0,16*d,1,1],[1,0,0,0,1,1]],
+  shimmy:(d)=>{const f=[[0,0,0,0,1,1]];for(let i=1;i<8;i++)f.push([i/8,(i%2?6:-6)*d,0,(i%2?5:-5)*d,1,1]);f.push([1,0,0,0,1,1]);return f;},
+  dip:(d)=>[[0,0,0,0,1,1],[.35,0,22,0,1.12,.86],[.55,0,22,0,1.12,.86],[.8,0,-30,6*d,.95,1.06],[1,0,0,0,1,1]],
+  moon:(d)=>[[0,0,0,0,1,1],[.5,-40*d,0,4*d,1,1],[.52,-40*d,0,0,-1,1],[.98,0,0,0,-1,1],[1,0,0,0,1,1]]};
+ const SCALES=[[0,2,4,7,9,12,14],[0,3,5,7,10,12,15],[0,2,4,5,7,9,11,12]];
+ const NOTES=['🎵','🎶','✨','⭐','💜','🎃'];
+ function stop(){live.forEach(a=>{try{a.cancel();}catch(e){}});live=[];clearTimeout(tmr);}
+ return function(box,o){stop();if(!o.body||!o.body.animate)return 0;
+  const beat=320+Math.random()*200,keys=Object.keys(MOVES),n=4+Math.floor(Math.random()*3),seq=[];
+  let last='';for(let i=0;i<n;i++){let k;do{k=keys[Math.floor(Math.random()*keys.length)];}while(k===last);last=k;seq.push([k,Math.random()<.5?-1:1,(k==='spin'||k==='shimmy'||k==='moon')?3:2+Math.floor(Math.random()*2)]);}
+  const beats=seq.reduce((a,s)=>a+s[2],0),total=beats*beat,frames=[];let b0=0;
+  seq.forEach(([k,d,len])=>{MOVES[k](d).forEach(([f,x,y,r,sx,sy])=>{const off=(b0+f*len)/beats;const fr=T(x,y,r,sx,sy);fr.offset=Math.min(1,off);frames.push(fr);});b0+=len;});
+  frames.sort((a,b)=>a.offset-b.offset);
+  o.body.style.transformBox='view-box';o.body.style.transformOrigin=o.origin;
+  live.push(o.body.animate(frames,{duration:total,easing:'ease-in-out'}));
+  (o.arms||[]).forEach(([el,ox,oy,lo,hi])=>{if(!el)return;el.style.transformBox='view-box';el.style.transformOrigin=ox+'px '+oy+'px';const fr=[{transform:'rotate(0deg)'}];
+   for(let i=1;i<beats*2;i++)fr.push({transform:'rotate('+(lo+Math.random()*(hi-lo)).toFixed(0)+'deg)'});fr.push({transform:'rotate(0deg)'});live.push(el.animate(fr,{duration:total,easing:'ease-in-out'}));});
+  (o.hops||[]).forEach((el,j)=>{if(!el)return;const fr=[];for(let i=0;i<=beats*2;i++)fr.push({transform:'translateY('+(i%2===(j%2)?0:-(8+Math.random()*10)).toFixed(0)+'px)'});fr[fr.length-1]={transform:'translateY(0)'};live.push(el.animate(fr,{duration:total,easing:'ease-in-out'}));});
+  /* tune: random scale, root and wave; one note per half beat plus a thump on each beat */
+  try{const t0=SFX.now(),sc=SCALES[Math.floor(Math.random()*SCALES.length)],root=[262,294,330,349,392][Math.floor(Math.random()*5)],wave=['square','triangle','sawtooth'][Math.floor(Math.random()*3)];let st=Math.floor(Math.random()*sc.length);
+   for(let i=0;i<beats*2;i++){st=Math.max(0,Math.min(sc.length-1,st+[-2,-1,1,1,2,0][Math.floor(Math.random()*6)]));if(Math.random()<.85)SFX.tone(root*Math.pow(2,sc[st]/12),beat/2000*.9,wave,.045,t0+i*beat/2000);
+    if(i%2===0)SFX.tone(i%4===0?110:82,.12,'sine',.12,t0+i*beat/2000,50);}}catch(e){}
+  /* notes floating up */
+  const r=box.getBoundingClientRect();for(let i=0;i<beats;i++)setTimeout(()=>{if(!box.isConnected)return;const s=document.createElement('div');s.textContent=NOTES[Math.floor(Math.random()*NOTES.length)];
+   s.style.cssText='position:absolute;pointer-events:none;font-size:'+(26+Math.random()*18)+'px;left:'+(10+Math.random()*80)+'%;top:'+(25+Math.random()*50)+'%;z-index:3';box.append(s);
+   const a=s.animate([{opacity:0,transform:'translateY(0) scale(.5)'},{opacity:1,transform:'translateY(-30px) scale(1)',offset:.3},{opacity:0,transform:'translateY(-120px) rotate('+(Math.random()*60-30)+'deg) scale(1.2)'}],{duration:1400,easing:'ease-out'});a.onfinish=()=>s.remove();},i*beat);
+  tmr=setTimeout(stop,total+50);return total;};})();
+/* ==== RANDOM DANCE END ==== */
 /* ==== MONSTER MAKER START ==== */
 /* ---------- Monster Maker: tap a part of the monster to change it, picture buttons only ---------- */
 if(!document.getElementById('hvmmcss')){const s=document.createElement('style');s.id='hvmmcss';s.textContent=`
@@ -2176,7 +2217,7 @@ SCENES.maker={title:'Monster Maker',mount(stage){
  const acts=el('div',{class:'mm-acts'});const mk=(ic,lab,fn)=>{const b=el('button',{class:'mm-act',type:'button','aria-label':lab});b.innerHTML=MM_TAB[ic];b.onclick=fn;acts.append(b);return b;};
  mk('undo','undo',()=>{const h=hist.pop();if(!h){SFX.thud();return;}st=h;pop=null;SFX.click();save();draw();renderPanel();});
  mk('dice','surprise me',()=>{hist.push({...st});for(const p of MM_PARTS)st[p.k]=Math.floor(Math.random()*p.n);name=newName();pop='body';SFX.zap();save();draw();renderPanel();});
- mk('dance','dance',()=>{const svg=box.querySelector('svg.mm-mon');svg.classList.remove('dance');void svg.getBoundingClientRect();svg.classList.add('dance');const t=SFX.now();[392,523,659,784,659,523].forEach((f,i)=>SFX.tone(f,.16,'square',.05,t+i*.16));setTimeout(()=>{const s2=box.querySelector('svg.mm-mon');if(s2)s2.classList.remove('dance');},2100);});
+ mk('dance','dance',()=>{const svg=box.querySelector('svg.mm-mon');if(!svg)return;HV_DANCE(box,{body:svg.querySelector('.mm-bob'),origin:'100px 300px',arms:[[svg.querySelector('.mm-armL'),40,170,-50,30],[svg.querySelector('.mm-armR'),160,170,-30,50]]});});
  mk('camera','save picture',()=>{SFX.click();const svg=mmSvg(st,false,null,'-40 -70 280 430').replace('<svg class="mm-mon" ','<svg width="280" height="430" ');svgToPng(svg,280,430,'#2A1660',d=>showPicture(d,name));});
  panel.append(tabs,opts,acts);
  function renderPanel(){for(const k in tabBtns)tabBtns[k].classList.toggle('on',k===tab);opts.innerHTML='';const P=MM_PARTS.find(p=>p.k===tab);
@@ -7622,7 +7663,6 @@ const mbFeet=f=>'<g transform="translate(126,0) scale(-1,1)">'+f+'</g><g transfo
 /* ----- face and neck accessories (Mabel's eyes at 124/176, y140) ----- */
 const mbHeart=(x,y,r,f,st)=>'<path d="M'+x+' '+(y+r)+' C'+(x-r*1.6)+' '+(y-r*.1)+' '+(x-r*.9)+' '+(y-r*1.2)+' '+x+' '+(y-r*.45)+' C'+(x+r*.9)+' '+(y-r*1.2)+' '+(x+r*1.6)+' '+(y-r*.1)+' '+x+' '+(y+r)+'Z" fill="'+f+'"'+(st?' stroke="'+st+'" stroke-width="4" stroke-linejoin="round"':'')+'/>';
 const MB_FACES=[
- {id:'none',f:()=>''},
  {id:'glasses',f:()=>MW.face.Glasses},
  {id:'hearts',f:()=>mbHeart(124,138,20,'rgba(255,111,163,.45)','#E2357A')+mbHeart(176,138,20,'rgba(255,111,163,.45)','#E2357A')+'<path d="M144 136 Q150 132 156 136" stroke="#E2357A" stroke-width="4" fill="none"/>'},
  {id:'stars',f:()=>'<g opacity=".95">'+mbG.star5(124,140,24,'#FFD23F')+mbG.star5(176,140,24,'#FFD23F')+'</g><circle cx="124" cy="141" r="10" fill="#2A1548" opacity=".75"/><circle cx="176" cy="141" r="10" fill="#2A1548" opacity=".75"/><path d="M146 138 Q150 134 154 138" stroke="#E0A82A" stroke-width="4" fill="none"/>'},
@@ -7632,10 +7672,10 @@ const MB_FACES=[
  {id:'scarf',f:()=>MW.face.Scarf},
  {id:'necklace',f:()=>'<path d="M116 196 Q150 228 184 196" stroke="#2A1548" stroke-width="3" fill="none"/>'+mbG.pumpkin(150,226,.36,true)},
  {id:'bowtie',f:()=>'<path d="M150 202 L126 190 V214Z M150 202 L174 190 V214Z" fill="#E2453F"/><circle cx="150" cy="202" r="7" fill="#B8323C"/><circle cx="134" cy="198" r="2.5" fill="#fff"/><circle cx="166" cy="206" r="2.5" fill="#fff"/>'},
+ {id:'none',f:()=>''},
 ];
 /* ----- things to hold: drawn at the front hand (origin = hand centre, upright) ----- */
 const MB_HELD=[
- {id:'none',vb:'-40 -40 80 80',s:''},
  {id:'wand',vb:'-80 -130 120 150',s:MW.hold.Wand},
  {id:'lantern',vb:'-50 -20 100 110',s:MW.hold.Lantern},
  {id:'bucket',vb:'-40 -10 80 80',s:'<g transform="translate(0,14) scale(1.25)"><path d="M-20 0 Q0 -22 20 0" fill="none" stroke="#2A1548" stroke-width="4"/><path d="M-22 0 H22 L18 34 Q0 40 -18 34Z" fill="#FF7F1F"/><path d="M8 0 H22 L18 34 Q12 37 6 37Z" fill="#C15E24"/><path d="M-10 12 l4 -6 l4 6Z M4 12 l4 -6 l4 6Z M-9 22 q9 7 18 0" fill="#FFD23F"/><circle cx="-8" cy="-4" r="6" fill="#FF4FA3"/><rect x="0" y="-9" width="12" height="8" rx="3" fill="#4FD8FF"/></g>'},
@@ -7643,14 +7683,16 @@ const MB_HELD=[
  {id:'lollipop',vb:'-40 -110 80 120',s:'<rect x="-3" y="-64" width="6" height="66" rx="3" fill="#F6E9D2"/><circle cx="0" cy="-82" r="24" fill="#FF6FB5"/><path d="M0 -82 m-16 0 a16 16 0 1 1 16 16 a10 10 0 1 1 -10 -10 a5 5 0 1 1 5 5" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>'},
  {id:'potion',vb:'-40 -80 80 100',s:'<rect x="-7" y="-62" width="14" height="22" rx="3" fill="#C8E8FF"/><rect x="-9" y="-70" width="18" height="10" rx="3" fill="#9A6A42"/><circle cx="0" cy="-24" r="22" fill="#C8E8FF"/><path d="M-20 -22 Q0 -14 20 -22 A22 22 0 0 1 -20 -22Z" fill="#8EE65B"/><circle cx="0" cy="-24" r="22" fill="none" stroke="#2A1548" stroke-width="3" opacity=".3"/><circle cx="-6" cy="-14" r="3.5" fill="#E8FFD8"/><circle cx="7" cy="-10" r="2.5" fill="#E8FFD8"/><circle cx="-10" cy="-34" r="4" fill="#fff" opacity=".7"/>'},
  {id:'spider',vb:'-40 -20 80 120',s:'<path d="M0 0 V62" stroke="#E8E2F6" stroke-width="2"/><g transform="translate(0,72)"><path d="M-8 -2 L-22 -12 M-8 2 L-24 2 M-8 6 L-22 16 M8 -2 L22 -12 M8 2 L24 2 M8 6 L22 16" stroke="#2A1548" stroke-width="3.5" stroke-linecap="round"/><ellipse cx="0" cy="2" rx="12" ry="14" fill="#2A1548"/><circle cx="-4" cy="-2" r="3.5" fill="#fff"/><circle cx="4" cy="-2" r="3.5" fill="#fff"/><circle cx="-4" cy="-1" r="1.6" fill="#2A1548"/><circle cx="4" cy="-1" r="1.6" fill="#2A1548"/></g>'},
+ {id:'none',vb:'-40 -40 80 80',s:''},
 ];
 /* ----- hats and hairstyles borrowed from the cast (Costume Closet parts), moved onto Mabel's head ----- */
 const MB_HEADX='<g transform="translate(150,140) scale(1,.906) translate(-150,-200)">';
 const MB_CASTHATS=['cowboy','beanie','santa','cap','band','star','peace','pinkbow','redbow','feathers','starfish','bee','helmet','dino'];
 let MB_O=null,MB_KEYS=null;
 function mbInit(){if(MB_O)return;
- const hats=['Classic','Star','Pumpkin','Bow','Crown'].map(n=>({mw:n})).concat([{none:1}]);
+ const hats=['Classic','Star','Pumpkin','Bow','Crown'].map(n=>({mw:n}));
  if(typeof AV_HATS!=='undefined')MB_CASTHATS.forEach(id=>{const h=AV_HATS.find(x=>x.id===id);if(h)hats.push({cast:h});});
+ hats.push({none:1});
  const hairdos=[{mw:1}];if(typeof AV_HAIRS!=='undefined')AV_HAIRS.forEach(h=>hairdos.push({cast:h}));
  MB_O={outfit:MB_OUTFITS,cloak:MB_CLOAK,hairdo:hairdos,hair:MB_HAIR,skin:MB_SKIN,hat:hats,shoes:MB_SHOES,face:MB_FACES,held:MB_HELD,broom:['Birch','Candy','Bat','Rocket'],pet:['Midnight','Flutter','Gourdon','Pip','None']};
  MB_KEYS=Object.keys(MB_O);}
@@ -7688,8 +7730,8 @@ function mbThumb(k,st,i){mbInit();const s2={...st,[k]:i};const head={broom:1,bod
  if(k==='hairdo'||k==='skin')return mbSvg('40 50 220 220',mbLayers(s2,false,null,{...head,hat:1}));
  if(k==='outfit')return mbSvg('-30 70 360 360',mbLayers(s2,false,null,{broom:1,pet:1,held:1,face:1,hat:1}));
  if(k==='shoes')return mbSvg('58 318 184 100',MB_LEGS+mbFeet(MB_SHOES[i].f()));
- if(k==='face'){if(!i)return MB_NONE;const low=['scarf','necklace','bowtie'].includes(MB_FACES[i].id);return mbSvg(low?'50 80 200 200':'66 76 168 140',mbLayers(s2,false,null,low?{broom:1,pet:1,held:1,hat:1}:{...head,hat:1,face:0}));}
- if(k==='held'){if(!i)return MB_NONE;const S=MB_SKIN[st.skin];return mbSvg(MB_HELD[i].vb,'<circle r="20" fill="'+S[0]+'"/>'+MB_HELD[i].s);}
+ if(k==='face'){if(MB_FACES[i].id==='none')return MB_NONE;const low=['scarf','necklace','bowtie'].includes(MB_FACES[i].id);return mbSvg(low?'50 80 200 200':'66 76 168 140',mbLayers(s2,false,null,low?{broom:1,pet:1,held:1,hat:1}:{...head,hat:1,face:0}));}
+ if(k==='held'){if(MB_HELD[i].id==='none')return MB_NONE;const S=MB_SKIN[st.skin];return mbSvg(MB_HELD[i].vb,'<circle r="20" fill="'+S[0]+'"/>'+MB_HELD[i].s);}
  if(k==='broom')return mbSvg('110 100 270 270','<g transform="rotate(-38 245 236)">'+MW.broom[MB_O.broom[i]]+'</g>');
  if(k==='pet'){const p=MB_O.pet[i];return MW.pet[p]?mbSvg(MB_PETVB[p],MW.pet[p]):MB_NONE;}
  return '';}
@@ -7778,11 +7820,13 @@ SCENES.dressup={title:"Mabel's Wardrobe",mount(stage){
  const root=el('div',{class:'mm-root mb-root'});stage.append(root);
  const box=el('div',{class:'mm-stage mb-stage'},el('div',{class:'mm-floor'}));const panel=el('div',{class:'mm-panel'});root.append(box,panel);
  mbInit();
- let st={outfit:0,cloak:0,hairdo:0,hair:0,skin:0,hat:0,shoes:0,face:0,held:0,broom:0,pet:0},tab='outfit',hist=[],pop=null,hinted=false,ov=null;
- try{let sv=JSON.parse(localStorage.getItem('hv-mabel3')||'null');const old=!sv&&JSON.parse(localStorage.getItem('hv-mabel2')||'null');
-  if(old){sv={...old};const ex=old.extra|0;if(ex===1)sv.face=1;if(ex===4)sv.face=7;if(ex===2)sv.held=1;if(ex===3)sv.held=2;}
+ const NF=MB_FACES.length-1,NH=MB_HELD.length-1,NT=MB_O.hat.length-1;
+ let st={outfit:0,cloak:0,hairdo:0,hair:0,skin:0,hat:0,shoes:0,face:NF,held:NH,broom:0,pet:0},tab='outfit',hist=[],pop=null,hinted=false,ov=null;
+ try{let sv=JSON.parse(localStorage.getItem('hv-mabel4')||'null');
+  if(!sv){const v3=JSON.parse(localStorage.getItem('hv-mabel3')||'null');if(v3){sv={...v3};sv.hat=v3.hat===5?NT:v3.hat>5?v3.hat-1:v3.hat;sv.face=v3.face===0?NF:v3.face-1;sv.held=v3.held===0?NH:v3.held-1;}}
+  if(!sv){const old=JSON.parse(localStorage.getItem('hv-mabel2')||'null');if(old){sv={...old};const ex=old.extra|0;sv.face=ex===1?0:ex===4?6:NF;sv.held=ex===2?0:ex===3?1:NH;}}
   if(sv){for(const k of MB_KEYS)if(Number.isInteger(sv[k]))st[k]=clamp(sv[k],0,MB_O[k].length-1);hinted=true;}}catch(e){}
- const save=()=>{try{localStorage.setItem('hv-mabel3',JSON.stringify(st));}catch(e){}};
+ const save=()=>{try{localStorage.setItem('hv-mabel4',JSON.stringify(st));}catch(e){}};
  const nameEl=el('div',{class:'mm-name'},'🧙‍♀️ Mabel');
  let hand=hinted?null:el('div',{class:'mm-hand',style:'left:47%;top:16%'},'👆');
  function draw(){box.querySelectorAll('svg.mb-fig').forEach(n=>n.remove());
@@ -7797,7 +7841,7 @@ SCENES.dressup={title:"Mabel's Wardrobe",mount(stage){
  const acts=el('div',{class:'mm-acts'});const mk=(ic,lab,fn)=>{const b=el('button',{class:'mm-act',type:'button','aria-label':lab});b.innerHTML=MM_TAB[ic];b.onclick=fn;acts.append(b);return b;};
  mk('undo','undo',()=>{const h=hist.pop();if(!h){SFX.thud();return;}st=h;pop=null;SFX.click();save();draw();renderPanel();});
  mk('dice','surprise me',()=>{hist.push({...st});for(const k of MB_KEYS)st[k]=Math.floor(Math.random()*MB_O[k].length);pop='hat';SFX.cackle();save();draw();renderPanel();});
- mk('dance','twirl',()=>{const svg=box.querySelector('svg.mb-fig');svg.classList.remove('twirl');void svg.getBoundingClientRect();svg.classList.add('twirl');SFX.cackle();const t=SFX.now();[523,659,784,1046,784,659].forEach((f,i)=>SFX.tone(f,.14,'triangle',.05,t+i*.14));setTimeout(()=>{const s2=box.querySelector('svg.mb-fig');if(s2)s2.classList.remove('twirl');},1700);});
+ mk('dance','dance',()=>{const svg=box.querySelector('svg.mb-fig');if(!svg)return;HV_DANCE(box,{body:svg.querySelector('.mb-all'),origin:'150px 420px',arms:[[svg.querySelector('[data-part="held"]'),94,212,-40,110]],hops:[...svg.querySelectorAll('[data-part="hat"]'),svg.querySelector('[data-part="pet"]')]});});
  const cam=mk('camera','take a picture',()=>{SFX.click();openPicker();});
  panel.append(tabs,opts,acts);
  function renderPanel(){for(const k in tabBtns)tabBtns[k].classList.toggle('on',k===tab);opts.innerHTML='';
@@ -9146,7 +9190,8 @@ SCENES.avatar={title:'Character Creator',keepSong:true,mount(stage){
  const TABS=[['outfit','👕'],['bot','👖'],['back','🦋'],['skin','🖐️'],['hair','💇'],['hairCol','🎨'],['hat','🎩'],['face','😎'],['held','🪄']];
  const head='40 66 220 220',full='-30 6 360 410';
  function thumb(over,vb,u){return avSVG(Object.assign({},cfg,over),{uid:'t'+u,size:1,vb,attrs:' preserveAspectRatio="xMidYMid meet"'});}
- function opts(){switch(tab){
+ function opts(){const L=opts0();return L.filter(o=>!/av-x/.test(o.html)).concat(L.filter(o=>/av-x/.test(o.html)));}
+ function opts0(){switch(tab){
   case 'outfit':return AV_OUTFITS.map((o,i)=>({on:cfg.outfit===o.id,html:thumb({outfit:o.id,bot:'same',back:'same',held:'none'},full,'o'+i),set:{outfit:o.id,bot:'same',back:'same'},tall:1}));
   case 'bot':{const cur=cfg.bot==='same'?cfg.outfit:cfg.bot;return avBots().map((id,i)=>({on:cur===id||(cfg.bot==='same'&&avBots().indexOf(cfg.outfit)<0&&false),html:thumb({bot:id,held:'none'},'20 236 260 180','b'+i),set:{bot:id}}));}
   case 'back':{const cur=cfg.back==='same'?(AV_OUTFITS.find(o=>o.id===cfg.outfit).back?cfg.outfit:'none'):cfg.back;return AV_BACKS.map((id,i)=>({on:cur===id,html:id==='none'?'<span class="av-x">✕</span>':thumb({back:id,held:'none'},full,'k'+i),set:{back:id},tall:1}));}
