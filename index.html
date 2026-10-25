@@ -32,7 +32,7 @@ button{font-family:inherit}
 .gutter{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 
 /* world */
-#world{position:fixed;inset:0;display:block;touch-action:pan-y}
+#world{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:pan-y}
 #spacer{position:relative;pointer-events:none}
 #hots{position:fixed;inset:0;pointer-events:none;overflow:hidden}
 .hot{position:absolute;pointer-events:auto;background:none;border:0;padding:0;cursor:pointer;transform-origin:50% 100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}
@@ -1348,7 +1348,7 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
  leaves:Array.from({length:26},(_,i)=>({x:(i*173)%W,y:(i*251)%H,v:30+(i%5)*12,ph:i})),
  flies:Array.from({length:30},(_,i)=>({x:(i*211)%W,y:ZB+60+(i*97)%(ZC-ZB-120),ph:i*1.7})),
  witchT:-4,witchY:0,dragging:false,dragX:0,dragCam:0,
- init(){this.ctx=this.c.getContext('2d');new ResizeObserver(()=>this.resize()).observe(document.body);this.resize();this.buildHots();addEventListener('scroll',()=>{this.camY=scrollY/this.scale;},{passive:true});
+ init(){this.ctx=this.c.getContext('2d');{const ro=new ResizeObserver(()=>this.resize());ro.observe(document.body);ro.observe(this.c);const rz=()=>this.resize();addEventListener('resize',rz);addEventListener('orientationchange',()=>setTimeout(rz,250));if(window.visualViewport)visualViewport.addEventListener('resize',rz);}this.resize();this.buildHots();addEventListener('scroll',()=>{this.camY=scrollY/this.scale;},{passive:true});
   this.c.addEventListener('pointerdown',e=>{if((WX1-WX0)*this.scale<=this.vw+2)return;this.dragging=true;this.dragX=e.clientX;this.dragCam=this.camX;this.c.setPointerCapture(e.pointerId);});
   this.c.addEventListener('pointermove',e=>{if(!this.dragging)return;const[lo,hi]=this.camRange(this.scale);this.camX=clamp(this.dragCam-(e.clientX-this.dragX)/this.scale,lo,hi);});
   this.c.addEventListener('pointerup',()=>{this.dragging=false;});this.c.addEventListener('pointercancel',()=>{this.dragging=false;});
@@ -1362,7 +1362,7 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
   requestAnimationFrame(ts=>this.frame(ts));},
  setZoom(z,save=true){z=clamp(z,.35,1.3);if(Math.abs(z-this.zoom)<.001)return;const s0=this.scale,cx=this.camX+this.vw/(2*s0),cy=scrollY/s0+this.vh/(2*s0);this.zoom=z;this.resize(true);const s1=this.scale;const[lo,hi]=this.camRange(s1);this.camX=clamp(cx-this.vw/(2*s1),lo,hi);scrollTo(0,Math.max(0,(cy-this.vh/(2*s1))*s1));this.camY=scrollY/s1;if(save)store.set('hv-zoom',z);$('#zoomOut').disabled=z<=.35;$('#zoomIn').disabled=z>=1.3;},
  camRange(s){const vis=this.vw/s;if(vis>=WX1-WX0){const c=(WX0+WX1)/2-vis/2;return[c,c];}return[WX0,WX1-vis];},
- resize(){this.vw=innerWidth;this.vh=innerHeight;this.dpr=Math.min(2,devicePixelRatio||1);this.c.width=Math.round(this.vw*this.dpr);this.c.height=Math.round(this.vh*this.dpr);this.c.style.width=this.vw+'px';this.c.style.height=this.vh+'px';
+ resize(){/* size to the fixed canvas box (the whole screen), not innerHeight: on iPad Safari innerHeight lags when the toolbar hides, which left a bar at the bottom */const rb=this.c.getBoundingClientRect();this.vw=Math.max(1,Math.round(rb.width)||innerWidth);this.vh=Math.max(innerHeight,Math.round(rb.height)||0);this.dpr=Math.min(2,devicePixelRatio||1);this.c.width=Math.round(this.vw*this.dpr);this.c.height=Math.round(this.vh*this.dpr);this.c.style.width='100%';this.c.style.height='100%';
   /* two buildings per screen: the whole street width fills the window; phones see 640 of the 800 and can drag */
   this.base=Math.min(2.4,this.vw>=700?this.vw/W:this.vw/640);this.scale=this.base*this.zoom;$('#hots').style.setProperty('--s',this.scale.toFixed(3));$('#spacer').style.height=Math.round(H*this.scale)+'px';
   const[lo,hi]=this.camRange(this.scale);if(this.camX==null)this.camX=400-this.vw/(2*this.scale);this.camX=clamp(this.camX,lo,hi);this.camY=scrollY/this.scale;this.vx0=this.camX;this.vx1=this.camX+this.vw/this.scale;},
