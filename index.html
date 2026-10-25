@@ -3579,7 +3579,24 @@ function boogiePose(move,u,t){
  return P;}
 
 /* ----- the posable monster ----- */
-function boogiePuppet(ctx,x,y,s,skin,P,t){
+/* the dancers use the village's character art: the whole character leans, stretches, squats and jumps with each move,
+   with little swooshes so each move is easy to read. falls back to the old puppet only if the art has not loaded yet */
+const BOOGIE_NC={skeleton:'rattles',frank:'frankie',mummy:'mummy',wolf:'wolfie',drac:'dracula',witch:'mabel'};
+function boogiePuppet(ctx,x,y,s,skin,P,t){const key=BOOGIE_NC[skin];if(!key||typeof NC==='undefined'||!NC[key])return boogiePuppetOld(ctx,x,y,s,skin,P,t);
+ const cl=v=>Math.max(0,Math.min(1,v));
+ const sq=cl(-(P.kL+P.kR)/2/1.6),st=cl(((P.aL+P.aR)/2-.22)/2.56)*(1-sq),kL=cl((P.hL-.07)/.88)*(1-sq),kR=cl((P.hR-.07)/.88)*(1-sq),lift=P.lift||0;
+ ctx.save();ctx.translate(x,y);ctx.scale(s,s);
+ const sh=1-Math.min(.6,lift/150);ctx.fillStyle='rgba(0,0,0,.3)';ctx.beginPath();ctx.ellipse(0,3,52*sh,10*sh,0,0,TAU);ctx.fill();
+ /* dust puffs on a squat or a landing */
+ if(sq>.4){ctx.fillStyle='rgba(235,225,255,'+(.45*sq)+')';for(const d of[-1,1]){ctx.beginPath();ctx.arc(d*(46+sq*10),-4,8+sq*6,0,TAU);ctx.arc(d*(60+sq*14),-10,5+sq*4,0,TAU);ctx.fill();}}
+ /* kick swooshes */
+ for(const[d,k]of[[-1,kL],[1,kR]]){if(k<.15)continue;ctx.strokeStyle='rgba(255,244,230,'+(.8*k)+')';ctx.lineWidth=5;ctx.lineCap='round';for(let i=0;i<3;i++){ctx.beginPath();ctx.arc(d*40,-40,44+i*12,d<0?Math.PI*.55:-Math.PI*.15,d<0?Math.PI*1.15:Math.PI*.45);ctx.stroke();}}
+ ctx.save();ctx.translate((kR-kL)*14,-lift);ctx.rotate((P.tilt||0)*1.5+(kR-kL)*.12);ctx.scale(1+sq*.16-st*.06,1-sq*.24+st*.12);
+ ncFit(ctx,key,0,0,170,195);ctx.restore();
+ /* arms-up sparkles over the head */
+ if(st>.3){const a=cl((st-.3)/.5);for(let i=0;i<5;i++){const px=-50+i*25,py=-215-lift-Math.abs(Math.sin(t*8+i))*10;drawStar(ctx,px,py,7*a,'#FFE08A');}}
+ ctx.restore();}
+function boogiePuppetOld(ctx,x,y,s,skin,P,t){
  ctx.save();ctx.translate(x,y);ctx.scale(s,s);
  const TH=36,SH=34,UA=31,FA=29,HW=12,SW=25,TOR=62;
  const drop=(h,k)=>TH*Math.cos(h)+SH*Math.cos(h+k);
