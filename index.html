@@ -4613,6 +4613,14 @@ SS_GAMES.balloons={label:'Balloons',col:'#D0566E',mode:true,
   const FULL=24,HOLD_FULL=10,CANDY=['#FF8A4C','#FFC94D','#8EE07B','#5EB8F2','#FF7BB8','#D78CFF'];
   const bals=[],fx=[],fly=[],gifts=[],pairs=[];let mine=0,spawnT=.3,ci=0,lane=0,fill=0,party=0,jackHop=0,pile=[],hint=1;
   let holder={key:SS_HOLDERS[0],idx:0,held:[],arrive:0,hop:0},leaver=null;
+  /* nudges from the friend when nobody has matched for a while */
+  const NAMES=['orange pumpkin','yellow smiley','green Frankie','blue','purple smiley','pink','white ghost'];
+  let idle=0,say=null,sayN=0,sayGap=0,focus=null;
+  function nudge(){const B=bals.filter(b=>!b.held&&b.grow>=1&&b.y>90&&b.y<A.H*.85);let pair=null;for(const a of B){const o=B.find(x=>x!==a&&x.k===a.k);if(o){pair=[a,o];break;}}
+   const lines=['Can you find two balloons that match?','Drag one balloon onto its twin!','Press, hold, and slide it to the one that looks the same.','I would love a balloon to hold!'];
+   if(pair)lines.push('Look! Two '+NAMES[pair[0].k]+' balloons. Push them together!');
+   const txt=pair&&sayN%2===1?lines[lines.length-1]:lines[sayN%4];sayN++;focus=pair;hint=1;
+   say={txt,t:0};SSA.bell(ssNote(9),.04);SSA.bell(ssNote(11),.035,.12);}
   {const r=seeded(9);for(let i=0;i<FULL;i++)pile.push({u:r(),v:r(),c:CANDY[i%CANDY.length],k:r()<.5?'circle':'star',rot:r()*6});}
   /* a pumpkin-shaped glass jar on the right, with Jack sitting beside it */
   const jar=()=>{const U=A.U,w=Math.min(150*U,A.W*.3),h=w*.92;return{x:A.W-w-Math.max(14*U,A.W*.04),y:A.H-h-10*U,w,h};};
@@ -4625,7 +4633,7 @@ SS_GAMES.balloons={label:'Balloons',col:'#D0566E',mode:true,
   /* in same mode each colour comes twice close together, so twins are easy to find */
   function nextType(){if(A.surprise){const lone=bals.filter(b=>!b.busy&&!bals.some(o=>o!==b&&!o.busy&&o.k===b.k));if(lone.length&&Math.random()<.5)return BAL[lone[Math.floor(Math.random()*lone.length)].k];return BAL[Math.floor(Math.random()*BAL.length)];}
    const k=ci++;return BAL[(Math.floor(k/4)*2+(k%2))%BAL.length];}
-  function gift(){return Math.random()<(A.surprise?.45:.3)?SS_TREATS[Math.floor(Math.random()*SS_TREATS.length)]:null;}
+  function gift(){return null;}
   function spawn(){const U=A.U,b=nextType();/* new balloons rise in the open sky left of the jar */
    const J=jar(),span=Math.max(A.W*.5,J.x-40*U),lanes=[.12,.37,.62,.87],x=A.surprise?span*(.08+Math.random()*.84):span*lanes[lane++%4];
    bals.push({...b,x,y:A.H+70*U,r:(44+Math.random()*10)*U,vy:-(42+Math.random()*14)*U,ph:Math.random()*TAU,gift:gift(),grow:1});}
@@ -4640,7 +4648,7 @@ SS_GAMES.balloons={label:'Balloons',col:'#D0566E',mode:true,
   /* two twins touch: they float down together into the friend's hand */
   function match(a,b){const base=holder.held.length+pairs.filter(p=>p.h===holder).length*2;if(base>=HOLD_FULL||holder.arrive>.6){pop(a);pop(b);return;}
    for(const o of[a,b]){const i=bals.indexOf(o);if(i>=0)bals.splice(i,1);}
-   hint=0;pairs.push({h:holder,a:{...a,x0:a.x,y0:a.y,r0:a.r},b:{...b,x0:b.x,y0:b.y,r0:b.r},i0:base,t:0});
+   hint=0;idle=0;say=null;focus=null;sayGap=0;pairs.push({h:holder,a:{...a,x0:a.x,y0:a.y,r0:a.r},b:{...b,x0:b.x,y0:b.y,r0:b.r},i0:base,t:0});
    const n=a.n+5;SSA.bell(ssNote(n),.07);SSA.bell(ssNote(n+2),.06,.05);SSA.bell(ssNote(n+4),.05,.1);
    for(let j=0;j<10;j++){const ang=j/10*TAU,s=(60+Math.random()*50)*A.U;fx.push({x:(a.x+b.x)/2,y:(a.y+b.y)/2,vx:Math.cos(ang)*s,vy:Math.sin(ang)*s,t:0,life:.9,col:'#FFE9A8',sh:'star',rot:0,vr:3});}}
   function sendOff(){leaver={...holder,t:0};const idx=(holder.idx+1)%SS_HOLDERS.length;holder={key:SS_HOLDERS[idx],idx,held:[],arrive:1,hop:0};
@@ -4662,6 +4670,8 @@ SS_GAMES.balloons={label:'Balloons',col:'#D0566E',mode:true,
    update(dt,t){const U=A.U,sp=spd();spawnT-=dt*sp;if(spawnT<=0&&bals.length<(A.calm?6:9)){spawn();spawnT=A.calm?1.6:1.05;}
     jackHop=Math.max(0,jackHop-dt*1.2);holder.hop=Math.max(0,holder.hop-dt*1.5);if(holder.arrive>0)holder.arrive=Math.max(0,holder.arrive-dt*.8);
     if(leaver){leaver.t+=dt;if(leaver.t>5)leaver=null;}
+    if(!bals.some(b=>b.held)){idle+=dt;}if(say){say.t+=dt;if(say.t>4.5){say=null;sayGap=6;}}else if(sayGap>0)sayGap-=dt;
+    if(idle>=10&&!say&&sayGap<=0&&holder.arrive<=0)nudge();
     for(let i=bals.length-1;i>=0;i--){const b=bals[i];b.grow=Math.min(1,b.grow+dt*3);if(b.grow<1||b.held)continue;b.y+=b.vy*dt*sp;b.x+=Math.sin(t*.8+b.ph)*10*U*dt;if(b.y<-b.r*3)bals.splice(i,1);}
     for(let i=pairs.length-1;i>=0;i--){const p=pairs[i];p.t+=dt/(A.calm?1.3:.95);if(p.t>=1){pairs.splice(i,1);p.h.held.push(p.a,p.b);p.h.hop=1;SSA.marimba(ssNote(9),.07);SSA.marimba(ssNote(11),.07,.12);
       if(p.h===holder&&holder.held.length>=HOLD_FULL)setTimeout(()=>{if(holder===p.h)sendOff();},700);}}
@@ -4704,13 +4714,18 @@ SS_GAMES.balloons={label:'Balloons',col:'#D0566E',mode:true,
     c.fillStyle='#C2581A';ssRR(c,jx-lw*.55,J.y+2*U,lw*1.1,nk*.62,nk*.25);c.fill();c.fillStyle='#FF8A2E';ssRR(c,jx-lw*.55,J.y,lw*1.1,nk*.5,nk*.25);c.fill();
     c.fillStyle='#4E8A3E';ssRR(c,jx-J.w*.04,J.y-nk*.7,J.w*.08,nk*.8,J.w*.03);c.fill();
     c.strokeStyle='#6FB04E';c.lineWidth=3*U;c.lineCap='round';c.beginPath();c.moveTo(jx+J.w*.03,J.y-nk*.5);c.bezierCurveTo(jx+J.w*.16,J.y-nk*.9,jx+J.w*.2,J.y-nk*.1,jx+J.w*.11,J.y-nk*.25);c.stroke();
-    /* Jack sits beside the jar */
-    const hop=Math.abs(Math.sin(jackHop*Math.PI*3))*28*U*(jackHop>0?1:0),js=Math.min(96*U,J.w*.66);ssChar(c,'jack',J.x-js*.5,H-10*U-hop,js,js);
     for(const f of fly){if(f.t<0)continue;const u=f.t,e=u*u*(3-2*u),tx=J.x+J.w/2,ty=J.y-6*U;const x=f.x0+(tx-f.x0)*e,y=f.y0+(ty-f.y0)*e-Math.sin(u*Math.PI)*120*U;c.fillStyle=f.col;ssShape(c,'circle',x,y,9*U);c.fillStyle='rgba(255,255,255,.5)';ssShape(c,'circle',x-3*U,y-3*U,3*U);}
     for(const f of fx){c.globalAlpha=Math.max(0,Math.min(1,(f.life-f.t)*2));c.fillStyle=f.col;ssShape(c,f.sh,f.x,f.y,(f.sh==='circle'?4:7)*U,f.rot);}c.globalAlpha=1;
     c.textAlign='center';c.textBaseline='middle';for(const g of gifts){const u=g.t/1.8,sc=u<.15?u/.15:1;c.globalAlpha=u<.7?1:(1-u)/.3;c.font=Math.round(g.s*sc)+'px serif';c.fillText(g.ch,g.x,g.y);c.fillStyle='#FFF4D6';for(let k=0;k<5;k++){const a=t*3+k*1.26;ssShape(c,'star',g.x+Math.cos(a)*g.s*.75,g.y+Math.sin(a)*g.s*.75,5*U,a);}}c.globalAlpha=1;
+    if(say){const P=hpos(holder),u=say.t,a=u<.3?u/.3:u>4?Math.max(0,(4.5-u)/.5):1,fs=Math.round(Math.max(15,19*U)),maxW=Math.min(300*U,W*.62);
+     c.font='800 '+fs+'px "Baloo 2",system-ui,sans-serif';const words=say.txt.split(' '),ln=[];let cur='';for(const w of words){const tt=cur?cur+' '+w:w;if(c.measureText(tt).width>maxW&&cur){ln.push(cur);cur=w;}else cur=tt;}ln.push(cur);
+     const bw=Math.max(...ln.map(l=>c.measureText(l).width))+28*U,bh=ln.length*fs*1.25+20*U,bx=Math.min(W-bw-8,Math.max(8,P.x-bw*.3)),by2=P.y-P.s*1.05-bh-14*U-(holder.held.length?40*U:0);
+     c.globalAlpha=a;c.fillStyle='rgba(0,0,0,.25)';ssRR(c,bx+3,by2+5,bw,bh,16*U);c.fill();c.fillStyle='#FFF6E6';ssRR(c,bx,by2,bw,bh,16*U);c.fill();
+     c.beginPath();const tx=Math.min(bx+bw-20*U,Math.max(bx+20*U,P.x));c.moveTo(tx-10*U,by2+bh-1);c.lineTo(tx+10*U,by2+bh-1);c.lineTo(tx,by2+bh+14*U);c.closePath();c.fill();
+     c.fillStyle='#2A1548';c.textAlign='left';c.textBaseline='top';ln.forEach((l,i)=>c.fillText(l,bx+14*U,by2+10*U+i*fs*1.25));c.globalAlpha=1;}
     /* the first time, a hand shows how to drag one twin onto the other */
-    if(hint>0&&!drag){const tw=[];for(const b of bals){const o=bals.find(x=>x!==b&&x.k===b.k&&x.y<H*.8&&x.y>80);if(o&&b.y<H*.8&&b.y>80){tw.push(b,o);break;}}
+    if(hint>0&&!drag){const tw=focus&&bals.includes(focus[0])&&bals.includes(focus[1])?focus.slice():[];if(!tw.length)for(const b of bals){const o=bals.find(x=>x!==b&&x.k===b.k&&x.y<H*.8&&x.y>80);if(o&&b.y<H*.8&&b.y>80){tw.push(b,o);break;}}
+     if(say&&tw.length)for(const q of tw)ssGlow(c,q.x,q.y,q.r*1.9,'rgba(255,233,168,.95)',.3+.2*Math.sin(t*5));
      if(tw.length){const u=(t*.45)%1,e=Math.min(1,u*1.4),x=tw[0].x+(tw[1].x-tw[0].x)*e,y=tw[0].y+(tw[1].y-tw[0].y)*e;c.globalAlpha=.85*hint*(u<.85?1:(1-u)/.15);c.font=Math.round(44*U)+'px serif';c.fillText('👆',x+6*U,y+30*U);c.globalAlpha=1;}}
     },
    down(p){const b=hit(p.x,p.y);if(b){p.mode='bal';p.b=b;p.sx=p.x;p.sy=p.y;p.dx=b.x-p.x;p.dy=b.y-p.y;return;}
