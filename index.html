@@ -1764,7 +1764,10 @@ function tilePic(id,w,h,tint){const cv=miniCanvas(w,h);const c=cv.ctx,fn=PREV[id
  const draw=t=>{c.save();c.clearRect(0,0,w,h);c.scale(w/480,h/270);pvTint=tint||null;pvSeed=seed;try{if(fn)fn(c,t,480,270);}catch(e){}pvTint=null;pvSeed=0;c.restore();};
  cv.play=()=>{if(raf)return;const t0=performance.now()-1700;const tick=()=>{draw((performance.now()-t0)/1000);raf=requestAnimationFrame(tick);};tick();};
  cv.stop=()=>{if(raf)cancelAnimationFrame(raf);raf=0;draw(1.7);};
- draw(1.7);return cv;}
+ draw(1.7);
+ /* drawn before the cast art finished loading? redraw once it is ready, so no old-style kids stay on a sign */
+ if(Object.keys(NC).length<Object.keys(NC_SVG).length){let n=0;const wait=()=>{if(Object.keys(NC).length>=Object.keys(NC_SVG).length){if(!raf)draw(1.7);}else if(n++<60)setTimeout(wait,250);};setTimeout(wait,250);}
+ return cv;}
 let menuTiles=[];
 function openMenu(){const m=$('#menu'),grid=$('#menuGrid'),foot=$('#menuFoot');closePeek();grid.innerHTML='';foot.innerHTML='';menuTiles=[];
  for(const[id,col]of TILES){const wide=false;/* every tile the same size */const g=GAMES.find(x=>x.id===id),st=g?unlockState(g):'open';const cv=tilePic(id,wide?480:300,wide?270:225,col);
