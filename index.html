@@ -1263,7 +1263,9 @@ const ROAD=(()=>{const Pt=ROAD_PTS,pts=[];const cr=(p0,p1,p2,p3,u)=>{const u2=u*
   xAt(y){for(let i=1;i<this.pts.length;i++){if(this.pts[i][1]>=y){const a=this.pts[i-1],b=this.pts[i];const u=(y-a[1])/((b[1]-a[1])||1);return a[0]+(b[0]-a[0])*u;}}return this.pts[this.pts.length-1][0];}};})();
 /* NH: neighborhood house searches */
 const NH_COUNT=28;
-function nhList(){if(nhList.c)return nhList.c;const L=[];MAINS.forEach((my,k)=>{for(const[hx,o]of[[-300,1],[1100,-1]]){L.push({x:hx,y:my-70,s:1.1});L.push({x:hx+o*40,y:my+150,s:.95});}});L.forEach((h,i)=>{h.id='house'+(i%NH_COUNT);h.i=i;});return nhList.c=L;}
+/* where the four search houses sit on each cross street: close enough to the main street to be seen on an iPad */
+const NH_SIDES=[[-300,1],[1100,-1]];
+function nhList(){if(nhList.c)return nhList.c;const L=[];MAINS.forEach((my,k)=>{for(const[hx,o]of NH_SIDES){L.push({x:hx,y:my-70,s:1.1});L.push({x:hx+o*40,y:my+235,s:.95});}});L.forEach((h,i)=>{h.id='house'+(i%NH_COUNT);h.i=i;});return nhList.c=L;}
 function nhBadge(ctx,x,y,s,i,t){const id='house'+(i%NH_COUNT);if(!SCENES[id])return;const done=store.get('hv-best-'+id,null)!=null;const by=y-(96+64)*s+Math.sin(t*2.2+i)*4;ctx.save();ctx.translate(x,by);const g=ctx.createRadialGradient(0,0,6,0,0,40);g.addColorStop(0,'rgba(255,200,77,.5)');g.addColorStop(1,'rgba(255,200,77,0)');ctx.fillStyle=g;ctx.beginPath();ctx.arc(0,0,40+Math.sin(t*3+i)*3,0,Math.PI*2);ctx.fill();ctx.fillStyle=done?'#8EE65B':'#FFC34D';ctx.strokeStyle='#2A1548';ctx.lineWidth=4;ctx.beginPath();ctx.arc(0,0,22,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.strokeStyle='#2A1548';ctx.lineWidth=4;ctx.lineCap='round';ctx.beginPath();ctx.arc(-3,-3,9,0,Math.PI*2);ctx.stroke();ctx.beginPath();ctx.moveTo(4,4);ctx.lineTo(12,12);ctx.stroke();if(done){ctx.fillStyle='#2A1548';ctx.font='900 14px "Baloo 2"';ctx.textAlign='center';ctx.fillText('✓',-3,2);}ctx.restore();}
 /* ==== DIRT PATH START ==== */
 /* one neutral packed-dirt lane: soft darker and lighter patches, scattered pebbles with a shade tone,
@@ -1429,8 +1431,8 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
   if(this.vx0<WX0+200||this.vx1>WX1-200){for(let yy=Math.floor((top-200)/120)*120;yy<bot+200;yy+=120){const zc=yy<ZB?['#160A33','#1A0D3A']:yy<ZC?['#0F2A32','#133440']:['#0B1638','#0F1C44'];if(yy<700)continue;for(let k=0;k<4;k++){const px=WX0-60-k*70+((yy/120)%2)*40,qx=WX1-30+k*70-((yy/120)%2)*40;drawPine(ctx,px,yy+(k%3)*30,80+(k%3)*26,zc[0],zc[1]);drawPine(ctx,qx,yy+((k+1)%3)*30,80+((k+1)%3)*26,zc[0],zc[1]);}}}
   /* neighborhood houses at the ends of every cross street, so the streets go somewhere */
   MAINS.forEach((my,k)=>{if(!V(my,260))return;const zc=my<ZB?'#160A33':my<ZC?'#0E2630':'#0B1638';const cols=[['#5B2E4E','#2A1548'],['#3A5A8A','#1E2A4A'],['#6A4A2A','#2A1A10'],['#4A6A3A','#1E3A1A'],['#7A3A5A','#3A1A2A']];
-   for(const[hx,o]of[[-300,1],[1100,-1]]){const c=cols[(k+(o>0?0:2))%5];big(ctx,hx,my-70,1.1,()=>drawCottage(ctx,0,0,t,c[0],c[1],130,96));drawFence(ctx,hx-110,hx+110,my-62,my<ZB?'#080318':'#2E3A5C');drawPumpkin(ctx,hx-o*90,my-64,14,.6);drawTree(ctx,hx+o*120,my-60,110,zc);drawLamp(ctx,hx-o*120,my-66,t,70);nhBadge(ctx,hx,my-70,1.1,k*4+(o>0?0:2),t);
-    const c2=cols[(k+(o>0?3:1))%5];big(ctx,hx+o*40,my+150,.95,()=>drawCottage(ctx,0,0,t,c2[0],c2[1],120,90));drawFence(ctx,hx+o*40-100,hx+o*40+100,my+158,my<ZB?'#080318':'#2E3A5C');drawBush(ctx,hx+o*150,my+156,1,'#143A2A','#1E4A36');nhBadge(ctx,hx+o*40,my+150,.95,k*4+(o>0?0:2)+1,t);}});
+   for(const[hx,o]of NH_SIDES){const c=cols[(k+(o>0?0:2))%5];big(ctx,hx,my-70,1.1,()=>drawCottage(ctx,0,0,t,c[0],c[1],130,96));drawFence(ctx,hx-110,hx+110,my-62,my<ZB?'#080318':'#2E3A5C');drawPumpkin(ctx,hx-o*90,my-64,14,.6);drawTree(ctx,hx+o*120,my-60,110,zc);drawLamp(ctx,hx-o*120,my-66,t,70);
+    const c2=cols[(k+(o>0?3:1))%5];big(ctx,hx+o*40,my+235,.95,()=>drawCottage(ctx,0,0,t,c2[0],c2[1],120,90));drawFence(ctx,hx+o*40-100,hx+o*40+100,my+243,my<ZB?'#080318':'#2E3A5C');drawBush(ctx,hx+o*150,my+241,1,'#143A2A','#1E4A36');}});
   /* ===== the S street ===== */
   drawRoad(ctx,top,bot,t,cx0,cx0+cw);
   /* lamps along the street, every so often, on the outside of each bend */
@@ -3484,6 +3486,8 @@ TILES.splice(5,0,['hayride','#D06A1A']);TILES.forEach(([id,c])=>TILE_COLOR[id]=c
 PREV.hayride=(x,t,W,H)=>HAYRIDE_THUMB(x,t,W,H);
 HOT.push({id:'hayride',x:-30,y:P.s_hayride.y,w:200,h:220,sub:'Hayride stop',title:'Haunted Hayride',kind:'post'});
 /* the parked wagon beside its sign, tractor facing the road */
+/* magnifying glasses over the search houses: drawn last so nothing covers them */
+{const _wd2=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd2.call(this,ctx,t,dt,top,bot);for(const h of nhList()){if(this.vis(h.y,top,bot,260))nhBadge(ctx,h.x,h.y,h.s,h.i,t);}};}
 {const HR_STOP={x:230,y:P.s_hayride.y+5};const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);if(this.vis(HR_STOP.y,top,bot,260))HAYRIDE_STOP_DRAW(ctx,HR_STOP.x,HR_STOP.y,t);};}
 /* ==== HAUNTED HAYRIDE END ==== */
 
@@ -9429,7 +9433,7 @@ const DOORS=(()=>{
   /* buildings added later are drawn from their own anchor, not the slot's x */
   const BASE={s_chomp:p=>[690,p.y-46],s_lib:p=>[690,p.y-46],s_boogie:p=>[110,p.y-46],s_bee:p=>[120,p.y-46]};
   for(const[id,who,dx,dy,w,h,snd]of DEF){const p=P[id];if(!p)continue;let bx=p.x,by=p.y;if(BASE[id])[bx,by]=BASE[id](p);/* the graveyard crypt sits on the side away from the road */const ox=id==='grave'&&p.side!=='L'?-dx:dx;list.push({id,who,x:bx+ox,y:by+dy,w,h,snd,knock:-99,hi:sayFor(who)});}
-  nhList().forEach((h,i)=>list.push({id:h.id,house:h,who:HOUSE_WHO[i%HOUSE_WHO.length],x:h.x,y:h.y-4*h.s,w:40*h.s,h:64*h.s,snd:'good',knock:-99,hi:'👋'}));
+  nhList().forEach((h,i)=>list.push({id:h.id,house:h,who:HOUSE_WHO[i%HOUSE_WHO.length],x:h.x,y:h.y-4*h.s,w:150*h.s,h:200*h.s,snd:'good',knock:-99,hi:'👋'}));
   list.forEach(d=>{d.hi=sayFor(d.who);});
   return list;}
  const all=()=>list||build();
