@@ -8578,22 +8578,62 @@ const DOORS=(()=>{
   ['grave','rattles',-105,-54,40,62,'drum'],['hut','bubbles',0,-4,46,74,'chime'],['tomb','mummy',0,-4,46,74,'groan'],
   ['treehouse','theo',0,-4,46,74,'good'],['barn','gourdon',0,-4,46,74,'jump'],['shed','iris',0,-4,46,74,'good'],
   ['wagon','lulu',0,-4,46,74,'chime'],['alley','kelsey',0,-4,46,74,'good'],
-  ['s_sense','bea',0,-4,46,74,'chime'],['s_chomp','benny',0,-4,46,74,'good'],['s_lib','pip',0,-4,46,74,'boo'],['s_boogie','wolfie',0,-4,46,74,'howl']];
+  ['s_sense','bea',0,-4,46,74,'chime'],['s_chomp','benny',42,0,56,88,'good'],['s_lib','pip',0,-4,46,74,'boo'],['s_boogie','wolfie',0,-4,46,74,'howl']];
  const NAMES={mabel:'Mabel',nick:'Nick',zed:'Zed',dracula:'Count Dracula',flutter:'Flutter',frankie:'Frankie',paco:'Paco',june:'June',zoe:'Zoe',rattles:'Rattles',bubbles:'Bubbles',mummy:'Mummy Mo',theo:'Theo',gourdon:'Gourdon',iris:'Iris',lulu:'Lulu',kelsey:'Kelsey',bea:'Bea',benny:'Benny',pip:'Pip',wolfie:'Wolfie',
   leo:'Leo',max:'Max',wyatt:'Wyatt',kenji:'Kenji',rocco:'Rocco',sunny:'Sunny',gus:'Gus',hank:'Hank',dot:'Dot',finn:'Finn',marina:'Marina',snap:'Snap',ivy:'Ivy',midnight:'Midnight',jack:'Jack',ghost:'Boo'};
  const HOUSE_WHO=['leo','max','wyatt','kenji','rocco','sunny','gus','hank','dot','finn','marina','snap','ivy','midnight','jack','ghost'];
- const HI=['👋','Hi!','Boo!','🍬','Trick or treat!','Hello!','🎃','Hee hee!'];
+ /* each neighbor says something about who they are or what they're dressed as. no names. */
+ const SAY={
+  mabel:['🧹 Broom is parked!','Hee hee hee!','🐸 Want a potion?','My hat is pointy!','Eye of newt, anyone?'],
+  nick:['🎅 Wrong holiday!','Ho ho... boo!','Is it Christmas yet?','🦌 Lost my reindeer!','Cookies? 🍪'],
+  zed:['👽 Take me to your candy!','Beep boop!','I come in peace ✌️','My spaceship is parked!','Earth candy is yummy!'],
+  dracula:['🧛 Good eve-ning!','I vant to eat your... candy!','Bleh bleh bleh!','🦇 Up past my bedtime!','No garlic please!'],
+  flutter:['🦇 Squeak squeak!','I hang upside down!','Flap flap flap!','Bats are cute! 🦇','I love the dark!'],
+  frankie:["⚡ It's alive!",'Need a hug? 🤗','Bolts are itchy!','Grr... hi friend!','I love lightning!'],
+  paco:['🪅 Hit me for candy!','Olé!','I am full of treats!','Party time! 🎉','Don\'t whack too hard!'],
+  june:['🦁 RAWR!','I am the king!','My mane is paper!','Roar roar!','Fluffy and fierce!'],
+  zoe:['🦸 To the rescue!','Super speed! ⚡','My cape is flappy!','Up, up and away!','Hero time!'],
+  rattles:['💀 I feel bonely!','Rattle rattle!','No body to go with!','Skele-TON of fun!','My bones are cold!'],
+  bubbles:['🫧 Bloop bloop!','Something smells yummy!','Stir stir stir!','Bubble trouble!','Hot soup? 🍲'],
+  mummy:['🧻 All wrapped up!','Mmmmmm!','I need a bath!','Unwrap me? No!','Toilet paper chic!'],
+  theo:['🏹 Bullseye!','I share my candy!','Up in my tree!','Robin Hood is here!','Swish! 🍃'],
+  gourdon:['🎃 Gourd day!','I am a big pumpkin!','Carve me nice!','Squash you? Never!','Seeds, anyone?'],
+  iris:['🌈 So colorful!','Rainbows rule!','Paint with me! 🎨','Sunshine and rain!','Sparkle sparkle!'],
+  lulu:['🧚 Wish granted!','Twinkle twinkle!','Fairy dust! ✨','My wings are shiny!','Make a wish!'],
+  kelsey:['📣 Go, team, go!','Gimme a C-A-N-D-Y!','Pom poms! 🎉','Jump jump!','You can do it!'],
+  bea:['🐝 Buzz buzz!','Bee happy!','Got any honey?','Bzzz hello!','I won\'t sting!'],
+  benny:['🍳 Sunny side up!','Eggs-cellent!','Crack crack!','I am egg-cited!','Don\'t fry me!'],
+  pip:['👻 boo... (nicely)','Shhh, it\'s quiet here!','Book of the day? 📚','Hee hee!','Ghosts love stories!'],
+  wolfie:['🐺 Arooooo!','Let\'s dance!','Full moon party!','My fur is fluffy!','Woof! I mean, howl!'],
+  leo:['🦖 RAWR!','Tiny arms, big hugs!','Stomp stomp!','Dino power!','I am VERY scary!'],
+  max:['🚀 3, 2, 1, blast off!','Made of cardboard!','Space candy?','Moon walk!','Houston, hi!'],
+  wyatt:['🤠 Howdy, partner!','Yee-haw!','Giddy up!','Rounding up candy!','Nice hat, huh?'],
+  kenji:['🥋 Hi-YA!','Wax on, wax off!','Karate chop!','Black belt in candy!','Kiai!'],
+  rocco:['😜 I escaped!','Shhh, don\'t tell!','Stripes are in!','Where\'s the candy?','Sneaky sneaky!'],
+  sunny:['☮️ Peace and candy!','Groovy!','Far out!','Love your costume!','Flower power! 🌼'],
+  gus:['⚡ Little but mighty!','It\'s alive... kinda!','Bolts! 🔩','Grr... hehe!','Mini monster!'],
+  hank:['🪓 Timber!','Plaid is rad!','Chop chop!','Pancakes? 🥞','Big beard, big heart!'],
+  dot:['🦕 Screech!','I can fly!','Flap flap!','Dino in the sky!','Prehistoric hi!'],
+  finn:['🦈 Chomp chomp!','Dun dun... dun dun!','Fin-tastic!','Just keep swimming!','Shark snack?'],
+  marina:['🧜‍♀️ Splash!','Under the sea!','Shiny scales!','Seashells! 🐚','Fishy friends!'],
+  snap:['🐊 Snap snap!','See you later!','Big teeth, big smile!','Chomp!','Swamp sweet swamp!'],
+  ivy:['👻 BOO! Got you!','It\'s just a sheet!','Wooooo!','I can\'t see much!','Spooky me!'],
+  midnight:['🐈‍⬛ Meow!','Purrrr...','Pet me!','Lucky black cat!','Mrrrow!'],
+  jack:['🎃 Light the way!','Glowing good!','Pumpkin pie? No!','Candle power!','Big grin! 😁'],
+  ghost:['👻 Boo!','Wooooo!','Peek-a-boo!','I glow at night!','Hehe, scared you!']};
+ const sayFor=who=>{const L=SAY[who]||['👋 Happy Halloween!','Boo!','Trick or treat!'];return L[Math.floor(Math.random()*L.length)];};
  const SPOT={cottage:[0,-4],bakery:[0,-4],print:[70,-4]};
  let list=null;
  function build(){list=[];
   /* buildings added later are drawn from their own anchor, not the slot's x */
   const BASE={s_sense:p=>[108,p.y-96],s_chomp:p=>[690,p.y-46],s_lib:p=>[690,p.y-46],s_boogie:p=>[110,p.y-46]};
-  for(const[id,who,dx,dy,w,h,snd]of DEF){const p=P[id];if(!p)continue;let bx=p.x,by=p.y;if(BASE[id])[bx,by]=BASE[id](p);/* the graveyard crypt sits on the side away from the road */const ox=id==='grave'&&p.side!=='L'?-dx:dx;list.push({id,who,x:bx+ox,y:by+dy,w,h,snd,knock:-99,hi:'👋'});}
+  for(const[id,who,dx,dy,w,h,snd]of DEF){const p=P[id];if(!p)continue;let bx=p.x,by=p.y;if(BASE[id])[bx,by]=BASE[id](p);/* the graveyard crypt sits on the side away from the road */const ox=id==='grave'&&p.side!=='L'?-dx:dx;list.push({id,who,x:bx+ox,y:by+dy,w,h,snd,knock:-99,hi:sayFor(who)});}
   nhList().forEach((h,i)=>list.push({id:h.id,house:h,who:HOUSE_WHO[i%HOUSE_WHO.length],x:h.x,y:h.y-4*h.s,w:40*h.s,h:64*h.s,snd:'good',knock:-99,hi:'👋'}));
+  list.forEach(d=>{d.hi=sayFor(d.who);});
   return list;}
  const all=()=>list||build();
  function hitDoor(x,y){let best=null,bd=1e9;for(const d of all()){const pad=Math.max(18,d.w*.35);if(x>d.x-d.w/2-pad&&x<d.x+d.w/2+pad&&y>d.y-d.h-pad&&y<d.y+pad){const dd=Math.hypot(x-d.x,y-(d.y-d.h/2));if(dd<bd){bd=dd;best=d;}}}return best;}
- function knock(d,t){d.knock=t;d.hi=pick(HI);SFX.knock();
+ function knock(d,t){d.knock=t;d.hi=sayFor(d.who);SFX.knock();
   setTimeout(()=>{try{SFX.door();}catch(e){}},420);
   setTimeout(()=>{try{const f=SFX[d.snd];if(typeof f==='function')f.call(SFX);}catch(e){}},760);}
  return{
@@ -8616,7 +8656,7 @@ const DOORS=(()=>{
     if(!ncFit(ctx,d.who,0,0,H*.85,H))drawGhost(ctx,0,-H*.5,H*.4,t);ctx.restore();
     /* hello bubble with their name */
     if(u>1&&u<4.1){const k=Math.min(1,(u-1)*5)*Math.min(1,(4.1-u)*4),bx=fx,by=fy-H-26;ctx.save();ctx.globalAlpha=k;ctx.translate(bx,by);ctx.scale(.7+.3*k,.7+.3*k);
-     const txt=d.hi+'  '+(NAMES[d.who]||'');ctx.font='900 18px "Baloo 2",system-ui,"Apple Color Emoji","Segoe UI Emoji"';const w=ctx.measureText(txt).width+28;
+     const txt=d.hi;ctx.font='900 18px "Baloo 2",system-ui,"Apple Color Emoji","Segoe UI Emoji"';const w=ctx.measureText(txt).width+28;
      ctx.fillStyle='#FFF4E6';ctx.beginPath();if(ctx.roundRect)ctx.roundRect(-w/2,-20,w,40,20);else ctx.rect(-w/2,-20,w,40);ctx.fill();ctx.beginPath();ctx.moveTo(-8,18);ctx.lineTo(0,32);ctx.lineTo(8,18);ctx.fill();
      ctx.fillStyle='#2A1548';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(txt,0,1);ctx.restore();}}}};})();
 {const _wd=world.draw;world.draw=function(ctx,t,dt,top,bot){_wd.call(this,ctx,t,dt,top,bot);DOORS.draw(ctx,t,top,bot);if(window.__hvDoorDebug){ctx.save();ctx.strokeStyle='#0F0';ctx.lineWidth=3;for(const d of DOORS.list()){if(d.y<top-100||d.y>bot+100)continue;ctx.strokeRect(d.x-d.w/2,d.y-d.h,d.w,d.h);}ctx.restore();}};}
