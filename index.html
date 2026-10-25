@@ -5536,8 +5536,9 @@ const HVBOARD={
 };
 /* end of a game: the Top 10 board when it is on the page, the old score card otherwise.
    num is the number the board ranks by (higher is better); o is the old overlay() options */
+const HV_BOARD_GAMES=/^(flight|chomp-.*|typing-.*)$/;/* only these games show a Top 10 board; the rest keep the plain score card */
 function hvGameOver(wrap,game,num,o,extra){
- if(typeof HVBOARD==='undefined'||!Number.isFinite(+num))return overlay(wrap,o);
+ if(typeof HVBOARD==='undefined'||!Number.isFinite(+num)||!HV_BOARD_GAMES.test(game))return overlay(wrap,o);
  return HVBOARD.show(wrap,Object.assign({game,score:Math.max(0,Math.round(+num)),stars:o.stars,stats:o.text,host:o.host,tag:o.title,onAgain:o.cb},extra||{}));}
 /* ==== TOP TEN END ==== */
 /* ==== BIG COUNTDOWN START ==== */
