@@ -9862,8 +9862,7 @@ const KA_CLIPS=["1uxdssc", "s199t9", "3to2mj", "1mdw04o", "nmc26z", "16p7dvc", "
    Pumpkin levels on the arcade games. Tap-to-hear speakers. "Your best" on the Top 10. Stray fingers and palms ignored. */
 const KA=(()=>{
  let rm=false;try{rm=matchMedia('(prefers-reduced-motion: reduce)').matches;}catch(e){}
- const savedCalm=store.get('hv-calm',null);
- const K={calm:savedCalm==null?rm:!!savedCalm,songOff:!!store.get('hv-song-off',false),lv:store.get('hv-levels',{})||{}};
+ const K={calm:rm,songOff:!!store.get('hv-song-off',false),lv:store.get('hv-levels',{})||{}};
  try{window.__ka=K;}catch(e){}
 
  /* ----- styles ----- */
@@ -9988,11 +9987,6 @@ body.calm .tp-k.no{animation:none!important}
   ['pointerdown','pointermove','pointerup','pointercancel'].forEach(ev=>w.addEventListener(ev,stray,true));};
 
  /* ----- buttons ----- */
- const calmB=el('button',{class:'rbtn',id:'calmBtn',type:'button','aria-label':'Calm mode',title:'Calm mode'},'🐢');
- calmB.onclick=()=>{K.setCalm(!K.calm);SFX.tone(K.calm?330:392,.4,'sine',.06,null,K.calm?262:523);toast(K.calm?'🐢 Calm mode on':'Calm mode off');};
- const songB=el('button',{class:'rbtn',id:'songBtn',type:'button','aria-label':'Village song',title:'Village song',hidden:''},el('span',{'aria-hidden':'true'},'🎵'),el('span',{class:'ka-slash','aria-hidden':'true'}));
- songB.onclick=()=>K.setSong(!K.songOff);
- $('#soundBtn').after(calmB,songB);
  const mSong=el('button',{class:'iconbtn ka-song',id:'modalSong',type:'button','aria-label':'Village song',title:'Village song',hidden:''},el('span',{'aria-hidden':'true'},'🎵'),el('span',{class:'ka-slash','aria-hidden':'true'}));
  mSong.onclick=()=>K.setSong(!K.songOff);
  $('#modalClose').before(mSong);
