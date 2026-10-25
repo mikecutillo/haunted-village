@@ -14,7 +14,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <style>html{color-scheme:dark;touch-action:manipulation;-webkit-text-size-adjust:100%}body{margin:0;touch-action:manipulation}button,a,[role=button]{touch-action:manipulation}img{max-width:100%}[hidden]{display:none!important}</style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Baloo+2:wght@500;700;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Luckiest+Guy&family=Lilita+One&family=Nunito:wght@900&family=Baloo+2:wght@500;700;800&display=swap">
 <style>
 /* Layout: one tall illustrated village drawn on a fixed canvas; the page scrolls a camera through it. Buildings are buttons placed over the drawing. Single dark look by design. */
 :root{
@@ -191,7 +191,7 @@ body.booting{overflow:hidden}
 body.booting #hots{display:none}
 .boot{position:fixed;inset:0;z-index:28;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:14px;padding:calc(env(safe-area-inset-top,0px) + clamp(64px,12vh,120px)) 24px 24px;text-align:center;
  background:linear-gradient(180deg,rgba(11,5,32,.78) 0%,rgba(11,5,32,.42) 38%,rgba(11,5,32,.08) 62%,rgba(11,5,32,.34) 100%)}
-.boot .wm{width:min(500px,82vw);filter:drop-shadow(0 0 30px rgba(255,122,26,.5)) drop-shadow(0 6px 10px rgba(0,0,0,.7))}
+.boot .wm{display:flex;flex-direction:column;align-items:center;font-size:min(150px,24vw);line-height:.85;filter:drop-shadow(0 0 30px rgba(255,122,26,.45)) drop-shadow(0 6px 10px rgba(0,0,0,.6))}.wm-tag{font-family:'Nunito','Baloo 2',sans-serif;font-weight:900;font-size:.16em;letter-spacing:.12em;text-transform:uppercase;color:#FFB547;line-height:1.2;margin-bottom:.06em}.wm-l1,.wm-l2 span{font-family:'Lilita One','Luckiest Guy',sans-serif;letter-spacing:-.027em;text-shadow:0 .047em 0 #2A1147}.wm-l1{color:#FF8A1F}.wm-l2{display:flex;align-items:center;margin-top:-.03em;color:#fff}.wm-l2 svg{width:.79em;height:.79em;margin:.12em -.07em 0 -.05em;flex-shrink:0}
 .boot p{margin:0;font-weight:800;font-size:clamp(15px,2.2vw,19px);color:#fff;max-width:40ch;text-wrap:balance;text-shadow:0 2px 10px rgba(0,0,0,.85),0 0 24px rgba(0,0,0,.6)}
 .boot .small{font-size:13px;color:#fff;opacity:.85;text-shadow:0 2px 8px rgba(0,0,0,.9)}
 @keyframes bootfade{to{opacity:0;visibility:hidden}}
@@ -623,12 +623,11 @@ body.booting .wx-wrap{display:none}
 <div class="zoom" aria-label="Zoom"><button type="button" id="zoomIn" aria-label="Zoom in">+</button><button type="button" id="zoomOut" aria-label="Zoom out">−</button></div>
 <div id="flash" aria-hidden="true"></div>
 <div class="boot" id="boot">
-  <svg class="wm" viewBox="0 0 520 184" role="img" aria-label="Haunted Village" style="overflow:visible;filter:drop-shadow(0 0 30px rgba(255,122,26,.45))">
-    <g fill="#4A1B05" transform="translate(0 6)"><text x="64" y="68" font-family="Luckiest Guy, Impact, sans-serif" font-size="74" textLength="440" lengthAdjust="spacing">Haunted</text><text x="108" y="160" font-family="Luckiest Guy, Impact, sans-serif" font-size="98" textLength="404" lengthAdjust="spacing">illage</text></g>
-    <g fill="#FF7A1A"><text x="64" y="68" font-family="Luckiest Guy, Impact, sans-serif" font-size="74" textLength="440" lengthAdjust="spacing">Haunted</text><text x="108" y="160" font-family="Luckiest Guy, Impact, sans-serif" font-size="98" textLength="404" lengthAdjust="spacing">illage</text></g>
-    <g fill="#FF7A1A"><path d="M156 164q0 16 7 26q7-10 7-26z"/><path d="M268 164q0 11 5 19q5-8 5-19z"/><path d="M378 164q0 21 8 31q8-10 8-31z"/><path d="M474 164q0 13 6 22q6-9 6-22z"/><path d="M300 72q0 10 5 17q5-7 5-17z"/></g>
-    <g transform="translate(60 130)"><path d="M-6 4Q-28 -34 -56 -44Q-46 -26 -48 -8Q-34 -14 -26 4Q-16 -2 -6 20Z" fill="#2A1548"/><path d="M6 4Q28 -34 56 -44Q46 -26 48 -8Q34 -14 26 4Q16 -2 6 20Z" fill="#2A1548"/><ellipse cx="0" cy="10" rx="11" ry="18" fill="#2A1548"/><path d="M-9 -4L-7 -16L-1 -6Z M9 -4L7 -16L1 -6Z" fill="#2A1548"/><circle cx="-4" cy="4" r="2.6" fill="#FFC34D"/><circle cx="4" cy="4" r="2.6" fill="#FFC34D"/></g>
-  </svg>
+  <div class="wm" role="img" aria-label="Trick or Treat Tracker: Pumpkin Hollow">
+    <div class="wm-tag" aria-hidden="true">Trick or Treat Tracker</div>
+    <div class="wm-l1" aria-hidden="true">Pumpkin</div>
+    <div class="wm-l2" aria-hidden="true"><span>H</span><svg viewBox="0 0 100 100" aria-hidden="true"><path d="M50 24C50 14 56 8 64 8" stroke="#3F8A3A" stroke-width="7" fill="none" stroke-linecap="round"/><ellipse cx="30" cy="60" rx="22" ry="32" fill="#E36A0B"/><ellipse cx="70" cy="60" rx="22" ry="32" fill="#E36A0B"/><ellipse cx="50" cy="60" rx="24" ry="35" fill="#FF8A1F"/><path d="M30 52L40 40L46 54Z" fill="#2A1147"/><path d="M70 52L60 40L54 54Z" fill="#2A1147"/><path d="M28 66Q50 86 72 66Q62 72 56 70L52 76L48 70Q38 72 28 66Z" fill="#2A1147"/></svg><span>llow</span></div>
+  </div>
   <p id="bootText">Every village needs a song. Build yours with the Monster Jamband, then explore while it plays.</p>
   <button class="playbtn" id="playBtn">Play</button>
   <span class="small" id="bootSmall">Sound on. Headphones recommended.</span>
