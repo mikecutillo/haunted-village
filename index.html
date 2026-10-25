@@ -8937,66 +8937,79 @@ const inEll=(u,v,cx,cy,rx,ry)=>((u-cx)/rx)**2+((v-cy)/ry)**2<=1;
 function inPoly(u,v,p){let c=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i],b=p[j];if((a[1]>v)!==(b[1]>v)&&u<(b[0]-a[0])*(v-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
 const mirror=p=>p.map(([a,b])=>[-a,b]).reverse();
 function shapesHit(u,v,list){for(const s of list){if(s.e?inEll(u,v,...s.e):inPoly(u,v,s.p))return true;}return false;}
-const ZIG=[[-.55,-.25],[-.38,-.12],[-.2,-.28],[0,-.12],[.2,-.28],[.38,-.12],[.55,-.25],[.4,-.5],[.2,-.38],[0,-.52],[-.2,-.38],[-.4,-.5]];
-/* face designs, shared by flat pictures and stand-up buddies: {e:[cx,cy,rx,ry]} ellipse or {p:[[x,y]...]} polygon */
 const BATWING=[[-.18,.12],[-.5,.36],[-.95,.3],[-.82,.1],[-.74,-.06],[-.62,.04],[-.5,-.16],[-.38,-.02],[-.3,-.2],[-.16,-.1]];
+/* ---- faces in the village's vector style: ink eyes with a white highlight, small smiles, round cheeks ----
+   a face is {e:eyes, h:eye highlights, m:mouth, k:cheeks, r:little raised bits (noses, fangs)}; shapes are {e:[cx,cy,rx,ry]} or {p:[[x,y]...]} */
+const FE=(x,y,rx,ry)=>({e:[x,y,rx,ry]});
+function arcP(cx,cy,r,a0,a1,w,n=12){const o=[],i=[];for(let k=0;k<=n;k++){const a=a0+(a1-a0)*k/n;o.push([cx+Math.cos(a)*(r+w/2),cy+Math.sin(a)*(r+w/2)]);i.push([cx+Math.cos(a)*(r-w/2),cy+Math.sin(a)*(r-w/2)]);}return{p:o.concat(i.reverse())};}
+const halfEll=(cx,cy,rx,ry,n=14)=>{const p=[];for(let k=0;k<=n;k++){const a=Math.PI+Math.PI*k/n;p.push([cx+Math.cos(a)*rx,cy+Math.sin(a)*ry]);}return{p};};
+const triUp=(cx,cy,w,h)=>({p:[[cx-w/2,cy-h/2],[cx+w/2,cy-h/2],[cx,cy+h/2]]});
+/* one face recipe, placed at (cx,cy) and scaled by s. kind: happy, boo, wink, jack, skull, stitch, fang, cat */
+function vFace(cx,cy,s,kind,q={}){const P=Object.assign({ex:.4,ey:.12,rx:.15,ry:.2,kx:.66,ky:-.1,hl:true},q);
+ const X=x=>cx+x*s,Y=y=>cy+y*s,S=v=>v*s,F={e:[],h:[],m:[],k:[],r:[]};
+ const eye=(x,y,rx,ry)=>{F.e.push(FE(X(x),Y(y),S(rx),S(ry)));if(P.hl)F.h.push(FE(X(x+rx*.32),Y(y+ry*.34),S(rx*.4),S(rx*.4)));};
+ const smile=(y,r,w)=>F.m.push(arcP(X(0),Y(y+r),S(r),Math.PI*1.18,Math.PI*1.82,S(w)));
+ if(kind!=='skull'||P.cheeks)for(const sd of[-1,1])F.k.push(FE(X(sd*P.kx),Y(P.ky),S(.13),S(.085)));
+ if(kind==='wink'){eye(P.ex,P.ey,P.rx,P.ry);F.m.push(arcP(X(-P.ex),Y(P.ey-.1),S(P.rx*1.05),Math.PI*.18,Math.PI*.82,S(.075)));F.m.push(halfEll(X(0),Y(-.1),S(.17),S(.17)));return F;}
+ if(kind==='jack'){for(const sd of[-1,1]){F.e.push(triUp(X(sd*P.ex),Y(P.ey+.02),S(.3),S(.26)));}
+  const g=halfEll(X(0),Y(-.04),S(.42),S(.3),18);F.m.push(g);F.r.push({p:[[X(-.16),Y(0)],[X(-.04),Y(0)],[X(-.04),Y(-.15)],[X(-.16),Y(-.15)]]},{p:[[X(.06),Y(0)],[X(.18),Y(0)],[X(.18),Y(-.15)],[X(.06),Y(-.15)]]});return F;}
+ if(kind==='skull'){eye(-P.ex,P.ey,P.rx,P.rx*1.05);eye(P.ex,P.ey,P.rx,P.rx*1.05);
+  F.m.push({p:[[X(-.065),Y(-.15)],[X(.065),Y(-.15)],[X(0),Y(-.05)]]});
+  F.m.push(arcP(X(0),Y(.0),S(.3),Math.PI*1.2,Math.PI*1.8,S(.05)));for(const t of[-.12,0,.12])F.m.push({p:[[X(t-.018),Y(-.36)],[X(t+.018),Y(-.36)],[X(t+.018),Y(-.25)],[X(t-.018),Y(-.25)]]});return F;}
+ eye(-P.ex,P.ey,P.rx,P.ry);eye(P.ex,P.ey,P.rx,P.ry);
+ if(kind==='boo')F.m.push(FE(X(0),Y(-.2),S(.08),S(.1)));
+ else if(kind==='stitch'){F.m.push(arcP(X(0),Y(.08),S(.3),Math.PI*1.22,Math.PI*1.78,S(.055)));for(const t of[-.17,0,.17])F.m.push({p:[[X(t-.02),Y(-.3)],[X(t+.02),Y(-.3)],[X(t+.02),Y(-.16)],[X(t-.02),Y(-.16)]]});}
+ else if(kind==='fang'){smile(-.2,.2,.06);for(const sd of[-1,1])F.r.push({p:[[X(sd*.09-.045),Y(-.22)],[X(sd*.09+.045),Y(-.22)],[X(sd*.09),Y(-.33)]]});}
+ else if(kind==='cat'){F.r.push({p:[[X(-.07),Y(-.04)],[X(.07),Y(-.04)],[X(0),Y(-.12)]]});for(const sd of[-1,1])F.m.push(arcP(X(sd*.08),Y(-.13),S(.08),Math.PI*1.05,Math.PI*1.95,S(.045)));}
+ else smile(-.24,.18,.065);
+ return F;}
 const FACE2D={
- pumpkin:[[{p:[[-.55,.1],[-.2,.1],[-.375,.42]]},{p:[[.2,.1],[.55,.1],[.375,.42]]},{p:[[-.08,-.05],[.08,-.05],[0,.1]]},{p:ZIG}],
-  [{p:[[-.58,.4],[-.18,.14],[-.2,.32]]},{p:[[.18,.14],[.58,.4],[.2,.32]]},{p:[[-.5,-.2],[-.3,-.05],[-.1,-.22],[.1,-.05],[.3,-.22],[.5,-.05],[.4,-.5],[-.4,-.5]]}],
-  [{e:[-.36,.2,.17,.17]},{e:[.36,.2,.1,.1]},{e:[0,-.1,.08,.08]},{p:[[-.5,-.22],[-.2,-.42],[.2,-.42],[.5,-.22],[.44,-.3],[.2,-.5],[-.2,-.5],[-.44,-.3]]}]],
- ghost:[[{e:[-.28,.25,.1,.15]},{e:[.28,.25,.1,.15]},{p:[[-.25,-.05],[.25,-.05],[.15,-.25],[0,-.3],[-.15,-.25]]}],
-  [{e:[-.28,.3,.12,.17]},{e:[.28,.3,.12,.17]},{e:[0,-.15,.16,.22]}],
-  [{p:[[-.4,.2],[-.16,.2],[-.16,.14],[-.4,.14]]},{p:[[.16,.2],[.4,.2],[.4,.14],[.16,.14]]},{e:[0,-.15,.1,.07]}]],
- bat:[[{e:[-.08,.14,.04,.05]},{e:[.08,.14,.04,.05]}],[{p:[[-.13,.2],[-.03,.12],[-.13,.1]]},{p:[[.13,.2],[.03,.12],[.13,.1]]}],[{e:[-.08,.14,.055,.075]},{e:[.08,.14,.055,.075]},{e:[0,-.02,.04,.05]}]],
- cat:[[{e:[-.33,.12,.12,.1]},{e:[.33,.12,.12,.1]},{p:[[-.07,-.1],[.07,-.1],[0,-.18]]},{p:[[-.18,-.3],[-.1,-.24],[0,-.3],[.1,-.24],[.18,-.3],[.1,-.36],[0,-.32],[-.1,-.36]]}],
-  [{p:[[-.46,.2],[-.2,.1],[-.46,.1]]},{p:[[.2,.1],[.46,.2],[.46,.1]]},{p:[[-.07,-.1],[.07,-.1],[0,-.18]]}],
-  [{e:[-.3,.15,.14,.14]},{e:[.3,.15,.14,.14]},{p:[[-.07,-.1],[.07,-.1],[0,-.18]]},{e:[0,-.34,.08,.1]}]],
- skull:[[{e:[-.32,.2,.2,.22]},{e:[.32,.2,.2,.22]},{p:[[-.1,-.15],[.1,-.15],[0,.02]]},{p:[[-.28,-.75],[-.22,-.75],[-.22,-.4],[-.28,-.4]]},{p:[[-.03,-.75],[.03,-.75],[.03,-.4],[-.03,-.4]]},{p:[[.22,-.75],[.28,-.75],[.28,-.4],[.22,-.4]]}],
-  [{e:[-.3,.2,.18,.18]},{e:[.3,.2,.18,.18]},{p:[[-.1,-.15],[.1,-.15],[0,.02]]},{p:[[-.4,-.35],[.4,-.35],[.34,-.55],[-.34,-.55]]}],
-  [{p:[[-.55,.38],[-.12,.12],[-.5,.05]]},{p:[[.55,.38],[.12,.12],[.5,.05]]},{p:[[-.1,-.15],[.1,-.15],[0,.02]]},{p:[[-.3,-.3],[0,-.4],[.3,-.3],[.2,-.6],[-.2,-.6]]}]],
- moon:[[{e:[-.55,.22,.07,.09]},{p:[[-.7,-.12],[-.4,-.12],[-.45,-.22],[-.55,-.27],[-.65,-.22]]}],
-  [{p:[[-.66,.24],[-.44,.24],[-.44,.18],[-.66,.18]]},{e:[-.55,-.18,.06,.05]}],
-  [{p:[[-.7,.32],[-.42,.16],[-.48,.1],[-.68,.18]]},{p:[[-.72,-.08],[-.63,-.18],[-.56,-.1],[-.48,-.2],[-.4,-.08],[-.48,-.3],[-.65,-.3]]}]],
- corn:[[{e:[-.18,.05,.07,.09]},{e:[.18,.05,.07,.09]},{p:[[-.2,-.15],[.2,-.15],[.12,-.27],[0,-.3],[-.12,-.27]]}],
-  [{e:[-.18,.05,.1,.1]},{e:[.18,.08,.06,.06]},{e:[0,-.22,.1,.08]}],
-  [{p:[[-.32,.15],[-.08,0],[-.3,-.02]]},{p:[[.32,.15],[.08,0],[.3,-.02]]},{p:[[-.25,-.18],[-.15,-.26],[-.05,-.18],[.05,-.26],[.15,-.18],[.25,-.26],[.15,-.34],[-.15,-.34]]}]],
- frank:[[{e:[-.3,.2,.1,.12]},{e:[.3,.2,.1,.12]},{p:[[-.4,-.2],[.4,-.2],[.3,-.38],[-.3,-.38]]}],
-  [{p:[[-.45,.32],[-.12,.18],[-.15,.08],[-.45,.12]]},{p:mirror([[-.45,.32],[-.12,.18],[-.15,.08],[-.45,.12]])},{p:[[-.35,-.28],[.35,-.28],[.35,-.38],[-.35,-.38]]}],
-  [{e:[-.3,.22,.14,.14]},{e:[.3,.18,.08,.08]},{p:[[-.35,-.2],[.35,-.25],[.1,-.42],[-.2,-.38]]}]]};
+ pumpkin:[vFace(0,.04,1.05,'jack',{ex:.36,ey:.2,kx:.66,ky:-.05}),vFace(0,.04,1.05,'happy',{kx:.64}),vFace(0,.04,1.05,'wink',{kx:.64})],
+ ghost:[vFace(0,.26,.82,'happy'),vFace(0,.26,.82,'boo'),vFace(0,.26,.82,'wink')],
+ bat:[vFace(0,.08,.3,'fang',{hl:false,kx:.55}),vFace(0,.08,.3,'boo',{hl:false,kx:.55}),vFace(0,.08,.3,'happy',{hl:false,kx:.55})],
+ cat:[vFace(0,.06,.95,'cat'),vFace(0,.06,.95,'boo'),vFace(0,.06,.95,'wink')],
+ skull:[vFace(0,.16,.95,'skull',{ex:.36,ey:.16,rx:.2}),vFace(0,.16,.95,'boo',{ex:.36,ey:.16,rx:.2,ry:.22,cheeks:1,kx:.6}),vFace(0,.16,.95,'wink',{ex:.36,ey:.16,rx:.2,ry:.22,kx:.6})],
+ moon:[{e:[FE(-.55,.2,.08,.1)],h:[FE(-.52,.24,.035,.035)],m:[arcP(-.56,-.02,.12,Math.PI*1.2,Math.PI*1.8,.06)],k:[FE(-.72,-.02,.07,.05)],r:[]},
+  {e:[],h:[],m:[arcP(-.55,.2,.08,Math.PI*.15,Math.PI*.85,.05),FE(-.55,-.15,.05,.06)],k:[FE(-.72,-.02,.07,.05)],r:[]},
+  {e:[FE(-.55,.2,.08,.1)],h:[FE(-.52,.24,.035,.035)],m:[halfEll(-.55,-.06,.11,.11)],k:[FE(-.72,-.02,.07,.05)],r:[]}],
+ corn:[vFace(0,-.08,.5,'happy',{hl:false}),vFace(0,-.08,.5,'boo',{hl:false}),vFace(0,-.08,.5,'wink',{hl:false})]};
+/* flat pictures: 1 = carve or cut, 2 = shallow cheek or bump */
+function faceCode(u,v,F,cut){if(shapesHit(u,v,F.e)){return(!cut&&shapesHit(u,v,F.h))?0:1;}if(shapesHit(u,v,F.m))return shapesHit(u,v,F.r)?0:1;if(shapesHit(u,v,F.k)||shapesHit(u,v,F.r))return 2;return 0;}
 const PMODELS={
- pumpkin:{name:'Pumpkin',emoji:'🎃',vmin:-.82,vmax:1.0,faces:['Happy','Spooky','Silly'],
+ pumpkin:{name:'Pumpkin',emoji:'🎃',vmin:-.82,vmax:1.0,faces:['Jack','Happy','Wink'],
   inside:(u,v)=>inEll(u,v,0,0,1,.82)||(Math.abs(u+.02*(v-.8))<.09&&v>.72&&v<1.0),
   relief:(u,v)=>v>.72?.5:Math.sqrt(Math.max(0,1-u*u-(v/.82)**2))*(.88+.12*Math.cos(u*Math.PI*3.5)),
-  face:(u,v,f)=>shapesHit(u,v,FACE2D.pumpkin[f])},
- ghost:{name:'Ghost',emoji:'👻',vmin:-.9,vmax:1.0,faces:['Happy','Boo!','Sleepy'],
+  face:(u,v,f,c)=>faceCode(u,v,FACE2D.pumpkin[f],c)},
+ ghost:{name:'Ghost',emoji:'👻',vmin:-.9,vmax:1.0,faces:['Happy','Boo!','Wink'],
   inside:(u,v)=>Math.abs(u)<.8&&v>-.86+.09*Math.abs(Math.sin(u*Math.PI*3.5))&&(v<=.2?true:inEll(u,v,0,.2,.8,.8)),
   relief:(u,v)=>Math.sqrt(Math.max(0,1-(u/.82)**2))*(v>.2?Math.sqrt(Math.max(0,1-((v-.2)/.82)**2)):1),
-  face:(u,v,f)=>shapesHit(u,v,FACE2D.ghost[f])},
- bat:{name:'Bat',emoji:'🦇',vmin:-.45,vmax:.5,faces:['Cute','Angry','Surprised'],
+  face:(u,v,f,c)=>faceCode(u,v,FACE2D.ghost[f],c)},
+ bat:{name:'Bat',emoji:'🦇',vmin:-.45,vmax:.5,faces:['Fangs','Boo!','Happy'],
   inside:(u,v)=>inEll(u,v,0,0,.2,.32)||shapesHit(u,v,[{p:BATWING},{p:mirror(BATWING)},{p:[[-.15,.3],[-.1,.5],[-.01,.32]]},{p:[[.01,.32],[.1,.5],[.15,.3]]}]),
   relief:(u,v)=>.3+.7*Math.exp(-((u/.28)**2)),
-  face:(u,v,f)=>shapesHit(u,v,FACE2D.bat[f])},
- cat:{name:'Cat',emoji:'🐱',vmin:-.72,vmax:.9,faces:['Sweet','Sly','Surprised'],
+  face:(u,v,f,c)=>faceCode(u,v,FACE2D.bat[f],c)},
+ cat:{name:'Cat',emoji:'🐱',vmin:-.72,vmax:.9,faces:['Sweet','Boo!','Wink'],
   inside:(u,v)=>inEll(u,v,0,0,.85,.72)||shapesHit(u,v,[{p:[[-.8,.2],[-.72,.9],[-.2,.6]]},{p:mirror([[-.8,.2],[-.72,.9],[-.2,.6]])}]),
   relief:(u,v)=>Math.sqrt(Math.max(0,1-(u/.9)**2-(v/.78)**2)),
-  face:(u,v,f)=>shapesHit(u,v,FACE2D.cat[f])},
- skull:{name:'Skull',emoji:'💀',vmin:-.75,vmax:.95,faces:['Classic','Grin','Spooky'],
+  face:(u,v,f,c)=>faceCode(u,v,FACE2D.cat[f],c)},
+ skull:{name:'Skull',emoji:'💀',vmin:-.75,vmax:.95,faces:['Grin','Boo!','Wink'],
   inside:(u,v)=>inEll(u,v,0,.15,.8,.8)||(Math.abs(u)<.5&&v>-.75&&v<.1),
   relief:(u,v)=>Math.sqrt(Math.max(0,1-(u/.82)**2-((v-.15)/.82)**2))*(v<.1?.9:1)||.25,
-  face:(u,v,f)=>shapesHit(u,v,FACE2D.skull[f])},
- moon:{name:'Moon',emoji:'🌙',vmin:-.9,vmax:.9,faces:['Happy','Sleepy','Spooky'],
+  face:(u,v,f,c)=>faceCode(u,v,FACE2D.skull[f],c)},
+ moon:{name:'Moon',emoji:'🌙',vmin:-.9,vmax:.9,faces:['Happy','Sleepy','Boo!'],
   inside:(u,v)=>inEll(u,v,0,0,.9,.9)&&!inEll(u,v,.42,.15,.72,.72),
   relief:(u,v)=>Math.sqrt(Math.max(0,1-(u*u+v*v)/.81)),
-  face:(u,v,f)=>shapesHit(u,v,FACE2D.moon[f])},
- corn:{name:'Candy corn',emoji:'🍬',vmin:-.85,vmax:.95,faces:['Happy','Silly','Spooky'],
+  face:(u,v,f,c)=>faceCode(u,v,FACE2D.moon[f],c)},
+ corn:{name:'Candy corn',emoji:'🍬',vmin:-.85,vmax:.95,faces:['Happy','Boo!','Wink'],
   inside:(u,v)=>inPoly(u,v,[[-.7,-.62],[.7,-.62],[0,.95]])||inEll(u,v,0,-.62,.7,.23),
   relief:(u,v)=>Math.sqrt(Math.max(0,1-(u/.8)**2))*(Math.abs(v+.5)<.035||Math.abs(v-.3)<.035?.55:1),
-  face:(u,v,f)=>shapesHit(u,v,FACE2D.corn[f])}
+  face:(u,v,f,c)=>faceCode(u,v,FACE2D.corn[f],c)}
 };
 const PSIZES=[['Small',40],['Medium',60],['Large',80]];
 const PLASTIC=[236,230,248];   /* one neutral preview color; filament color is picked at print time */
 
-/* ---- stand-up buddies: signed distance shapes, meshed with surface nets into a closed printable solid ---- */
+/* ---- stand-up buddies: signed distance shapes, meshed with surface nets into a closed printable solid.
+   x right, y depth (front is -y), z up. Chunky and round like the village cast: big heads, mitten hands. ---- */
 function sdShape(u,v,s){if(s.e){const[cx,cy,rx,ry]=s.e;return(Math.hypot((u-cx)/rx,(v-cy)/ry)-1)*Math.min(rx,ry);}
  const p=s.p;let d=1e9,sg=1;for(let i=0,j=p.length-1;i<p.length;j=i++){const ex=p[j][0]-p[i][0],ey=p[j][1]-p[i][1],wx=u-p[i][0],wy=v-p[i][1],h=Math.max(0,Math.min(1,(wx*ex+wy*ey)/(ex*ex+ey*ey))),bx=wx-ex*h,by=wy-ey*h;d=Math.min(d,bx*bx+by*by);
   const c1=v>=p[i][1],c2=v<p[j][1],c3=ex*wy>ey*wx;if((c1&&c2&&c3)||(!c1&&!c2&&!c3))sg=-sg;}return sg*Math.sqrt(d);}
@@ -9008,41 +9021,70 @@ const sdCap=(x,y,z,a,b,r)=>{const px=x-a[0],py=y-a[1],pz=z-a[2],bx=b[0]-a[0],by=
 const sdBox=(x,y,z,cx,cy,cz,hx,hy,hz,r)=>{const qx=Math.abs(x-cx)-hx+r,qy=Math.abs(y-cy)-hy+r,qz=Math.abs(z-cz)-hz+r;return Math.hypot(Math.max(qx,0),Math.max(qy,0),Math.max(qz,0))+Math.min(Math.max(qx,qy,qz),0)-r;};
 const extrude=(d2,a,h)=>{const w=Math.abs(a)-h;return Math.min(Math.max(d2,w),0)+Math.hypot(Math.max(d2,0),Math.max(w,0));};
 const sdRev=(x,y,z,cz,s,prof)=>sdShape(Math.hypot(x,y)/s,(z-cz)/s,{p:prof})*s;
-const CAT_EAR=[[-.22,.7],[-.2,.98],[-.05,.86]],BAT_EAR=[[-.14,.5],[-.12,.74],[-.02,.58]];
-const BAT_UPWING=[[-.12,.34],[-.48,.78],[-.5,.96],[-.4,.88],[-.34,.96],[-.26,.84],[-.18,.9],[-.08,.62]];
+const CAT_EAR=[[-.3,.78],[-.27,1.04],[-.08,.92]],BAT_EAR=[[-.2,.6],[-.2,.84],[-.05,.68]];
+/* bat wings spread out to the sides; the scalloped lower edge climbs outward so it prints without support */
+const BAT_WING=[[-.2,.5],[-.42,.62],[-.62,.74],[-.76,.82],[-.72,.66],[-.64,.6],[-.58,.66],[-.5,.52],[-.42,.58],[-.36,.44],[-.28,.48],[-.2,.34]];
+const FZIG=[[-.25,.79],[-.17,.71],[-.09,.79],[0,.7],[.09,.79],[.17,.71],[.25,.79],[.25,.83],[-.25,.83]];
+const BF=(cx,cz,s,q)=>[vFace(cx,cz,s,'happy',q),vFace(cx,cz,s,'boo',q),vFace(cx,cz,s,'wink',q)];
 /* the lower edge of every part rises from where it joins, so nothing starts printing in mid-air */
 const PCHARS={
- pumpkin:{name:'Pumpkin',emoji:'🎃',fset:'pumpkin',faces:PMODELS.pumpkin.faces,fz:.34,fs:.42,hz:.6,hs:1.25,
-  body:(x,y,z,hat)=>{let d=Math.max(sdEll(x,y,z,0,0,.3,.42,.38,.32)+.028*Math.abs(Math.cos(Math.atan2(y,x)*4)),.07-z);if(!hat)d=smin(d,sdCap(x,y,z,[0,0,.56],[.04,0,.74],.055),.04);return d;}},
- ghost:{name:'Ghost',emoji:'👻',fset:'ghost',faces:PMODELS.ghost.faces,fz:.62,fs:.5,hz:.92,hs:1.0,
-  body:(x,y,z)=>{let d=smin(sdRev(x,y,z,0,1,[[0,.05],[.34,.05],[.32,.3],[.27,.6],[0,.6]]),sdSph(x,y,z,0,0,.64,.28),.1);
-   for(const s of[-1,1])d=smin(d,sdCap(x,y,z,[s*.22,-.02,.42],[s*.4,-.06,.58],.065),.06);return d;}},
- cat:{name:'Cat',emoji:'🐱',fset:'cat',faces:PMODELS.cat.faces,fz:.66,fs:.42,hz:.86,hs:.95,
-  body:(x,y,z)=>{let d=Math.max(sdEll(x,y,z,0,0,.26,.3,.25,.27),.07-z);d=smin(d,sdSph(x,y,z,0,-.02,.66,.24),.1);
-   for(const s of[-1,1])d=smin(d,extrude(sdShape(s*x,z,{p:CAT_EAR}),y+.02,.05)-.01,.03);
-   return smin(d,sdCap(x,y,z,[.22,.16,.12],[.34,.18,.44],.05),.05);}},
- frank:{name:'Frankie',emoji:'🧟',fset:'frank',faces:['Happy','Grumpy','Silly'],fz:.62,fs:.34,hz:.9,hs:1.0,
-  body:(x,y,z)=>{let d=sdBox(x,y,z,0,0,.26,.22,.17,.2,.06);d=smin(d,sdBox(x,y,z,0,0,.64,.23,.2,.2,.07),.04);
-   d=Math.min(d,sdBox(x,y,z,0,.01,.86,.25,.22,.05,.03),sdCap(x,y,z,[-.33,0,.58],[.33,0,.58],.05));
-   for(const s of[-1,1])d=smin(d,sdBox(x,y,z,s*.27,-.02,.27,.06,.08,.15,.04),.03);return d;}},
- bat:{name:'Bat',emoji:'🦇',fset:'bat',faces:PMODELS.bat.faces,fz:.24,fs:1.4,hz:.6,hs:.8,
-  body:(x,y,z)=>{let d=Math.max(sdEll(x,y,z,0,0,.3,.19,.16,.32),.07-z);
-   for(const s of[-1,1]){d=smin(d,extrude(sdShape(s*x,z,{p:BAT_EAR}),y,.045)-.008,.03);d=smin(d,extrude(sdShape(s*x,z,{p:BAT_UPWING}),y-.04,.03),.03);}return d;}},
- skull:{name:'Skull',emoji:'💀',fset:'skull',faces:PMODELS.skull.faces,fz:.5,fs:.42,hz:.86,hs:1.15,
-  body:(x,y,z)=>smin(sdSph(x,y,z,0,0,.56,.33),sdBox(x,y,z,0,-.05,.23,.24,.2,.16,.08),.12)}
+ ghost:{name:'Ghost',emoji:'👻',faces:['Happy','Boo!','Wink'],fx:BF(0,.6,.36,{rx:.15,ry:.2,ex:.38}),hz:.9,hs:.95,
+  body:(x,y,z)=>{const a=Math.atan2(y,x);
+   let d=smin(sdRev(x,y,z,0,1,[[0,.04],[.36,.04],[.35,.2],[.32,.5],[0,.5]]),sdSph(x,y,z,0,0,.58,.3),.16);
+   if(z<.18)d+=.03*(.5+.5*Math.cos(a*8+Math.PI/2))*(1-z/.18);
+   for(const s of[-1,1])d=smin(d,sdCap(x,y,z,[s*.24,-.02,.34],[s*.42,-.04,.44],.075),.08);return d;}},
+ pumpkin:{name:'Pumpkin',emoji:'🎃',faces:['Jack','Happy','Wink'],fx:[vFace(0,.33,.4,'jack',{ex:.36,ey:.22,kx:.68,ky:-.04}),vFace(0,.34,.4,'happy',{kx:.64}),vFace(0,.34,.4,'wink',{kx:.64})],hz:.62,hs:1.2,
+  body:(x,y,z,hat)=>{const r=Math.hypot(x,y)||1e-6,front=Math.min(1,Math.max(0,(y/r+.78)/.2)),c=Math.exp(-(((Math.cos(Math.atan2(y,x)*4))/.28)**2));
+   let d=Math.max(sdEll(x,y,z,0,0,.33,.46,.4,.32)+.035*c*front,.06-z);
+   d=smin(d,sdEll(x,y,z,0,0,.6,.1,.1,.04),.06);
+   if(!hat){d=smin(d,sdCap(x,y,z,[0,0,.6],[.03,0,.74],.05),.04);d=Math.min(d,sdCap(x,y,z,[.03,0,.74],[.1,0,.78],.04));
+    d=smin(d,extrude(sdShape(x,z,{e:[-.12,.68,.11,.045]}),y-.04,.018),.03);}
+   return d;}},
+ cat:{name:'Cat',emoji:'🐱',faces:['Sweet','Boo!','Wink'],fx:[vFace(0,.66,.36,'cat',{rx:.15,ry:.21,ex:.4,ey:.12}),vFace(0,.66,.36,'boo',{rx:.15,ry:.21,ex:.4}),vFace(0,.66,.36,'wink',{rx:.15,ry:.21,ex:.4})],hz:.9,hs:.92,
+  body:(x,y,z)=>{let d=Math.max(sdEll(x,y,z,0,.02,.24,.26,.23,.26),.05-z);d=smin(d,sdEll(x,y,z,0,0,.66,.34,.28,.28),.14);
+   for(const s of[-1,1]){d=smin(d,extrude(sdShape(s*x,z,{p:CAT_EAR}),y-.02,.05)-.02,.05);d=smin(d,sdEll(x,y,z,s*.11,-.18,.08,.08,.09,.06),.04);}
+   d=smin(d,sdCap(x,y,z,[.18,.18,.08],[.34,.06,.1],.055),.05);d=smin(d,sdCap(x,y,z,[.34,.06,.1],[.36,-.1,.13],.055),.03);return d;}},
+ frank:{name:'Frankie',emoji:'🧟',faces:['Happy','Boo!','Stitches'],fx:[vFace(0,.62,.34,'happy',{rx:.13,ry:.17,ex:.38,ey:.14}),vFace(0,.62,.34,'boo',{rx:.13,ry:.17,ex:.38,ey:.14}),vFace(0,.62,.34,'stitch',{rx:.13,ry:.17,ex:.38,ey:.14})],hz:.92,hs:1.02,
+  body:(x,y,z)=>{let d=sdBox(x,y,z,0,0,.26,.21,.16,.17,.07);
+   d=smin(d,sdBox(x,y,z,0,-.01,.63,.25,.22,.23,.11),.05);
+   d=Math.min(d,sdBox(x,y,z,0,.01,.84,.27,.24,.08,.05));
+   d=Math.min(d,extrude(sdShape(x,z,{p:FZIG}),y+.21,.025));
+   for(const s of[-1,1]){d=Math.min(d,sdCap(x,y,z,[s*.22,0,.46],[s*.31,0,.48],.04));d=Math.min(d,sdBox(x,y,z,s*.31,0,.48,.025,.05,.05,.015));
+    d=smin(d,sdCap(x,y,z,[s*.22,-.01,.38],[s*.27,-.04,.2],.06),.04);d=smin(d,sdSph(x,y,z,s*.27,-.05,.16,.08),.04);
+    d=Math.min(d,sdBox(x,y,z,s*.1,-.02,.05,.09,.13,.05,.04));}
+   return Math.max(d,-z);}},
+ bat:{name:'Bat',emoji:'🦇',faces:['Fangs','Boo!','Happy'],fx:[vFace(0,.44,.3,'fang',{rx:.16,ry:.2,ex:.4,ey:.16}),vFace(0,.44,.3,'boo',{rx:.16,ry:.2,ex:.4,ey:.16}),vFace(0,.44,.3,'happy',{rx:.16,ry:.2,ex:.4,ey:.16})],belly:true,hz:.72,hs:.85,
+  body:(x,y,z)=>{let d=Math.max(sdEll(x,y,z,0,0,.38,.3,.27,.32),.06-z);
+   for(const s of[-1,1]){d=smin(d,extrude(sdShape(s*x,z,{p:BAT_EAR}),y-.02,.05)-.015,.04);d=smin(d,extrude(sdShape(s*x,z,{p:BAT_WING}),y-.04,.022)-.006,.04);
+    d=smin(d,sdEll(x,y,z,s*.09,-.04,.06,.06,.07,.06),.04);}return d;}},
+ skull:{name:'Skull',emoji:'💀',faces:['Grin','Boo!','Wink'],fx:[vFace(0,.54,.36,'skull',{ex:.38,ey:.12,rx:.2}),vFace(0,.54,.36,'boo',{ex:.38,ey:.12,rx:.2,ry:.22,cheeks:1}),vFace(0,.54,.36,'wink',{ex:.38,ey:.12,rx:.2,ry:.22})],hz:.84,hs:1.1,
+  body:(x,y,z)=>{let d=smin(sdEll(x,y,z,0,.02,.56,.36,.33,.32),sdBox(x,y,z,0,-.03,.33,.23,.22,.1,.09),.12);
+   d=smin(d,sdRev(x,y,z,0,1,[[0,.04],[.2,.04],[.13,.12],[.12,.24],[0,.24]]),.06);
+   d=smin(d,Math.min(sdEll(x,y,z,-.12,-.13,.16,.12,.07,.075),sdEll(x,y,z,.12,-.13,.16,.12,.07,.075),sdSph(x,y,z,0,-.16,.16,.05)),.02);
+   return Math.max(d,.04-z);}}
 };
-const HATS=[['🚫','No hat',null],
- ['🧙','Witch hat',(x,y,z,c)=>sdRev(x,y,z,c.hz,c.hs,[[0,-.14],[.13,-.14],[.3,0],[.3,.03],[.12,.05],[.02,.42],[0,.42]])],
+const HATS=[['🧙','Witch hat',(x,y,z,c)=>sdRev(x,y,z,c.hz,c.hs,[[0,-.14],[.13,-.14],[.3,0],[.3,.03],[.12,.05],[.02,.42],[0,.42]])],
  ['🎩','Top hat',(x,y,z,c)=>sdRev(x,y,z,c.hz,c.hs,[[0,-.14],[.14,-.14],[.27,-.02],[.27,.01],[.16,.03],[.17,.3],[0,.3]])],
- ['🎀','Bow',(x,y,z,c)=>{const s=c.hs,b=c.hz+.02*s;return Math.min(sdEll(x,y,z,-.11*s,0,b,.1*s,.05*s,.07*s),sdEll(x,y,z,.11*s,0,b,.1*s,.05*s,.07*s),sdSph(x,y,z,0,0,b,.05*s));}]];
+ ['🎀','Bow',(x,y,z,c)=>{const s=c.hs,b=c.hz+.02*s;return Math.min(sdEll(x,y,z,-.11*s,0,b,.1*s,.05*s,.07*s),sdEll(x,y,z,.11*s,0,b,.1*s,.05*s,.07*s),sdSph(x,y,z,0,0,b,.05*s));}],
+ ['🚫','No hat',null]];
 const STAR=Array.from({length:10},(_,i)=>{const a=-Math.PI/2+i*Math.PI/5,r=i%2?.3:.52;return[Math.cos(a)*r,Math.sin(a)*r];});
-const BASES=[['🚫','No stand',null],['⚪','Round',(x,y,z)=>extrude(Math.hypot(x,y)-.4,z-.035,.035)],
- ['⬜','Square',(x,y,z)=>extrude(Math.max(Math.abs(x),Math.abs(y))-.36,z-.035,.035)],['⭐','Star',(x,y,z)=>extrude(sdShape(x,y,{p:STAR}),z-.035,.035)]];
-function standSDF(o){const C=PCHARS[o.char],F=FACE2D[C.fset][o.face],H=HATS[o.hat][2],B=BASES[o.base][2];
+const BASES=[['⚪','Round',(x,y,z)=>extrude(Math.hypot(x,y)-.42,z-.035,.035)],
+ ['⬜','Square',(x,y,z)=>extrude(Math.max(Math.abs(x),Math.abs(y))-.38,z-.035,.035)],['⭐','Star',(x,y,z)=>extrude(sdShape(x,y,{p:STAR}),z-.035,.035)],['🚫','No stand',null]];
+const FDEP=.065,FPOP=.032;
+/* raise a flat 2D region a little off the surface, softened so it reads like the round vector shapes */
+const bump=(d,f,h,y)=>Math.min(d,Math.max(f+h*.35,d-h,y));
+function standSDF(o){const C=PCHARS[o.char],F=C.fx[o.face],H=HATS[o.hat][2],B=BASES[o.base][2];
  return(x,y,z)=>{let d=C.body(x,y,z,!!H);
-  if(y<.05&&d<.12){const f=sdList(x/C.fs,(z-C.fz)/C.fs,F)*C.fs;d=o.pop?Math.min(d,Math.max(f,d-.035,y)):Math.max(d,-Math.max(f,-d-.045,y));}
+  if(y<.02&&d<.1){
+   if(C.belly)d=bump(d,sdShape(x,z,{e:[0,.22,.17,.12]}),.014,y);
+   if(F.k.length)d=bump(d,sdList(x,z,F.k),.018,y);
+   if(F.r.length)d=bump(d,sdList(x,z,F.r),.022,y);
+   const fe=F.e.length?sdList(x,z,F.e):1,fh=F.h.length?sdList(x,z,F.h):1,fm=F.m.length?sdList(x,z,F.m):1;
+   if(o.pop){d=bump(d,fe,FPOP,y);if(F.h.length)d=Math.max(d,-Math.max(fh,-d-.018,y));}
+   const cut=Math.min(o.pop?1:Math.max(fe,-fh),F.r.length?Math.max(fm,-sdList(x,z,F.r)):fm);d=Math.max(d,-Math.max(cut,-d-FDEP,y));}
   if(H)d=smin(d,H(x,y,z,C),.03);if(B)d=smin(d,B(x,y,z),.025);return d;};}
-/* surface nets: one vertex per surface cell, one quad per crossing edge. Grid border is outside, so the mesh is closed. */
+/* surface nets: one vertex per surface cell, one quad per crossing edge. Grid border is outside, so the mesh is closed.
+   Returns shared vertices P and triangle indices I, so the preview can shade it smoothly. */
 function meshSDF(f,b,cell){const nx=Math.ceil((b[3]-b[0])/cell)+1,ny=Math.ceil((b[4]-b[1])/cell)+1,nz=Math.ceil((b[5]-b[2])/cell)+1,F=new Float32Array(nx*ny*nz);
  for(let k=0;k<nz;k++)for(let j=0;j<ny;j++)for(let i=0;i<nx;i++){let v=f(b[0]+i*cell,b[1]+j*cell,b[2]+k*cell);if(!i||!j||!k||i===nx-1||j===ny-1||k===nz-1)v=Math.max(v,cell);F[i+nx*(j+ny*k)]=v;}
  const cx=nx-1,cy=ny-1,V=new Int32Array(cx*cy*(nz-1)).fill(-1),P=[];
@@ -9051,23 +9093,26 @@ function meshSDF(f,b,cell){const nx=Math.ceil((b[3]-b[0])/cell)+1,ny=Math.ceil((
   if(!m||m===255)continue;let sx=0,sy=0,sz=0,n=0;
   for(const[a,e]of ED){if((g[a]<0)===(g[e]<0))continue;const t=g[a]/(g[a]-g[e]);sx+=CO[a][0]+(CO[e][0]-CO[a][0])*t;sy+=CO[a][1]+(CO[e][1]-CO[a][1])*t;sz+=CO[a][2]+(CO[e][2]-CO[a][2])*t;n++;}
   V[i+cx*(j+cy*k)]=P.length/3;P.push(b[0]+(i+sx/n)*cell,b[1]+(j+sy/n)*cell,b[2]+(k+sz/n)*cell);}
- const T=[],vi=(i,j,k)=>V[i+cx*(j+cy*k)],tri=(a,c,d)=>T.push(P[a*3],P[a*3+1],P[a*3+2],P[c*3],P[c*3+1],P[c*3+2],P[d*3],P[d*3+1],P[d*3+2]);
- const quad=(a,c,d,e,flip)=>{if(flip){tri(a,d,c);tri(a,e,d);}else{tri(a,c,d);tri(a,d,e);}};
+ const I=[],vi=(i,j,k)=>V[i+cx*(j+cy*k)];
+ const quad=(a,c,d,e,flip)=>{if(flip)I.push(a,d,c,a,e,d);else I.push(a,c,d,a,d,e);};
  for(let k=1;k<nz-1;k++)for(let j=1;j<ny-1;j++)for(let i=1;i<nx-1;i++){const s=F[i+nx*(j+ny*k)]<0;
   if(s!==(F[i+1+nx*(j+ny*k)]<0))quad(vi(i,j-1,k-1),vi(i,j,k-1),vi(i,j,k),vi(i,j-1,k),!s);
   if(s!==(F[i+nx*(j+1+ny*k)]<0))quad(vi(i-1,j,k-1),vi(i-1,j,k),vi(i,j,k),vi(i,j,k-1),!s);
   if(s!==(F[i+nx*(j+ny*(k+1))]<0))quad(vi(i-1,j-1,k),vi(i,j-1,k),vi(i,j,k),vi(i-1,j,k),!s);}
- return new Float32Array(T);}
-/* buddy mesh in millimetres: sits on z=0, centred, total height = chosen size */
-function buildStand(o,cell){const t=meshSDF(standSDF(o),[-.6,-.56,-.04,.6,.56,1.42],cell);let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
- for(let i=0;i<t.length;i+=3){x0=Math.min(x0,t[i]);x1=Math.max(x1,t[i]);y0=Math.min(y0,t[i+1]);y1=Math.max(y1,t[i+1]);z0=Math.min(z0,t[i+2]);z1=Math.max(z1,t[i+2]);}
- const k=PSIZES[o.size][1]/(z1-z0),mx=(x0+x1)/2,my=(y0+y1)/2;for(let i=0;i<t.length;i+=3){t[i]=(t[i]-mx)*k;t[i+1]=(t[i+1]-my)*k;t[i+2]=(t[i+2]-z0)*k;}return t;}
+ return{P:new Float32Array(P),I:new Uint32Array(I)};}
+const unindex=m=>{const t=new Float32Array(m.I.length*3);for(let k=0;k<m.I.length;k++){const v=m.I[k]*3;t[k*3]=m.P[v];t[k*3+1]=m.P[v+1];t[k*3+2]=m.P[v+2];}return t;};
+/* buddy mesh in millimetres: sits on z=0, centred, total height = chosen size. Indexed {P,I,sdf,k,mx,my,z0} */
+function buildStandIdx(o,cell){const f=standSDF(o),m=meshSDF(f,[-.82,-.56,-.04,.82,.56,1.42],cell),P=m.P;let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9,z0=1e9,z1=-1e9;
+ for(let i=0;i<P.length;i+=3){x0=Math.min(x0,P[i]);x1=Math.max(x1,P[i]);y0=Math.min(y0,P[i+1]);y1=Math.max(y1,P[i+1]);z0=Math.min(z0,P[i+2]);z1=Math.max(z1,P[i+2]);}
+ const k=PSIZES[o.size][1]/(z1-z0),mx=(x0+x1)/2,my=(y0+y1)/2;const U=new Float32Array(P);for(let i=0;i<P.length;i+=3){P[i]=(P[i]-mx)*k;P[i+1]=(P[i+1]-my)*k;P[i+2]=(P[i+2]-z0)*k;}
+ return{P,I:m.I,U,sdf:f};}
+function buildStand(o,cell){return unindex(buildStandIdx(o,cell));}
 
 function buildSolid(o,NX,wantN){const m=PMODELS[o.shape],half=o.W/2,rt=6/half,tabV=m.vmax+rt*.3,vTop=o.key?tabV+rt:m.vmax,vBot=m.vmin;
  const du=2.1/NX,NY=Math.ceil((vTop-vBot+.1)/du),u0=-1.05,v0=vBot-.05,T0=3,puff=o.puffy?7:1.2,holeR=2.3/half;
  const Hh=new Float32Array(NX*NY);
  for(let j=0;j<NY;j++)for(let i=0;i<NX;i++){const u=u0+(i+.5)*du,v=v0+(j+.5)*du;let h=0;
-  if(m.inside(u,v)){h=T0+puff*m.relief(u,v);if(m.face(u,v,o.face))h=o.cut?0:Math.min(h,1.2);}
+  if(m.inside(u,v)){h=T0+puff*m.relief(u,v);const fc=m.face(u,v,o.face,o.cut);if(fc===1)h=o.cut?0:Math.min(h,1.2);else if(fc===2)h=Math.max(T0,h-(o.puffy?1.6:.8));}
   if(o.key){const d=Math.hypot(u,v-tabV);if(d<rt){if(d<holeR)h=0;else h=Math.max(h,T0);}}
   Hh[j*NX+i]=h;}
  const T=[],N=[];const cell=du*half,X=i=>(u0+i*du)*half,Y=j=>(v0+j*du)*half;
@@ -9090,7 +9135,7 @@ function b64(u8){let s='';const C=0x8000;for(let i=0;i<u8.length;i+=C)s+=String.
 
 
 SCENES.print={title:'Print Shop',mount(stage){
- const o={kind:'flat',shape:'pumpkin',face:0,size:1,puffy:true,cut:true,key:true,char:'ghost',sface:0,hat:0,base:1,pop:false,nick:store.get('hv-tag','')};
+ const o={kind:'flat',shape:'pumpkin',face:0,size:1,puffy:true,cut:true,key:true,char:'ghost',sface:0,hat:HATS.length-1,base:0,pop:false,nick:store.get('hv-tag','')};
  let P=null,raf=0,alive=true,ang=.6,drag=false,lastX=0;
  const root=el('div',{class:'prt'});const left=el('div',{class:'prt-view'}),right=el('div',{class:'prt-ctl'});root.append(left,right);stage.append(root);
  const cv=miniCanvas(520,440);cv.className='prt-cv';left.append(cv);
@@ -9138,16 +9183,17 @@ SCENES.print={title:'Print Shop',mount(stage){
  right.append(el('div',{class:'prt-act'},save,stat),help);
  const C=()=>o.kind==='stand'?PCHARS[o.char]:PMODELS[o.shape];
  function paintFaces(){const target=o.kind==='stand'?sFace:fFace,key=o.kind==='stand'?'sface':'face';target.innerHTML='';
-  C().faces.forEach((n,i)=>{const b=el('button',{class:'prt-b'+(o[key]===i?' on':''),type:'button'},el('span',{class:'e'},['😊','😈','🤪'][i]),el('small',{},n));b.onclick=()=>{o[key]=i;SFX.click();rebuild();paintFaces();};target.append(b);});}
+  C().faces.forEach((n,i)=>{const b=el('button',{class:'prt-b'+(o[key]===i?' on':''),type:'button'},el('span',{class:'e'},FACE_EMO[n]||['😊','😮','😉'][i]),el('small',{},n));b.onclick=()=>{o[key]=i;SFX.click();rebuild();paintFaces();};target.append(b);});}
  const all=[...kindB,...fShape,...fStyle,...fCut,...fKey,...sChar,...sPop,...sHat,...sBase,...sizeB];
  function paint(){all.forEach(b=>b.classList.toggle('on',!!b._get()));flat.hidden=o.kind!=='flat';stand.hidden=o.kind!=='stand';sizeB.forEach(b=>b.querySelector('.e').textContent=C().emoji);paintFaces();}
  const flatOpts=()=>({shape:o.shape,face:o.face,W:PSIZES[o.size][1],puffy:o.puffy,cut:o.cut,key:o.key});
  const standOpts=()=>({char:o.char,face:o.sface,hat:o.hat,base:o.base,pop:o.pop,size:o.size});
- function rebuild(){let t,n;if(o.kind==='stand'){t=buildStand(standOpts(),.027);n=null;}else{const r=buildSolid(flatOpts(),72,true);t=r.t;n=r.n;}
+ let G=null,T3=null;
+ function rebuild(){let t,n;if(o.kind==='stand'){const m=buildStandIdx(standOpts(),.022);G={stand:true,m};t=unindex(m);n=null;}else{const r=buildSolid(flatOpts(),72,true);G={stand:false,r};t=r.t;n=r.n;}
   const cnt=t.length/9;P={t,n:cnt,cen:new Float32Array(cnt*3),nor:n||new Float32Array(cnt*3)};
   for(let k=0;k<cnt;k++){const b=k*9;P.cen[k*3]=(t[b]+t[b+3]+t[b+6])/3;P.cen[k*3+1]=(t[b+1]+t[b+4]+t[b+7])/3;P.cen[k*3+2]=(t[b+2]+t[b+5]+t[b+8])/3;
    if(!n){const ax=t[b+3]-t[b],ay=t[b+4]-t[b+1],az=t[b+5]-t[b+2],bx=t[b+6]-t[b],by=t[b+7]-t[b+1],bz=t[b+8]-t[b+2];let nx=ay*bz-az*by,ny=az*bx-ax*bz,nz=ax*by-ay*bx;const l=Math.hypot(nx,ny,nz)||1;P.nor[k*3]=nx/l;P.nor[k*3+1]=ny/l;P.nor[k*3+2]=nz/l;}}
-  stat.textContent='';}
+  stat.textContent='';if(T3)T3.set(G);}
  /* fixed scale (px per mm) so Small, Medium and Large really look different, on a 1 cm grid */
  function draw(){const c=cv.ctx,W=520,H=440;c.clearRect(0,0,W,H);const g=c.createRadialGradient(W/2,H*.7,20,W/2,H*.7,W*.7);g.addColorStop(0,'#3B2380');g.addColorStop(1,'#140B2E');c.fillStyle=g;c.fillRect(0,0,W,H);
   if(!P)return;const st=o.kind==='stand',S=3.3,ca=Math.cos(ang),sa=Math.sin(ang),pit=st?.32:.9,cp=Math.cos(pit),sp=Math.sin(pit),oy=st?H*.8:H*.6;
@@ -9162,15 +9208,53 @@ SCENES.print={title:'Print Shop',mount(stage){
    c.fillStyle='rgb('+(r*sh|0)+','+(gg*sh|0)+','+(bb*sh|0)+')';c.strokeStyle=c.fillStyle;c.lineWidth=.6;c.beginPath();c.moveTo(a1[0],a1[1]);c.lineTo(a2[0],a2[1]);c.lineTo(a3[0],a3[1]);c.closePath();c.fill();c.stroke();}
   const mm=PSIZES[o.size][1];c.fillStyle='rgba(20,11,46,.75)';c.beginPath();c.roundRect?c.roundRect(12,12,190,34,17):c.rect(12,12,190,34);c.fill();
   c.fillStyle='#FFC34D';c.font='900 17px "Baloo 2",sans-serif';c.textAlign='left';c.fillText('📏 '+PSIZES[o.size][0]+': '+(st?(mm/10)+' cm tall':'about '+(mm/10)+' cm'),24,35);}
- let last=performance.now();function loop(){if(!alive)return;const now=performance.now();if(!drag)ang+=(now-last)/1000*.7;last=now;draw();raf=requestAnimationFrame(loop);}
- cv.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;cv.setPointerCapture(e.pointerId);});cv.addEventListener('pointermove',e=>{if(drag){ang+=(e.clientX-lastX)*.012;lastX=e.clientX;}});cv.addEventListener('pointerup',()=>{drag=false;});cv.addEventListener('pointercancel',()=>{drag=false;});
+ let last=performance.now();function loop(){if(!alive)return;const now=performance.now();if(!drag)ang+=(now-last)/1000*.7;last=now;if(T3)T3.draw(ang,o);else draw();raf=requestAnimationFrame(loop);}
+ const spin=c=>{c.addEventListener('pointerdown',e=>{drag=true;lastX=e.clientX;c.setPointerCapture(e.pointerId);});c.addEventListener('pointermove',e=>{if(drag){ang+=(e.clientX-lastX)*.012;lastX=e.clientX;}});c.addEventListener('pointerup',()=>{drag=false;});c.addEventListener('pointercancel',()=>{drag=false;});};spin(cv);
  const fname=()=>(o.nick+'-halloween-'+(o.kind==='stand'?'buddy-'+o.char:o.shape)+'-'+PSIZES[o.size][0].toLowerCase()).replace(/[^\w\-]+/g,'-')+'.stl';
- const finalStl=()=>stlBytes(o.kind==='stand'?buildStand(standOpts(),.016):buildSolid(flatOpts(),88));
+ const finalStl=()=>stlBytes(o.kind==='stand'?buildStand(standOpts(),.015):buildSolid(flatOpts(),96));
  save.onclick=async()=>{SFX.click();if(!tagOK(o.nick)){stat.textContent='Type your initials and grade first, like MM3.';nick.focus();SFX.bad();return;}const bytes=finalStl(),file=new File([bytes],fname(),{type:'model/stl'});const done=()=>{stat.textContent='Saved! Now send it the way your class shares work. 📤';help.classList.add('flash');setTimeout(()=>help.classList.remove('flash'),2400);SFX.good();};
   try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'My Halloween print'});done();return;}}catch(e){if(e&&e.name==='AbortError')return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'model/stl'}));a.download=fname();document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);done();};
  rebuild();paint();loop();
- return()=>{alive=false;cancelAnimationFrame(raf);};}};
+ /* smooth plastic preview with Three.js; the flat canvas drawing above stays as the fallback */
+ if(window.__hvThree)window.__hvThree().then(THREE=>{if(!alive)return;T3=PRINT_VIEW3D(THREE,cv);spin(T3.canvas);cv.replaceWith(T3.canvas);T3.set(G);}).catch(()=>{});
+ return()=>{alive=false;cancelAnimationFrame(raf);if(T3)T3.dispose();};}};
+const FACE_EMO={Happy:'😊','Boo!':'😮',Wink:'😉',Jack:'🎃',Sweet:'😺',Fangs:'🧛',Grin:'😁',Stitches:'🧵',Sleepy:'😴'};
+/* Three.js preview: same fixed px-per-mm scale and 1 cm grid as the canvas view, soft light, and darker carved-in spots so faces read like the vector art */
+function PRINT_VIEW3D(THREE,ref){const W=520,H=440,S=3.3;
+ const canvas=document.createElement('canvas');canvas.className=ref.className;canvas.style.width=ref.style.width;canvas.style.height=ref.style.height;
+ const R=new THREE.WebGLRenderer({canvas,antialias:true,alpha:false});R.setPixelRatio(Math.min(2,window.devicePixelRatio||1));R.setSize(W,H,false);
+ if('outputColorSpace' in R)R.outputColorSpace=THREE.SRGBColorSpace;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.05;
+ const scene=new THREE.Scene();
+ const bg=document.createElement('canvas');bg.width=4;bg.height=256;{const x=bg.getContext('2d'),g=x.createLinearGradient(0,0,0,256);g.addColorStop(0,'#140B2E');g.addColorStop(.75,'#3B2380');g.addColorStop(1,'#2A1858');x.fillStyle=g;x.fillRect(0,0,4,256);}
+ const bt=new THREE.CanvasTexture(bg);bt.colorSpace=THREE.SRGBColorSpace;scene.background=bt;
+ const cam=new THREE.OrthographicCamera(-W/S/2,W/S/2,H/S/2,-H/S/2,1,800);
+ scene.add(new THREE.HemisphereLight(0xf2ecff,0x4a3480,1.1));
+ const key=new THREE.DirectionalLight(0xffffff,2.1);key.position.set(-120,160,180);scene.add(key);
+ const rim=new THREE.DirectionalLight(0x8EE0D0,.9);rim.position.set(140,80,-160);scene.add(rim);
+ const fill=new THREE.DirectionalLight(0xffd6b0,.35);fill.position.set(160,40,120);scene.add(fill);
+ const spinG=new THREE.Group();scene.add(spinG);
+ const bed=new THREE.Mesh(new THREE.PlaneGeometry(110,110).rotateX(-Math.PI/2),new THREE.MeshStandardMaterial({color:0x4A4A5C,roughness:.9}));bed.position.y=-.05;spinG.add(bed);
+ const grid=new THREE.GridHelper(100,10,0xb4b4d2,0xb4b4d2);grid.material.transparent=true;grid.material.opacity=.35;spinG.add(grid);
+ const mat=new THREE.MeshStandardMaterial({vertexColors:true,roughness:.48,metalness:0});
+ const base=new THREE.Color().setRGB(PLASTIC[0]/255,PLASTIC[1]/255,PLASTIC[2]/255,THREE.SRGBColorSpace),ink=new THREE.Color().setRGB(.34,.27,.5,THREE.SRGBColorSpace);
+ let mesh=null,isStand=true;
+ function set(G){if(!G)return;if(mesh){spinG.remove(mesh);mesh.geometry.dispose();}const geo=new THREE.BufferGeometry();
+  if(G.stand){const{P,I,U,sdf}=G.m,n=P.length/3,pos=new Float32Array(n*3),nor=new Float32Array(n*3),col=new Float32Array(n*3),e=.004,c=new THREE.Color();
+   for(let v=0;v<n;v++){const x=U[v*3],y=U[v*3+1],z=U[v*3+2];
+    let gx=sdf(x+e,y,z)-sdf(x-e,y,z),gy=sdf(x,y+e,z)-sdf(x,y-e,z),gz=sdf(x,y,z+e)-sdf(x,y,z-e);const l=Math.hypot(gx,gy,gz)||1;gx/=l;gy/=l;gz/=l;
+    /* ambient occlusion from the distance field: hollows (eyes, mouths, creases) come out darker */
+    let occ=0;for(const[h,w]of[[.012,1],[.028,.6],[.05,.35]])occ+=w*Math.max(0,h-sdf(x+gx*h,y+gy*h,z+gz*h))/h;const ao=Math.max(0,Math.min(1,1-occ*.85));
+    c.copy(ink).lerp(base,ao);col[v*3]=c.r;col[v*3+1]=c.g;col[v*3+2]=c.b;
+    pos[v*3]=P[v*3];pos[v*3+1]=P[v*3+2];pos[v*3+2]=-P[v*3+1];nor[v*3]=gx;nor[v*3+1]=gz;nor[v*3+2]=-gy;}
+   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));geo.setIndex(new THREE.BufferAttribute(I,1));}
+  else{const{t,n}=G.r,m=t.length/3,pos=new Float32Array(m*3),nor=new Float32Array(m*3),col=new Float32Array(m*3);let top=0;for(let v=0;v<m;v++)top=Math.max(top,t[v*3+2]);
+   for(let v=0;v<m;v++){pos[v*3]=t[v*3];pos[v*3+1]=t[v*3+2];pos[v*3+2]=-t[v*3+1];nor[v*3]=n[v*3];nor[v*3+1]=n[v*3+2];nor[v*3+2]=-n[v*3+1];
+    const low=t[v*3+2]<1.6&&n[v*3+2]>.9?.55:1;col[v*3]=base.r*low+ink.r*(1-low);col[v*3+1]=base.g*low+ink.g*(1-low);col[v*3+2]=base.b*low+ink.b*(1-low);}
+   geo.setAttribute('position',new THREE.BufferAttribute(pos,3));geo.setAttribute('normal',new THREE.BufferAttribute(nor,3));geo.setAttribute('color',new THREE.BufferAttribute(col,3));}
+  mesh=new THREE.Mesh(geo,mat);spinG.add(mesh);isStand=G.stand;}
+ function draw(ang){const pit=isStand?.32:.9,ty=isStand?42:14;spinG.rotation.y=-ang;cam.position.set(0,ty+Math.sin(pit)*300,Math.cos(pit)*300);cam.lookAt(0,ty,0);R.render(scene,cam);}
+ return{canvas,set,draw,dispose(){if(mesh)mesh.geometry.dispose();mat.dispose();bt.dispose();R.dispose();}};}
 
 
 
