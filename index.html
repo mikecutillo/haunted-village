@@ -8951,7 +8951,7 @@ SCENES.coloring={title:'Coloring Studio',mount(stage){
 
 
 /* ---------- Print Shop: design a flat picture or a stand-up buddy, save an STL to the iPad ---------- */
-const PRINT_ENDPOINT='https://script.google.com/macros/s/AKfycbxW8dxYA3REofi_nrZZ76ZqUxvtCJUCUHlxZlrxaWEG4fH_82Qva4GkLUPY3PQt7vYV/exec';            /* Google Apps Script web app URL goes here (see teacher setup) */
+const PRINT_ENDPOINT='https://script.google.com/macros/s/AKfycbxW8dxYA3REofi_nrZZ76ZqUxvtCJUCUHlxZlrxaWEG4fH_82Qva4GkLUPY3PQt7vYV/exec';            /* class script: Pumpkin Patch and Top 10 boards */
 const PRINT_CODE='boo-2026';        /* simple class code checked by the script */
 const inEll=(u,v,cx,cy,rx,ry)=>((u-cx)/rx)**2+((v-cy)/ry)**2<=1;
 function inPoly(u,v,p){let c=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i],b=p[j];if((a[1]>v)!==(b[1]>v)&&u<(b[0]-a[0])*(v-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}

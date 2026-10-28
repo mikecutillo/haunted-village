@@ -1154,7 +1154,7 @@ const SAYS={
  quiz:'Answer fun questions about the village.',
  dressup:'Dress up Mabel with hats, capes, and brooms!',
  coloring:'Pick a picture and color it in!',
- print:'Design a little Halloween model. Then send it to your teacher to print for real!'};
+ print:'Make a Halloween model. Save it and send it in to be 3D printed!'};
 const VOICE={on:false,
  say(txt){if(!this.on||!('speechSynthesis' in window))return;try{speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(txt);u.rate=.92;u.pitch=1.15;u.lang='en-US';const vs=speechSynthesis.getVoices();const v=vs.find(x=>/Samantha|Karen|Ava|Allison|Google US English/i.test(x.name))||vs.find(x=>/^en/i.test(x.lang));if(v)u.voice=v;speechSynthesis.speak(u);}catch(e){}},
  force(txt){const o=this.on;this.on=true;this.say(txt);this.on=o;},
@@ -1770,8 +1770,8 @@ function drawTownCard(ctx,i,t,w,h){const s=w/340;ctx.save();ctx.scale(s,s);const
  else if(k===13){ctx.fillStyle='#1C2F5A';ctx.fillRect(0,H*.7,W,H*.2);ctx.fillStyle='#8A5A2B';ctx.fillRect(40,H*.66,180,10);for(let p=0;p<4;p++)ctx.fillRect(50+p*50,H*.68,8,H*.14);drawPumpkin(ctx,200,H*.64,22,.9);ctx.fillStyle='#FFC34D';ctx.globalAlpha=.3;ctx.beginPath();ctx.arc(200,H*.64,50,0,TAU);ctx.fill();ctx.globalAlpha=1;}
  ctx.restore();}
 
-/* ---------- Print Shop: design a small Halloween model, save an STL, send it to the teacher ---------- */
-const PRINT_ENDPOINT='https://script.google.com/macros/s/AKfycbxW8dxYA3REofi_nrZZ76ZqUxvtCJUCUHlxZlrxaWEG4fH_82Qva4GkLUPY3PQt7vYV/exec';            /* Google Apps Script web app URL goes here (see teacher setup) */
+/* ---------- Print Shop: design a small Halloween model, save an STL to the iPad ---------- */
+const PRINT_ENDPOINT='https://script.google.com/macros/s/AKfycbxW8dxYA3REofi_nrZZ76ZqUxvtCJUCUHlxZlrxaWEG4fH_82Qva4GkLUPY3PQt7vYV/exec';            /* class script: Pumpkin Patch and Top 10 boards */
 const PRINT_CODE='boo-2026';        /* simple class code checked by the script */
 const inEll=(u,v,cx,cy,rx,ry)=>((u-cx)/rx)**2+((v-cy)/ry)**2<=1;
 function inPoly(u,v,p){let c=false;for(let i=0,j=p.length-1;i<p.length;j=i++){const a=p[i],b=p[j];if((a[1]>v)!==(b[1]>v)&&u<(b[0]-a[0])*(v-a[1])/(b[1]-a[1])+a[0])c=!c;}return c;}
@@ -1858,8 +1858,8 @@ SCENES.print={title:'Print Shop',mount(stage){
  const nick=el('input',{class:'prt-in',type:'text',maxlength:'14',placeholder:'Your nickname',value:o.nick,'aria-label':'Your nickname'});nick.oninput=()=>{o.nick=nick.value.replace(/[^\w \-]/g,'').slice(0,14);store.set('hv-nick',o.nick);};
  right.append(el('div',{class:'prt-sec'},el('b',{},'8. Your nickname'),nick,el('small',{style:'color:var(--muted)'},'Use a nickname. Not your real name.')));
  const stat=el('div',{class:'prt-stat',role:'status'});
- const send=el('button',{class:'btn slime prt-send',type:'button'},'📧  Send to my teacher');const save=el('button',{class:'btn ghost prt-save',type:'button'},'💾  Save to this iPad');
- right.append(el('div',{class:'prt-act'},send,save),stat);
+ const save=el('button',{class:'btn slime prt-send',type:'button'},'💾  Save my model');
+ right.append(el('div',{class:'prt-act'},save),stat);
  function paintFaces(){faceRow.innerHTML='';PMODELS[o.shape].faces.forEach((n,i)=>{const b=el('button',{class:'prt-b'+(o.face===i?' on':''),type:'button'},el('span',{class:'e'},faceEmo[i]),el('small',{},n));b.onclick=()=>{o.face=i;SFX.click();rebuild();paintFaces();};faceRow.append(b);});}
  function paint(){btns.forEach(b=>b.classList.toggle('on',!!b._get()));colB.forEach(b=>b.classList.toggle('on',!!b._get()));paintFaces();}
  const opts=(res)=>({shape:o.shape,face:o.face,W:PSIZES[o.size][1],puffy:o.puffy,cut:o.cut,key:o.key});
@@ -1882,16 +1882,8 @@ SCENES.print={title:'Print Shop',mount(stage){
  const fname=()=>('halloween-'+o.shape+'-'+(o.nick||'print')).replace(/[^\w\-]+/g,'-').toLowerCase()+'.stl';
  const finalStl=()=>stlBytes(buildSolid(opts(),88));
  save.onclick=async()=>{SFX.click();const bytes=finalStl(),file=new File([bytes],fname(),{type:'model/stl'});
-  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'My Halloween print'});stat.textContent='Saved! Give this file to your teacher.';return;}}catch(e){if(e&&e.name==='AbortError')return;}
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:'My Halloween print'});stat.textContent='Saved! Now send it the way your class shares work. 📤';SFX.good();return;}}catch(e){if(e&&e.name==='AbortError')return;}
   const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([bytes],{type:'model/stl'}));a.download=fname();document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},4000);stat.textContent='Saved! Look in your Downloads or Files app.';SFX.good();};
- send.onclick=async()=>{SFX.click();if(!o.nick.trim()){stat.textContent='Type a nickname first.';nick.focus();SFX.bad();return;}
-  if(!PRINT_ENDPOINT){stat.textContent='Sending is not turned on yet. Tap Save and give the file to your teacher.';SFX.thud();return;}
-  send.disabled=true;stat.textContent='Sending to your teacher...';
-  try{const bytes=finalStl(),png=cv.toDataURL('image/png').split(',')[1];
-   const res=await fetch(PRINT_ENDPOINT,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({code:PRINT_CODE,nick:o.nick.trim(),shape:PMODELS[o.shape].name,face:PMODELS[o.shape].faces[o.face],color:PCOLORS[o.color][0],size:PSIZES[o.size][0]+' ('+PSIZES[o.size][1]+' mm)',style:(o.puffy?'Puffy':'Flat')+', '+(o.cut?'cut-out':'carved')+(o.key?', keychain hole':''),filename:fname(),stl:b64(bytes),png})});
-   const j=await res.json();if(j&&j.ok){stat.textContent='Sent! Your teacher will print it. 🎉';SFX.win();}else{stat.textContent='Hmm, that did not go through. Tap Save instead.';SFX.bad();}}
-  catch(e){stat.textContent='Could not confirm it was sent. Tap Save too, just in case.';SFX.bad();}
-  send.disabled=false;};
  rebuild();paint();loop();
  return()=>{alive=false;cancelAnimationFrame(raf);};}};
 
