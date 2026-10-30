@@ -10171,8 +10171,11 @@ function avHash(str){let h=7;for(const ch of String(str))h=(h*31+ch.charCodeAt(0
 function avCostumeName(cfg){const c=avFix(cfg),nm=id=>(typeof KID_INFO!=='undefined'&&KID_INFO[id]&&KID_INFO[id][1])||id;
  if((c.bot!=='same'&&c.bot!==c.outfit)||(c.back!=='same'&&c.back!==c.outfit))return 'Mix-and-match costume';return nm(c.outfit);}
 /* ---------- saved kids ---------- */
-function avLoad(){const a=store.get(AV_ST,[]);return Array.isArray(a)?a.filter(k=>k&&k.id&&k.cfg&&Array.isArray(k.emo)).slice(-AV_MAX):[];}
-function avSave(a){store.set(AV_ST,a.slice(-AV_MAX));}
+/* kids are kept in memory too: if the browser refuses to write localStorage (private tab, full storage), they still join the street and the cards for this visit */
+let AV_MEM=null,AV_OK=true;
+function avLoad(){if(AV_MEM&&!AV_OK)return AV_MEM.slice();const a=store.get(AV_ST,[]);return Array.isArray(a)?a.filter(k=>k&&k.id&&k.cfg&&Array.isArray(k.emo)).slice(-AV_MAX):[];}
+function avSave(a){a=a.slice(-AV_MAX);AV_MEM=a.slice();store.set(AV_ST,a);
+ try{const b=JSON.parse(localStorage.getItem(AV_ST)||'[]');AV_OK=Array.isArray(b)&&b.length===a.length&&a.every((k,i)=>b[i]&&b[i].id===k.id);}catch(e){AV_OK=false;}}
 /* rasterize a saved kid into the cast image cache so drawKid() can draw it like any other trick-or-treater */
 function avRegister(kid){const key='me_'+kid.id;if(NC_SVG[key])return key;NC_SVG[key]=avSVG(kid.cfg,{uid:'r'+kid.id});NC_BB[key]=[30,70,300,406];NC_KID[key]=key;
  const img=new Image();img.onload=()=>{const S=1.5,l=0,t=20,r=380,b=420;const cv=document.createElement('canvas');cv.width=Math.ceil((r-l)*S);cv.height=Math.ceil((b-t)*S);cv.getContext('2d').drawImage(img,-l*S,-t*S,380*S,420*S);NC[key]={cv,l,t,w:r-l,h:b-t};};
@@ -10252,7 +10255,9 @@ function avMakeWalker(kid,i,t){const key=avRegister(kid),d=avDoor(),dEntry=ROAD.
  return{ty:key,pl:{side:'R',y:AV_AT.y},door:d,entry,dEntry,x:d.x,y:d.y,st:'in',until:t+1+i*2.2,d:0,dir:-1,v:34+(i%4)*5,k:0,face:-1,r:seeded(900+i*13+(kid.id.length*7))};}
 avCastSync();
 {const _init=KIDLIFE.init.bind(KIDLIFE);KIDLIFE.init=function(t){_init(t);avLoad().forEach((k,i)=>{try{this.kids.push(avMakeWalker(k,i,t));}catch(e){console.warn('avatar kid',e);}});};}
-function avJoin(kid){if(!KIDLIFE.ready)return;const t=world.t||0;const w=avMakeWalker(kid,0,t);w.until=t+.6;KIDLIFE.kids=KIDLIFE.kids.filter(k=>k.ty!==w.ty);KIDLIFE.kids.push(w);}
+function avJoin(kid){if(!KIDLIFE.ready)return;const t=world.t||0;const w=avMakeWalker(kid,0,t);w.until=t+.9;KIDLIFE.kids=KIDLIFE.kids.filter(k=>k.ty!==w.ty);KIDLIFE.kids.push(w);}
+/* a kid waits behind the door until its picture is ready, so it never walks out as a stand-in costume */
+{const _kd=KIDLIFE.draw.bind(KIDLIFE);KIDLIFE.draw=function(ctx,t,dt,V){for(const k of this.kids){if(k.st==='in'&&String(k.ty).startsWith('me_')&&!NC[k.ty]&&t>=k.until-.05)k.until=t+.25;}return _kd(ctx,t,dt,V);};}
 function avLeave(id){const key='me_'+id;KIDLIFE.kids=KIDLIFE.kids.filter(k=>k.ty!==key);}
 
 /* ---------- the scene ---------- */
@@ -10419,12 +10424,16 @@ SCENES.avatar={title:'Character Creator',keepSong:true,mount(stage){
   const L=avSayings(emo,seed);setTimeout(()=>{if(alive&&step==='lines'){say(L[0][0]+' '+L[0][1]);markLine(0);lineI=1;}},300);}
  function finish(){if(step==='done')return;const kid={id:Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36),name:name||'New Kid',cfg:Object.assign({},cfg),emo:emo.slice(),seed,t:Date.now()};
   const all=avLoad();all.push(kid);while(all.length>AV_MAX){const old=all.shift();avLeave(old.id);}avSave(all);avCastSync();
+  /* send them out right now: closing the window, a back swipe or a stray tap can no longer stop the walk */
+  try{avJoin(kid);}catch(e){console.warn(e);}
   SFX.win();step='done';kidBox.classList.remove('bob');
   /* little walk-off: the kid hops and slides out of the mirror */
   const s=kidBox.querySelector('svg');if(s){s.style.transition='transform .9s ease-in, opacity .9s';s.style.transform='translateX(60%) translateY(-6%) scale(.85)';s.style.opacity='0';}
-  setTimeout(()=>KA.soon(()=>{if(!alive)return;closeScene();try{avJoin(kid);}catch(e){console.warn(e);}
+  /* the 3-2-1 chip still asks before the village moves the child; the kid is already out on the street either way */
+  setTimeout(()=>{const go=()=>{if(alive)closeScene();
    try{const k=world.scale||1;window.scrollTo({top:Math.max(0,AV_AT.y*k-innerHeight*.62),behavior:'smooth'});}catch(e){}
-   toast(kid.name+' '+kid.emo.join('')+' is off to trick-or-treat! Find them in Meet the Neighbors too.');},'🏘️',()=>{try{avJoin(kid);}catch(e){}}),950);}
+   toast(kid.name+' '+kid.emo.join('')+' is off to trick-or-treat! Find them in Meet the Neighbors too.');};
+   if(alive&&typeof KA!=='undefined'&&KA.soon)KA.soon(go,'🏘️',()=>{});else go();},950);}
  draw(false);build();
  return()=>{alive=false;clearTimeout(bubT);if(keyFn)removeEventListener('keydown',keyFn,true);};}};
 /* test hook: window.__hvAvatar.svg(cfg) */
