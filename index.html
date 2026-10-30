@@ -1803,10 +1803,14 @@ function closeMenu(){const m=$('#menu');if(m.hidden)return;menuTiles.forEach(c=>
 function makeGame(parent,W,H,opts={}){
  const wrap=el('div',{class:'gwrap'});const c=el('canvas',{class:'gcanvas'});wrap.append(c);parent.append(wrap);
  try{KA.guardTouch(wrap);}catch(e){}const ctx=c.getContext('2d');let scale=1,ox=0,oy=0,raf=0,last=0,running=true,dpr=1;
- function resize(){const r=wrap.getBoundingClientRect();if(!r.width||!r.height)return;dpr=Math.min(2,window.devicePixelRatio||1);c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);c.style.width=r.width+'px';c.style.height=r.height+'px';scale=Math.min(r.width/W,r.height/H);if(opts.cover)scale=Math.max(r.width/W,r.height/H);ox=(r.width-W*scale)/2;oy=opts.cover?(r.height-H*scale):(r.height-H*scale)/2;}
+ let started=false,lastTs=0,sizeKey='';
+ /* Only touch the canvas when its size really changed. Setting canvas.width wipes it, and Safari reports tiny size changes whenever fingers land
+    or its toolbar slides, which flashed the whole game black. When a real change does happen, repaint in the same breath so no blank frame shows. */
+ function resize(){const r=wrap.getBoundingClientRect();if(!r.width||!r.height)return;const nd=Math.min(2,window.devicePixelRatio||1),key=r.width+'x'+r.height+'@'+nd;if(key===sizeKey)return;sizeKey=key;dpr=nd;c.width=Math.round(r.width*dpr);c.height=Math.round(r.height*dpr);c.style.width=r.width+'px';c.style.height=r.height+'px';scale=Math.min(r.width/W,r.height/H);if(opts.cover)scale=Math.max(r.width/W,r.height/H);ox=(r.width-W*scale)/2;oy=opts.cover?(r.height-H*scale):(r.height-H*scale)/2;if(started&&running){try{render(lastTs);}catch(e){}}}
  const ro=new ResizeObserver(resize);ro.observe(wrap);resize();
  function toWorld(e){const r=c.getBoundingClientRect();return{x:(e.clientX-r.left-ox)/scale,y:(e.clientY-r.top-oy)/scale}}
- function loop(ts){if(!running)return;const dt=Math.min(.05,last?(ts-last)/1000:0);last=ts;if(opts.update)opts.update(dt*(typeof KA!=='undefined'?KA.rate():1),ts/1000);ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#0B0520';ctx.fillRect(0,0,c.width,c.height);ctx.setTransform(dpr*scale,0,0,dpr*scale,ox*dpr,oy*dpr);ctx.save();if(!opts.cover){ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();}if(opts.draw)opts.draw(ctx,ts/1000);ctx.restore();raf=requestAnimationFrame(loop);}
+ function render(ts){ctx.setTransform(1,0,0,1,0,0);ctx.fillStyle='#0B0520';ctx.fillRect(0,0,c.width,c.height);ctx.setTransform(dpr*scale,0,0,dpr*scale,ox*dpr,oy*dpr);ctx.save();if(!opts.cover){ctx.beginPath();ctx.rect(0,0,W,H);ctx.clip();}if(opts.draw)opts.draw(ctx,ts/1000);ctx.restore();}
+ function loop(ts){if(!running)return;const dt=Math.min(.05,last?(ts-last)/1000:0);last=ts;if(opts.update)opts.update(dt*(typeof KA!=='undefined'?KA.rate():1),ts/1000);render(ts);started=true;lastTs=ts;raf=requestAnimationFrame(loop);}
  raf=requestAnimationFrame(loop);
  return{canvas:c,ctx,wrap,toWorld,W,H,destroy(){running=false;cancelAnimationFrame(raf);ro.disconnect();}};
 }
@@ -2910,7 +2914,7 @@ SCENES.wrap={title:'Mummy Wrap',mount(stage){
   ov.append(p);g.wrap.append(ov);raf=requestAnimationFrame(anim);menuOv=ov;}
  /* ---- input: every finger belongs to the side it first touched ---- */
  function sideAt(x){return mode==='solo'?0:(x<W/2?0:1);}
- function down(e){e.preventDefault();SFX.get();try{g.canvas.setPointerCapture(e.pointerId);}catch(_){}const q=g.toWorld(e);ptrs.set(e.pointerId,{side:sideAt(q.x),a:null,acc:0});move(e);}
+ function down(e){e.preventDefault();if(e.pointerType==='touch'&&((e.width||0)>70||(e.height||0)>70))return;SFX.get();try{g.canvas.setPointerCapture(e.pointerId);}catch(_){}const q=g.toWorld(e);ptrs.set(e.pointerId,{side:sideAt(q.x),a:null,acc:0});move(e);}
  function move(e){const p=ptrs.get(e.pointerId);if(!p)return;if(e.pointerType==='mouse'&&!(e.buttons&1))return;
   const s=sides[p.side];if(!s)return;const q=g.toWorld(e);s.finger={x:q.x,y:q.y,t:performance.now()};
   if(state!=='play'||s.done){p.a=null;return;}
