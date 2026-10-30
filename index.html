@@ -10119,7 +10119,9 @@ function avSVG(cfg,opt={}){const c=avFix(cfg);const S=AV_SKINS[c.skin],HC=AV_HAI
  let defs='';used.forEach(k=>{defs+=avSrc(k).clips.join('');});
  const uid='av'+(opt.uid||(++AV_UID))+'_';
  let svg='<svg xmlns="http://www.w3.org/2000/svg" viewBox="'+(opt.vb||'-40 0 380 420')+'"'+(opt.size?'':' width="380" height="420"')+(opt.attrs||'')+'><defs>'+defs+'</defs>'+out.join('')+'</svg>';
- return svg.replace(/\bid="([^"]+)"/g,'id="'+uid+'$1"').replace(/url\(#/g,'url(#'+uid);}
+ return avOneEach(svg).replace(/\bid="([^"]+)"/g,'id="'+uid+'$1"').replace(/url\(#/g,'url(#'+uid);}
+/* A shape that sets the same attribute twice (the ink style already has a line width, and some moods add their own) is fine in the live preview but is invalid as a picture, so the saved kid could not be drawn and the old lion showed instead. Keep the last value of each attribute, which is the one the mood meant. */
+function avOneEach(svg){return svg.replace(/<([a-zA-Z][\w:-]*)((?:\s+[^\s=>\/]+(?:="[^"]*")?)+)\s*(\/?)>/g,(m,tag,attrs,sl)=>{const seen=new Map();attrs.replace(/\s+([^\s=>\/]+)(?:="([^"]*)")?/g,(x,n,v)=>{seen.set(n,v);return x;});if(seen.size===(attrs.match(/\s+[^\s=>\/]+(?:="[^"]*")?/g)||[]).length)return m;let o='<'+tag;seen.forEach((v,n)=>{o+=' '+n+(v===undefined?'':'="'+v+'"');});return o+sl+'>';});}
 
 /* ---------- personality emojis and what each one says ---------- */
 const AV_EMO=[
