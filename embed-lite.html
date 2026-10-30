@@ -3,7 +3,13 @@
 <head>
 <meta charset="utf-8">
 <title>Haunted Village</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<script>/* no browser zoom: iOS Safari ignores user-scalable, so stop its gestures directly */
+(function(){var stop=function(e){e.preventDefault();};
+['gesturestart','gesturechange','gestureend'].forEach(function(t){document.addEventListener(t,stop,{passive:false});});
+document.addEventListener('dblclick',stop,{passive:false});
+document.addEventListener('touchmove',function(e){if(e.touches.length>1&&e.cancelable&&!(e.target.closest&&e.target.closest('input,textarea')))e.preventDefault();},{passive:false});
+})();</script>
 <meta name="description" content="Haunted Village: games, shorts, a song you compose, and a live Witch Tracker for Halloween night.">
 <meta name="theme-color" content="#140B2E">
 <meta name="apple-mobile-web-app-capable" content="yes">

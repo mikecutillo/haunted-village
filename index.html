@@ -3,7 +3,13 @@
 <head>
 <meta charset="utf-8">
 <title>Haunted Village</title>
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<script>/* no browser zoom: iOS Safari ignores user-scalable, so stop its gestures directly */
+(function(){var stop=function(e){e.preventDefault();};
+['gesturestart','gesturechange','gestureend'].forEach(function(t){document.addEventListener(t,stop,{passive:false});});
+document.addEventListener('dblclick',stop,{passive:false});
+document.addEventListener('touchmove',function(e){if(e.touches.length>1&&e.cancelable&&!(e.target.closest&&e.target.closest('input,textarea')))e.preventDefault();},{passive:false});
+})();</script>
 <meta name="description" content="Haunted Village: games, shorts, a song you compose, and a live Witch Tracker for Halloween night.">
 <meta name="theme-color" content="#140B2E">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -1355,7 +1361,7 @@ const world={c:$('#world'),ctx:null,scale:1,base:1,zoom:+(store.get('hv-zoom',.7
   this.c.addEventListener('click',e=>this.tap(e));
   /* zoom: pinch on touch, ctrl+wheel on desktop, and the +/- buttons */
   let pinch=null;addEventListener('touchstart',e=>{if(e.touches.length===2)pinch={d:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY),z:this.zoom};},{passive:true});
-  addEventListener('touchmove',e=>{if(pinch&&e.touches.length===2){e.preventDefault();const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);this.setZoom(pinch.z*d/pinch.d,false);}},{passive:false});
+  addEventListener('touchmove',e=>{if(pinch&&e.touches.length===2){e.preventDefault();const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(!pinch.on){if(Math.abs(d-pinch.d)<40)return;pinch.on=true;pinch.d=d;}this.setZoom(pinch.z*d/pinch.d,false);}},{passive:false});
   addEventListener('touchend',()=>{if(pinch){pinch=null;store.set('hv-zoom',this.zoom);}});
   addEventListener('wheel',e=>{if(!e.ctrlKey)return;e.preventDefault();this.setZoom(this.zoom*(e.deltaY<0?1.08:.92));},{passive:false});
   $('#zoomIn').onclick=()=>{SFX.click();this.setZoom(this.zoom*1.25);};$('#zoomOut').onclick=()=>{SFX.click();this.setZoom(this.zoom/1.25);};
@@ -7337,7 +7343,7 @@ HS.mount=function(stage,cfg){
  root.addEventListener('pointerdown',e=>{if(e.target.closest('.hs-ui,.overlay'))return;try{root.setPointerCapture(e.pointerId);}catch(_){}P.set(e.pointerId,{x:e.clientX,y:e.clientY,x0:e.clientX,y0:e.clientY,t0:performance.now(),moved:0});vel.x=vel.y=0;tween=null;if(P.size===2){const[a,b]=[...P.values()];pinch={d:Math.hypot(a.x-b.x,a.y-b.y)||1,z:cam.z};}SFX.get();});
  root.addEventListener('pointermove',e=>{const p=P.get(e.pointerId);if(!p)return;const dx=e.clientX-p.x,dy=e.clientY-p.y;p.x=e.clientX;p.y=e.clientY;p.moved=Math.max(p.moved,Math.hypot(e.clientX-p.x0,e.clientY-p.y0));
   if(P.size===1){if(p.moved>9){root.classList.add('drag');cam.x-=dx/cam.z;cam.y-=dy/cam.z;vel.x=dx;vel.y=dy;clampCam();}}
-  else if(P.size===2&&pinch){const[a,b]=[...P.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);const r=root.getBoundingClientRect();setZoom(pinch.z*d/pinch.d,(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top);}});
+  else if(P.size===2&&pinch){const[a,b]=[...P.values()];const d=Math.hypot(a.x-b.x,a.y-b.y);if(!pinch.on){if(Math.abs(d-pinch.d)<40)return;pinch.on=true;pinch.d=d;}const r=root.getBoundingClientRect();setZoom(pinch.z*d/pinch.d,(a.x+b.x)/2-r.left,(a.y+b.y)/2-r.top);}});
  const up=e=>{const p=P.get(e.pointerId);if(!p)return;P.delete(e.pointerId);root.classList.remove('drag');if(P.size<2)pinch=null;if(e.type==='pointerup'&&p.moved<=9&&performance.now()-p.t0<800&&P.size===0)tap(e.clientX,e.clientY);};
  root.addEventListener('pointerup',up);root.addEventListener('pointercancel',up);
  root.addEventListener('wheel',e=>{e.preventDefault();const r=root.getBoundingClientRect();setZoom(cam.z*Math.exp(-e.deltaY*.0015),e.clientX-r.left,e.clientY-r.top);},{passive:false});
