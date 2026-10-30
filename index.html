@@ -684,6 +684,7 @@ const NC_BB={"bea":[98,77,281,403],"benny":[76,105,308,403],"bubbles":[67,113,30
 const NC={};
 (()=>{const S=1.5;for(const k in NC_SVG){const img=new Image();img.onload=()=>{const[l0,t0,r0]=NC_BB[k];const l=Math.max(0,Math.min(l0,98)-4),r=Math.min(380,Math.max(r0,282)+4),t=Math.max(0,t0-4),b=420;
  const cv=document.createElement('canvas');cv.width=Math.ceil((r-l)*S);cv.height=Math.ceil((b-t)*S);cv.getContext('2d').drawImage(img,-l*S,-t*S,380*S,420*S);NC[k]={cv,l,t,w:r-l,h:b-t};};
+ img.onerror=()=>{if(img._b)return;img._b=1;try{img.src=URL.createObjectURL(new Blob([NC_SVG[k]],{type:'image/svg+xml'}));}catch(e){}};
  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(NC_SVG[k]);}})();
 /* draw character k with feet at (x,y); k = frame pixels -> canvas units */
 function ncDraw(ctx,key,x,y,k,rot=0){const R=NC[key];if(!R)return false;ctx.save();ctx.translate(x,y);if(rot)ctx.rotate(rot);ctx.drawImage(R.cv,(R.l-190)*k,(R.t-403)*k,R.w*k,R.h*k);ctx.restore();return true;}
@@ -701,8 +702,10 @@ drawWerewolf=function(ctx,x,y,s,t,howl=0){const b=NC_BB.wolfie,k=s*NC_H.wolfie/(
 drawHorseman=function(ctx,x,y,s,t,rear=0){const b=NC_BB.horseman,k=s*190/(b[2]-b[0]),tt=t||0;ctx.save();ctx.translate(x,y);if(rear){ctx.translate(40*s,0);ctx.rotate(-rear*.32);ctx.translate(-40*s,0);}
  const ok=ncDraw(ctx,'horseman',-10*s,-Math.abs(Math.sin(tt*11))*5*s,k);ctx.restore();if(!ok)NC_OLD.horse(ctx,x,y,s,t,rear);};
 const NC_KID={ghost:'ivy',dino:'leo',astro:'max',lion:'june',robin:'theo',cowboy:'wyatt',karate:'kenji',rainbow:'iris',prisoner:'rocco',hippie:'sunny',frankkid:'gus',lumber:'hank',hero:'zoe',santa:'nick',fairy:'lulu',ptero:'dot',shark:'finn',bee:'bea',egg:'benny',pinata:'paco',cheer:'kelsey',alien:'zed',mermaid:'marina',croc:'snap'};
-drawKid=function(ctx,x,y,type,ph,s=1){const key=NC_KID[type];const k=s*84/267;
- if(!key||!ncDraw(ctx,key,x,y-Math.abs(Math.sin(ph||0))*3*s,k,Math.sin(ph||0)*.05))NC_OLD.kid(ctx,x,y,type,ph,s);};
+/* only the new cast art is ever drawn. If a kid's picture is not ready (or failed to load), a made-up kid uses the cast kid its outfit came from; anyone else waits, invisible, until the art is ready */
+const NC_STAND={};
+drawKid=function(ctx,x,y,type,ph,s=1){let key=NC_KID[type];if(!key||!NC[key])key=NC_STAND[type];if(!key||!NC[key])return;const k=s*84/267;
+ ncDraw(ctx,key,x,y-Math.abs(Math.sin(ph||0))*3*s,k,Math.sin(ph||0)*.05);};
 const NC_HOST={jack:'jack',mabel:'mabel',rattles:'rattles',pip:'pip',patches:'patches',midnight:'midnight'};
 drawHost=function(ctx,id,t){const key=NC_HOST[id];if(!key||!ncFit(ctx,key,60,128,116,122,-Math.abs(Math.sin((t||0)*3))*3))NC_OLD.host(ctx,id,t);};
 /* cast cards, hidden-object targets and the dino kid's name: patched once the tables exist */
@@ -10173,6 +10176,8 @@ function avSave(a){store.set(AV_ST,a.slice(-AV_MAX));}
 /* rasterize a saved kid into the cast image cache so drawKid() can draw it like any other trick-or-treater */
 function avRegister(kid){const key='me_'+kid.id;if(NC_SVG[key])return key;NC_SVG[key]=avSVG(kid.cfg,{uid:'r'+kid.id});NC_BB[key]=[30,70,300,406];NC_KID[key]=key;
  const img=new Image();img.onload=()=>{const S=1.5,l=0,t=20,r=380,b=420;const cv=document.createElement('canvas');cv.width=Math.ceil((r-l)*S);cv.height=Math.ceil((b-t)*S);cv.getContext('2d').drawImage(img,-l*S,-t*S,380*S,420*S);NC[key]={cv,l,t,w:r-l,h:b-t};};
+ try{const o=AV_OUTFITS.find(x=>x.id===(kid.cfg&&kid.cfg.outfit));NC_STAND[key]=o&&o.k?o.k:'ivy';}catch(e){NC_STAND[key]='ivy';}
+ img.onerror=()=>{if(img._b)return;img._b=1;try{img.src=URL.createObjectURL(new Blob([NC_SVG[key]],{type:'image/svg+xml'}));}catch(e){}};
  img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(NC_SVG[key]);
  const lines=avSayings(kid.emo,kid.seed||0);let n=0;
  try{Object.defineProperty(KID_SAY,key,{configurable:true,get(){const L=lines[n%lines.length];return L?L[0]+' '+L[1]:'Trick or treat!';}});}catch(e){}
